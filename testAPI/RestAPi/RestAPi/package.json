@@ -1,0 +1,15 @@
+{
+  "name": "rest-api",
+  "version": "0.0.0",
+  "description": "RestAPi",
+  "main": "server.js",
+  "author": {
+    "name": "Daniel"
+  },
+  "dependencies": {
+    "express": "latest",
+    "mongoose": "latest",
+    "body-parser":  "latest"
+
+  }
+}
