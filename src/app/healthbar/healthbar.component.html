@@ -1,0 +1,54 @@
+<div container="col-md-4">
+    <div class="healthBar">
+      <div class="col-md-1">Homework:</div>
+
+      <div id="bar" *ngIf='homeworkCounts[0] > 0' class="col-md-{{homeworkCounts[0]}} alert-danger">{{homeworkCounts[0]}}</div>
+      <div id="bar" *ngIf='homeworkCounts[0] == 0' class="col-md-1 alert-danger">0</div>
+
+      <div id="bar" *ngIf='homeworkCounts[1] > 0' class="col-md-{{homeworkCounts[1]}} alert-warning">{{homeworkCounts[1]}}</div>
+      <div id="bar" *ngIf='homeworkCounts[1] == 0' class="col-md-1 alert-warning">0</div>
+
+      <div id="bar" *ngIf='homeworkCounts[2] > 0' class="col-md-{{homeworkCounts[2]}} alert-success">{{homeworkCounts[2]}}</div>
+      <div id="bar" *ngIf='homeworkCounts[2] == 0' class="col-md-1 alert-success">0</div>
+    </div>
+
+    <br><br>
+    <div class="healthBar">
+      <div class="col-md-1">Tests:</div>
+
+      <div id="bar" *ngIf='testCounts[0] > 0' class="col-md-{{testCounts[0]}} alert-danger">{{testCounts[0]}}</div>
+      <div id="bar" *ngIf='testCounts[0] == 0' class="col-md-1 alert-danger">0</div>
+
+      <div id="bar" *ngIf='testCounts[1] > 0' class="col-md-{{testCounts[1]}} alert-warning">{{testCounts[1]}}</div>
+      <div id="bar" *ngIf='testCounts[1] == 0' class="col-md-1 alert-warning">0</div>
+
+      <div id="bar" *ngIf='testCounts[2] > 0' class="col-md-{{testCounts[2]}} alert-success">{{testCounts[2]}}</div>
+      <div id="bar" *ngIf='testCounts[2] == 0' class="col-md-1 alert-success">0</div>
+    </div>
+    <br><br>
+    <div class="healthBar">
+      <div class="col-md-1">Quizzes:</div>
+
+      <div id="bar" *ngIf='quizCounts[0] > 0' class="col-md-{{quizCounts[0]}} alert-danger">{{quizCounts[0]}}</div>
+      <div id="bar" *ngIf='quizCounts[0] == 0' class="col-md-1 alert-danger">0</div>
+
+      <div id="bar" *ngIf='quizCounts[1] > 0' class="col-md-{{quizCounts[1]}} alert-warning">{{quizCounts[1]}}</div>
+      <div id="bar" *ngIf='quizCounts[1] == 0' class="col-md-1 alert-warning">0</div>
+
+      <div id="bar" *ngIf='quizCounts[2] > 0' class="col-md-{{quizCounts[2]}} alert-success">{{quizCounts[2]}}</div>
+      <div id="bar" *ngIf='quizCounts[2] == 0' class="col-md-1 alert-success">0</div>
+    </div>
+    <br><br>
+    <div class="healthBar">
+      <div class="col-md-1">Projects:</div>
+
+      <div id="bar" *ngIf='projectCounts[0] > 0' class="col-md-{{projectCounts[0]}} alert-danger">{{projectCounts[0]}}</div>
+      <div id="bar" *ngIf='projectCounts[0] == 0' class="col-md-1 alert-danger">0</div>
+
+      <div id="bar" *ngIf='projectCounts[1] > 0' class="col-md-{{projectCounts[1]}} alert-warning">{{projectCounts[1]}}</div>
+      <div id="bar" *ngIf='projectCounts[1] == 0' class="col-md-1 alert-warning">0</div>
+
+      <div id="bar" *ngIf='projectCounts[2] > 0' class="col-md-{{projectCounts[2]}} alert-success">{{projectCounts[2]}}</div>
+      <div id="bar" *ngIf='projectCounts[2] == 0' class="col-md-1 alert-success">0</div>
+    </div>
+</div>
