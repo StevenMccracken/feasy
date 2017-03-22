@@ -20,6 +20,9 @@ import { HealthbarComponent } from './healthbar/healthbar.component';
 //services
 import { AssignmentService } from './service/assignment.service';
 
+//bootsrtap
+import { NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -32,8 +35,9 @@ import { AssignmentService } from './service/assignment.service';
     BrowserModule,
     FormsModule,
     HttpModule,
+    NgbModalModule.forRoot(),
     CalendarModule.forRoot(),
-    MaterialModule.forRoot(),
+    MaterialModule.forRoot()
 
   ],
   providers: [ AssignmentService ],
