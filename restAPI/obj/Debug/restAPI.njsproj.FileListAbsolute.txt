@@ -1,2 +1,0 @@
-C:\epicenterAPIs\restAPI\restAPI\obj\Debug\restAPI.njsprojResolveAssemblyReference.cache
-C:\epicenterAPIs\restAPI\restAPI\bin\Microsoft.NodejsTools.WebRole.dll
