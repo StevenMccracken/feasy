@@ -1,0 +1,76 @@
+.menuBar {
+    height: 120%;
+
+}
+
+md-list-item {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.menuContent {
+    text-align: center;
+    display: flex;
+}
+.menuBar:hover {
+    border-left: 6px solid;
+    border-color: #483D8B;
+}
+.menuBar:focus {
+    border: 6px solid lightgray;
+}
+
+.closeSide {
+    font-family: 'Nunito', sans-serif;
+    float: right;
+    margin-right: 0px;
+}
+
+h3.logo{
+    font-family: 'Pacifico', cursive;
+    margin-bottom: 30px;
+    border-bottom: 1px
+}
+.card{
+    background: white;
+}
+
+md-sidenav.md-sidenav-opened, md-sidenav.md-sidenav-opening{
+    box-shadow: none;
+    border-right: 1px solid purple;
+}
+
+h4.route {
+    padding-top: 8px;
+    margin-left: 90px;
+}
+.leftMenu{
+    display:flex;
+}
+.toolBarComponent{
+    font-family: 'Nunito', sans-serif;
+}
+.dropdown-item {
+    padding: 3px 0.5rem !important;
+}
+i.fa.fa-user-circle{
+    font-size: 150%;
+}
+.top-dropdown-menu{
+    width: 145px;
+    top: 55px;
+    right: -25px;
+}
+
+.form-inline {
+    margin-left: 50px;
+}
+
+.searchTool {
+    background-color: lightgray;
+}
+
+.healthbar-widget{
+    margin: 5px 5px;
+    width: 90%;
+}

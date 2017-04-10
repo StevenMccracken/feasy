@@ -1,0 +1,82 @@
+<md-sidenav-container>
+
+    <!-- The bottom code is specifically for the sidebar -->
+    <md-sidenav #sidenav mode="side"  class="app-sidenav" color="primary">
+
+        <!-- allows the sidebar a exit 'X' functionality to close itself -->
+        <div class="closeSide">
+            <button class="closeSide" (click)="sidenav.close()">
+                X
+            </button>
+        </div>
+
+        <br>
+
+        <div class="title">
+            <h3 class="logo">Epicenter</h3>
+        </div>
+
+        <!-- This is where the menu happens it uses Angular's interpolation feature
+        along with *ngFor to loop through an array of menu located in the component
+        .ts file-->
+        <div class="menuSide">
+            <md-list>
+                <md-list-item *ngFor="let item of items" class="menuBar">
+                    <div class="menuContent">
+                        <i md-list-avatar class="{{ item.icon }}"></i>
+                        <h2 md-line> {{ item.menu }} </h2>
+                    </div>
+                </md-list-item>
+            </md-list>
+
+            <app-danger-alert></app-danger-alert>
+        </div>
+
+    </md-sidenav>
+    <!-- The bottom is code for the toolbar that is purely used for general  -->
+    <md-toolbar class="toolBarComponent" layout="row">
+        <button *ngIf="!sidenav.opened" class="app-icon-button" (click)="sidenav.toggle()">
+            <i class="fa fa-bars fa-lg icon" aria-hidden="true"></i>
+        </button>
+
+        <form class="form-inline">
+            <div class="form-group">
+                <i class="fa fa-search icon"></i>
+                <input type="text" class="form-control mx-sm-3 searchTool" placeholder="Search for...">
+            </div>
+        </form>
+
+        <span class="app-toolbar-filler"></span>
+        <div class="dropdown">
+            <button class="btn dropdown icon" data-toggle="dropdown">
+                <i class="fa fa-user-circle" aria-hidden="true"></i>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right">
+                <a class="dropdown-item" href="#">Profile</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="#">Settings</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="#">Sign-Out</a>
+            </div>
+        </div>
+    </md-toolbar>
+
+    <div>
+        <md-card>
+            <app-calendar></app-calendar>
+        </md-card>
+    </div>
+    <div class="healthbar-widget">
+        <md-card>
+            <md-card-title>Health Bar</md-card-title>
+            <app-healthbar></app-healthbar>
+        </md-card>
+    </div>
+
+    <md-grid-list cols="4" rowHeight="100px">
+        <md-grid-tile [colspan]="2" [rowspan]="5">
+            the health bar
+        </md-grid-tile>
+    </md-grid-list>
+
+</md-sidenav-container>
