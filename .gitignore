@@ -3,9 +3,7 @@
 /tmp
 
 # dependencies
-/node_modules
-/bower_components
-/restAPI/node_modules
+node_modules/
 
 # IDEs and editors
 /.idea
