@@ -1,33 +1,32 @@
 var User = require('../models/user.js');
 
-//post function for creating a user
-exports.postUsers = (function (req, res) {
-    var user = new User();      // create a new instance of the User model
-    user.userId = req.body.userId;
-    user.userName = req.body.userName;
-    user.email = req.body.email;
-    user.password = req.body.password;
+var exports = module.exports = {};
 
-    // save the user and check for errors
-    user.save(function (err) {
+exports.getUsers = function(req, callback) {
+    User.find((err, users) => {
+        if (err) {
+            return console.log('Unable to retrieve all users');
+        }
+        console.log(users);
+        callback(users);
+    });
+};
+
+exports.postUser = function(req, callback) {
+    var newUser = new User();
+    newUser.userId     = req.body.userId;
+    newUser.userName   = req.body.userName;
+    newUser.email      = req.body.email;
+    newUser.password   = req.body.password;
+
+    newUser.save(function (err) {
         if (err) {
             res.send(err);
+            return;
         }
         res.json({ message: 'User created!' });
     });
-});
-
-//gets all users //////// REMOVE BEFORE LAUNCHING /////////////////////////////////////////////////////////////////////////////
-exports.getUsers    = (function (req, res) {
-    //find users
-    User.find(function (err, users) {
-        if (err) {
-            res.send(err);
-        }
-        res.json(users);//send all users if no errors
-    });
-});
-
+};
 
 //get a specific user by name
 exports.getUserById = (function (req, res) {

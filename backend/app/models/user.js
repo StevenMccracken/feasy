@@ -1,14 +1,12 @@
 ﻿var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
- 
 
 var UserSchema = mongoose.Schema({
-    userId: { type: Number, required: true, index: { unique: true } }, 
-    userName: { type: String, required: true, index: { unique: true } },
-    email: String,
-    password: { type: String, required: true},
-    dateCreated: { type: Date, default: Date.now }
-
+    userId:         { type: Number, required: true, index: { unique: true } },
+    userName:       { type: String, required: true, index: { unique: true } },
+    email:          String,
+    password:       { type: String, required: true},
+    dateCreated:    { type: Date, default: Date.now }
 });
 
 //excucute before user.save() is called
@@ -29,7 +27,6 @@ UserSchema.pre('save', function (callback) {
         });
     });
 });
-
 
 //export mongoose model to be used
 module.exports = mongoose.model('User', UserSchema);

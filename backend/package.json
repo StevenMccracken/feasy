@@ -1,5 +1,5 @@
 {
-    "name": "Epicenter backend",
+    "name": "epicenter",
     "version": "0.0.0",
     "description": "Epicenter backend",
     "main": "server.js",
