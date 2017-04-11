@@ -30,34 +30,28 @@ module.exports = function(_router) {
     router.route('/users/:user_id').get((req, res) => {
         // Check user_id parameter for non-numeric characters
         if(!(/^\d+$/).test(req.params.user_id)) {
-            res.json(null);
-            return;
+            return res.json(null);
         }
 
         users.getUserById(req, user => {
             res.json(user);
         });
     });
-    // .put(users.updaterUser) // TODO: put request to update user
 
     // Create a user
     router.route('/users').post((req, res) => {
         // Check request parameters
         if(!isValidUserId(req.body.userId)) {
-            reject(req, res, 'userId');
-            return;
+            return reject(req, res, 'userId');
         }
         if(!isValidUsername(req.body.userName)) {
-            reject(req, res, 'userName');
-            return;
+            return reject(req, res, 'userName');
         }
         if(!isValidEmail(req.body.email)) {
-            reject(req, res, 'email');
-            return;
+            return reject(req, res, 'email');
         }
         if(req.body.password == null || req.body.password === '') {
-            reject(req, res, 'password');
-            return;
+            return reject(req, res, 'password');
         }
 
         // Parameters passed all checks, so go to the db
@@ -66,17 +60,33 @@ module.exports = function(_router) {
         });
     });
 
+    // Update a user
+    router.route('/users/:user_id').put((req, res) => {
+        // Check user_id parameter for non-numeric characters
+        if(!(/^\d+$/).test(req.params.user_id)) {
+            return res.json(null);
+        }
+
+        // Check request paramters
+        if(!isValidUsername(req.body.userName)) {
+            return reject(req, res, 'userName');
+        }
+
+        users.updateUser(req, result => {
+            res.json(result);
+        });
+    });
+
     // Delete a user
     router.route('/users/:user_id').delete((req, res) => {
         // Check user_id parameter for non-numeric characters
         if(!(/^\d+$/).test(req.params.user_id)) {
-            var result = {
+            var response = {
                 result: 'failed',
                 reason: 'user_id does not exist'
             };
             console.log('Delete request failed because user_id %s does not exist', req.params.user_id);
-            res.json(result);
-            return;
+            return res.json(response);
         }
 
         users.deleteUser(req, result => {

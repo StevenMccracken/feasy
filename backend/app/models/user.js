@@ -9,14 +9,14 @@ var UserSchema = mongoose.Schema({
     dateCreated:    { type: Date, default: Date.now }
 });
 
-//excucute before user.save() is called
+// Executes right before user is saved in the database
 UserSchema.pre('save', function (callback) {
     var user = this;
 
-    //break out if password hasnt changed
+    // If user didn't update password, break out
     if (!user.isModified('password')) return callback();
 
-    //hashing passoword
+    // Password has changed, so hash the new password
     bcrypt.genSalt(5, function (err, salt) {
         if (err) return callback(err);
 
