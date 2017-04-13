@@ -34,15 +34,15 @@ module.exports = function(_router) {
         });
     });
 
-    // Get all users
-    router.route('/users').get((req, res) => {
-        users.getUsers(req, dbResult => {
-            if(dbResult['error'] != null) {
-                return rejectFromJson(req, res, dbResult);
-            }
-            res.json(dbResult);
-        });
-    });
+    // // Get all users
+    // router.route('/users').get((req, res) => {
+    //     users.getUsers(req, dbResult => {
+    //         if(dbResult['error'] != null) {
+    //             return rejectFromJson(req, res, dbResult);
+    //         }
+    //         res.json(dbResult);
+    //     });
+    // });
 
     // Get a specific user by their username
     router.route('/users/:username').get((req, res) => {
@@ -132,11 +132,11 @@ module.exports = function(_router) {
     // TODO: Get all assignments
     router.route('/users/:username/assignments').get((req, res) => {
         // Check request parameters
-        if(!isValidUserId(req.params.user_id)) {
-            return reject(req, res, 'invalid_request_error', 'Your user ID parameter is invalid');
+        if(!isValidUserId(req.params.username)) {
+            return reject(req, res, 'invalid_request_error', 'Your username parameter is invalid');
         }
 
-        users.getUserById(req, dbResult => {
+        assignments.getAllAssignments(req, dbResult => {
             if(dbResult['error'] != null) {
                 return rejectFromJson(req, res, dbResult);
             }
@@ -207,7 +207,7 @@ function rejectFromJson(request, response, errorJson) {
  * Sends detailed error JSON to the client and logs the error
  * @param {Object} request - the HTTP request
  * @param {Object} response - the HTTP response
- * @param {string} errorType - a standardized error type
+ * @param {string} errorType - the standardized error type
  * @param {string} errorMessage - a more clear explanation of what went wrong
  */
 function reject(request, response, errorType, errorMessage) {

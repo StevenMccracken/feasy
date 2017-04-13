@@ -299,10 +299,10 @@ exports.login = function(req, callback) {
 
 /**
  * Creates a detailed JSON message when a failure occurs and logs the error
- * @param {string} source -
- * @param {string} reason -
- * @param {string} errorType -
- * @param {string} reason -
+ * @param {string} source - the name of the function where the error occurred
+ * @param {string} reason - the detailed reason the function received an error (kept private on the server)
+ * @param {string} errorType - the standardized error type
+ * @param {string} details - a more clear explanation of what went wrong (for the client)
  * @returns {Object}
  */
 function fail(source, reason, errorType, details) {

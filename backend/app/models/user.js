@@ -12,7 +12,7 @@ var UserSchema = mongoose.Schema({
 });
 
 // Executes right before user is saved in the database
-UserSchema.pre('save', (callback) => {
+UserSchema.pre('save', function(callback) {
     // If user didn't update password, break out
     if (!this.isModified('password')) {
         return callback();
