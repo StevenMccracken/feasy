@@ -8,9 +8,9 @@ module.exports = function(_router) {
     router = _router;
 
     // Middleware
-	router.use( (req, res, next) => {
+	router.use((req, res, next) => {
 	    var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-	    console.log(req.method + ' request came in from ' + ip);
+	    console.log('%s request came in from %s', req.method, ip);
 	    next();
 	});
 
@@ -19,109 +19,247 @@ module.exports = function(_router) {
         res.json( { message: 'This is the REST API for Epicenter' } );
     });
 
-    // Get all users
-    router.route('/users').get((req, res) => {
-        users.getUsers(req, users => {
-            res.json(users);
+    router.post('/login', (req, res) => {
+        // Check request parameters
+        if(!req.body.username || !req.body.password) {
+            return reject(req, res, 'invalid_request_error', 'Missing login parameters');
+        }
+
+        users.login(req, result => {
+            if(result['error'] != null) {
+                return rejectFromJson(req, res, result);
+            }
+            res.json(result);
         });
     });
 
-    // Get a specific user
-    router.route('/users/:user_id').get((req, res) => {
-        // Check user_id parameter for non-numeric characters
-        if(!(/^\d+$/).test(req.params.user_id)) {
-            return res.json(null);
+    // Get all users
+    router.route('/users').get((req, res) => {
+        users.getUsers(req, dbResult => {
+            if(dbResult['error'] != null) {
+                return rejectFromJson(req, res, dbResult);
+            }
+            res.json(dbResult);
+        });
+    });
+
+    // Get a specific user by their username
+    router.route('/users/:username').get((req, res) => {
+        // Check request parameters
+        if(!isValidUsername(req.params.username)) {
+            return reject(req, res, 'invalid_request_error', 'Your username parameter is invalid');
         }
 
-        users.getUserById(req, user => {
-            res.json(user);
+        users.getUserByUsername(req, dbResult => {
+            if(dbResult['error'] != null) {
+                return rejectFromJson(req, res, dbResult);
+            }
+            res.json(dbResult);
         });
     });
 
     // Create a user
     router.route('/users').post((req, res) => {
         // Check request parameters
-        if(!isValidUserId(req.body.userId)) {
-            return reject(req, res, 'userId');
-        }
-        if(!isValidUsername(req.body.userName)) {
-            return reject(req, res, 'userName');
+        if(!isValidUsername(req.body.username)) {
+            return reject(req, res, 'invalid_request_error', 'Your username parameter is invalid');
         }
         if(!isValidEmail(req.body.email)) {
-            return reject(req, res, 'email');
+            return reject(req, res, 'invalid_request_error', 'Your email parameter is invalid');
         }
-        if(req.body.password == null || req.body.password === '') {
-            return reject(req, res, 'password');
+        if(!isValidPassword(req.body.password)) {
+            return reject(req, res, 'invalid_request_error', 'Your password parameter is invalid');
+        }
+        if(!isValidName(req.body.firstName)) {
+            return reject(req, res, 'invalid_request_error', 'Your firstName parameter is invalid');
+        }
+        if(!isValidName(req.body.lastName)) {
+            return reject(req, res, 'invalid_request_error', 'Your lastName parameter is invalid');
         }
 
         // Parameters passed all checks, so go to the db
-        users.postUser(req, result => {
-            res.json(result);
+        users.createUser(req, dbResult => {
+            if(dbResult['error'] != null) {
+                return rejectFromJson(req, res, dbResult);
+            }
+            res.status(201).json(dbResult);
         });
     });
 
     // Update a user
-    router.route('/users/:user_id').put((req, res) => {
-        // Check user_id parameter for non-numeric characters
-        if(!(/^\d+$/).test(req.params.user_id)) {
-            return res.json(null);
-        }
-
+    router.route('/users/:username').put((req, res) => {
         // Check request paramters
-        if(!isValidUsername(req.body.userName)) {
-            return reject(req, res, 'userName');
+        if(!isValidUsername(req.params.username)) {
+            return reject(req, res, 'invalid_request_error', 'Your username parameter is invalid');
+        }
+        if(req.body.new_username && !isValidUsername(req.body.new_username)) {
+            return reject(req, res, 'invalid_request_error', 'Your new username parameter is invalid');
+        }
+        if(req.body.new_email && !isValidEmail(req.body.new_email)) {
+            return reject(req, res, 'invalid_request_error', 'Your new email parameter is invalid');
+        }
+        if(req.body.new_firstName && !isValidName(req.body.new_firstName)) {
+            return reject(req, res, 'invalid_request_error', 'Your new first name parameter is invalid');
+        }
+        if(req.body.new_lastName && !isValidName(req.body.new_lastName)) {
+            return reject(req, res, 'invalid_request_error', 'Your new last name parameter is invalid');
         }
 
-        users.updateUser(req, result => {
-            res.json(result);
+        users.updateUser(req, dbResult => {
+            if(dbResult['error'] != null) {
+                return rejectFromJson(req, res, dbResult);
+            }
+            res.status(200).json(dbResult);
         });
     });
 
     // Delete a user
-    router.route('/users/:user_id').delete((req, res) => {
-        // Check user_id parameter for non-numeric characters
-        if(!(/^\d+$/).test(req.params.user_id)) {
-            var response = {
-                result: 'failed',
-                reason: 'user_id does not exist'
-            };
-            console.log('Delete request failed because user_id %s does not exist', req.params.user_id);
-            return res.json(response);
+    router.route('/users/:username').delete((req, res) => {
+        // Check request parameters
+        if(!isValidUsername(req.params.username)) {
+            return reject(req, res, 'invalid_request_error', 'Your username parameter is invalid');
         }
 
-        users.deleteUser(req, result => {
-            res.json(result);
+        users.deleteUser(req, dbResult => {
+            if(dbResult['error'] != null) {
+                return rejectFromJson(req, res, dbResult);
+            }
+            res.json(dbResult);
         });
     });
 
-    // TODO: Uupdate these assignment routes to new format
-    router.route('/users/:user_id/assignments')
-    .get(assignments.getAllAssignments)
-    .post(assignments.createAssignment);
+    // TODO: Get all assignments
+    router.route('/users/:username/assignments').get((req, res) => {
+        // Check request parameters
+        if(!isValidUserId(req.params.user_id)) {
+            return reject(req, res, 'invalid_request_error', 'Your user ID parameter is invalid');
+        }
+
+        users.getUserById(req, dbResult => {
+            if(dbResult['error'] != null) {
+                return rejectFromJson(req, res, dbResult);
+            }
+            res.json(dbResult);
+        });
+    });
+
+    // TODO: Get a specific assignment
+    router.route('/users/:user_id/assignments/:assignment_id').get((req, res) => {
+        // Check request parameters
+        if(!isValidUserId(req.params.user_id)) {
+            return reject(req, res, 'invalid_request_error', 'Your user ID parameter is invalid');
+        }
+    });
+
+    // TODO: Create an assignment
+    router.route('/users/:user_id/assignments').post((req, res) => {
+        // Check request parameters
+        if(!isValidUserId(req.params.user_id)) {
+            return reject(req, res, 'invalid_request_error', 'Your user ID parameter is invalid');
+        }
+    });
+
+    // TODO: Update an asssignment
+    router.route('/users/:user_id/assignments/:assignment_id').put((req, res) => {
+        // Check request parameters
+        if(!isValidUserId(req.params.user_id)) {
+            return reject(req, res, 'invalid_request_error', 'Your user ID parameter is invalid');
+        }
+    });
+
+    // TODO: Delete an assignment
+    router.route('/users/:user_id/assignments/:assignment_id').delete((req, res) => {
+        // Check request parameters
+        if(!isValidUserId(req.params.user_id)) {
+            return reject(req, res, 'invalid_request_error', 'Your user ID parameter is invalid');
+        }
+    });
 
     return router;
 }
 
-// Create server log about failed request and send failure response to client
-function reject(request, response, reason) {
-	console.log('Received invalid %s request. Reason: %s', request.method, reason);
-	response.send('invalid_request');
+/**
+ * Sends detailed error JSON to the client and logs the error
+ * @param {Object} request - the HTTP request
+ * @param {Object} response - the HTTP response
+ * @param {Object} errorJson - the JSON containing the error type and details
+ */
+function rejectFromJson(request, response, errorJson) {
+	console.log('%s request failed because: %s', request.method, errorJson['error']['message']);
+    switch(errorJson['error']['type']) {
+        case 'invalid_request_error':   response.status(400);
+            break;
+        case 'resource_error':          response.status(403);
+            break;
+        case 'login_error':             response.status(403);
+            break;
+        case 'resource_dne_error':      response.status(404);
+            break;
+        case 'api_error':               response.status(500);
+            break;
+        default:
+    }
+    response.json(errorJson);
 }
 
-// Helper function to validate usernames
+/**
+ * Sends detailed error JSON to the client and logs the error
+ * @param {Object} request - the HTTP request
+ * @param {Object} response - the HTTP response
+ * @param {string} errorType - a standardized error type
+ * @param {string} errorMessage - a more clear explanation of what went wrong
+ */
+function reject(request, response, errorType, errorMessage) {
+    var errorJson = {
+        error: {
+            type: errorType,
+            message: errorMessage
+        }
+    };
+    rejectFromJson(request, response, errorJson);
+}
+
+/**
+ * Validates usernames
+ * @param {string} username - a user's username
+ * @returns {Boolean} validity of username (true if username is not null, not empty, and only contains alphanumeric characters, dashes, or underscores)
+ */
 function isValidUsername(username) {
-    // Returns true if username is not null, not empty, and only contains alphanumeric characters, dashes, and underscores
-    return username != null && username !== '' && (/^[a-zA-Z0-9-_]+$/).test(username);
+    return username != null && (/^[\w\-_]+$/).test(username);
 }
 
-// Helper function to validate user ids
+/**
+ * Validates a user id
+ * @param {string} id - a user's id
+ * @returns {Boolean} validity of id (true if id is not null, not empty, and alphanumeric)
+ */
 function isValidUserId(id) {
-    // Returns true if id is not null, not empty, numeric, non-negative, and an integer
-    return id != null && id !== '' && (/^\d+$/).test(id) && parseInt(id) >= 0 && !(/\./).test(id);
+    return id != null && id !== '' && (/^[a-z0-9]+$/).test(id);
 }
 
-// Helper function to validate email addresses
+/**
+ * Validates an email address
+ * @param {string} email - a user's email
+ * @returns {Boolean} validity of email (true if email is not null and matches valid email formats)
+ */
 function isValidEmail(email) {
-    // Returns true if the email is not null and matches valid email formats
     return email != null && (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/).test(email);
 }
+
+/**
+ * Validates a password
+ * @param {string} password - a user's password
+ * @returns {Boolean} validity of password (true if password is not null and not empty)
+ */
+ function isValidPassword(password) {
+     return password != null && password !== '';
+ }
+
+ /**
+  * Validates a first or last name
+  * @param {string} name - a user's name
+  * @returns {Boolean} validity of name (true if name is null, or if it is not empty and is alphanumeric)
+  */
+  function isValidName(name) {
+      return name == null || (/^[\w\s]+$/).test(name);
+  }

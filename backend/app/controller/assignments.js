@@ -1,31 +1,31 @@
 var Assignment = require('../models/assignment.js');
 
-//post function for creating a new assignemnt
-exports.createAssignment = (function (req, res) {
+var exports = module.exports = {};
+
+// Get all assignments
+exports.getAllAssignments = function(req, callback) {
+    Assignment.find((err, assignments) => {
+        if (err) {
+            console.log('Unable to retrieve all assignments -> %s', err.message == null ? 'unknown' : err.message);
+            return callback({});
+        }
+        callback(assignments);
+    });
+};
+
+// Create an assignment
+exports.createAssignment = function (req, callback) {
     var assignment = new Assignment();
     assignment.type = req.body.type;
     assignment.name = req.body.name;
     assignment.dueDate = req.body.dueDate;
     assignment.assignmentId = req.body.assignmentId;
 
-    // save the assigment and check for errors
     assignment.save(function (err) {
         if (err) {
-            res.send(err);
+            console.log('Unable to create assignment -> %s', err.message == null ? 'unknown' : err.message);
+            return callback(null);
         }
-        res.json({ message: 'Assignemnt created!' });
+        callback(assignment);
     });
-});
-
-//post f
-
-//gets all assignments
-exports.getAllAssignments = (function (req, res) {
-    //find assignments
-    Assignment.find(function (err, assignments) {
-        if (err) {
-            res.send(err);
-        }
-        res.json(assignments);//send all assignmentss if no errors
-    });
-});
+};
