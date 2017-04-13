@@ -19,7 +19,8 @@ module.exports = function(_router) {
         res.json( { message: 'This is the REST API for Epicenter' } );
     });
 
-    router.post('/login', (req, res) => {
+    // Validate a login attempt
+    router.route('/login').post((req, res) => {
         // Check request parameters
         if(!req.body.username || !req.body.password) {
             return reject(req, res, 'invalid_request_error', 'Missing login parameters');
