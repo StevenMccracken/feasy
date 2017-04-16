@@ -13,7 +13,7 @@ exports.createAssignment = (function (req, res) {
         if (err) {
             res.send(err);
         }
-        res.json({ message: 'Assignemnt created!' });
+        res.json({ message: 'Assignment created!' });
     });
 });
 
