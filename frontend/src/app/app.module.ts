@@ -24,7 +24,11 @@ import { AssignmentService } from './services/assignment.service';
 //bootstrap
 import { NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 
+//routing
+import { AppRoutingModule } from './app-routing/routing.module';
+
 @NgModule({
+
     declarations: [
         AppComponent,
         DashboardLayoutComponent,
@@ -37,6 +41,7 @@ import { NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
         FormsModule,
         HttpModule,
         BrowserAnimationsModule,
+        AppRoutingModule,
         NgbModalModule.forRoot(),
         CalendarModule.forRoot(),
         MaterialModule.forRoot()

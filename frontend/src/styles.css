@@ -1,5 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
-@import '~@angular/material/core/theming/prebuilt/deeppurple-amber.css';*/
+@import '../node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css';
 html, body, material-app, md-sidenav-container, .my-content {
     margin: 0;
     width: 100%;
@@ -16,7 +16,7 @@ md-sidenav{
     width: 15%;
 }
 .icon{
-    color: white;
+    color: #939393;
 }
 .icon-rev{
     color: black;
