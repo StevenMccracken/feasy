@@ -8,6 +8,6 @@ var path = require('path');
 
 app.use('/', express.static(path.join(__dirname, '../dist')));
 
-app.listen(3000, function(){
+app.listen(3000, "0.0.0.0", function(){
   console.log('Express has started listening to port 3000')
 });
