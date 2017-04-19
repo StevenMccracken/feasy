@@ -1,11 +1,16 @@
 /* You can add global styles to this file, and also import other style files */
 @import '../node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css';
+@import '../node_modules/angular-calendar/dist/css/angular-calendar.css';
 html, body, material-app, md-sidenav-container, .my-content {
     margin: 0;
     width: 100%;
     height: 100%;
 }
-
+.center {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 20%;
+}
 .loader {
     border: 16px solid #f3f3f3; /* Light grey */
     border-top: 16px solid #3498db; /* Blue */
