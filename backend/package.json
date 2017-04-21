@@ -1,7 +1,7 @@
 {
-  "name": "epicenter",
+  "name": "epicenter-backend",
   "version": "0.0.0",
-  "description": "Epicenter",
+  "description": "Epicenter backend",
   "main": "server.js",
   "author": {
     "name": "Daniel Olivera, Steven McCracken"

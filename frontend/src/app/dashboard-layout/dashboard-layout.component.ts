@@ -14,10 +14,8 @@ export class DashboardLayoutComponent implements OnInit {
 
     //this will be a service or a class that we can inject or import
     items:MenuItem[] = [
-        {icon:"fa fa-home fa-lg", menu:"Home"},
-        {icon:"fa fa-list fa-lg", menu:"To-Do List"},
-        {icon:"fa fa-file-word-o fa-lg", menu:"Work"},
-        {icon:"fa fa-rocket fa-lg", menu:"Widgets"}
+        {icon:"fa fa-home fa-lg", menu:"Calendar", route:"/calendar"},
+        {icon:"fa fa-list fa-lg", menu:"Health Bar", route:"/healthbar"}
     ];
 
     constructor() { }
