@@ -1,16 +1,20 @@
 {
-    "name": "epicenter",
-    "version": "0.0.0",
-    "description": "Epicenter backend",
-    "main": "server.js",
-    "author": {
-        "name": "Daniel Olivera"
-    },
-    "dependencies": {
-        "express": "latest",
-        "mongoose": "latest",
-        "body-parser": "latest",
-        "cors": " 2.8.1",
-        "bcrypt-nodejs": "~0.0.3"
-    }
+  "name": "epicenter",
+  "version": "0.0.0",
+  "description": "Epicenter",
+  "main": "server.js",
+  "author": {
+    "name": "Daniel Olivera, Steven McCracken"
+  },
+  "dependencies": {
+    "bcrypt-nodejs": "~0.0.3",
+    "body-parser": "latest",
+    "cors": " 2.8.1",
+    "express": "latest",
+    "jsonwebtoken": "^7.3.0",
+    "mongoose": "latest",
+    "passport": "^0.3.2",
+    "passport-jwt": "^2.2.1",
+    "uuid": "^3.0.1"
+  }
 }

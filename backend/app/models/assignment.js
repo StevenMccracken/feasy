@@ -5,10 +5,9 @@ var AssignmentSchema = mongoose.Schema({
     class:          { type: String },
     type:           { type: String },
     dueDate:        { type: Date, required: true },
-    dueTime:        { type: Number },
-    extraInfo:      { type: String },
+    description:    { type: String },
     completed:      { type: Boolean },
-    userId:         { type: String, required: true},
+    username:       { type: String, required: true},
     dateCreated:    { type: Date, default: Date.now }
 });
 

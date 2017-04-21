@@ -1,31 +1,24 @@
-var express     = require('express');
-var app         = express();
-var PORT        = 27017;
-var cors        = require('cors');
-var bodyParser  = require('body-parser');
-var router      = require('./app/router_mod.js')(express.Router());
-var mongoose    = require('mongoose');
+var express     = require('express'),
+    app         = express(),
+    PORT        = 8080,
+    cors        = require('cors'),
+    bodyParser  = require('body-parser'),
+    router      = require('./app/router_mod.js')(express.Router()),
+    mongoose    = require('mongoose'),
+    config      = require('./config/database');
 
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
-    extended: true
+  extended: true
 }));
-
 app.use('/api', router);
 
-mongoose.connect('mongodb://localhost/userDB', (err) => {
-    if (err) {
-        console.log('Database connection error', err);
-        throw '';
-    }
-    console.log('Successfully connected to mongodb');
-});
+mongoose.connect(config.database);
 
-// Start listening
 app.listen(PORT, (err) => {
-    if (err) {
-        return console.log('Server connection error', err);
-    }
-    console.log(`Epicenter magic happens on port ${PORT}`);
+  if (err) {
+    return console.log('Server connection error', err);
+  }
+  console.log(`Epicenter magic happens on port ${PORT}`);
 });
