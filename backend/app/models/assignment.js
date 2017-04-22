@@ -1,4 +1,5 @@
 ﻿var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
 
 var AssignmentSchema = mongoose.Schema({
     title:          { type: String, required: true },

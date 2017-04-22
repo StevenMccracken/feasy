@@ -27,7 +27,9 @@ exports.getAssignments = function(req, callback) {
 exports.createAssignment = function(req, callback) {
   var assignment = new Assignment();
   assignment.title    = req.body.title.trim();
-  assignment.dueDate  = new Date(req.body.dueDate);
+
+  // Turn UNIX time in req.body to milliseconds for JS date constructor
+  assignment.dueDate  = new Date(parseInt(req.body.dueDate) * 1000);
   assignment.username = req.params.username;
   if(req.body.class) assignment.class             = req.body.class.trim();
   if(req.body.type) assignment.type               = req.body.type.trim();
