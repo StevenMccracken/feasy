@@ -15,7 +15,7 @@ module.exports = function(_router) {
   // Middleware
 	router.use((req, res, next) => {
     var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    console.log('%s request came in from %s', req.method, ip);
+    console.log('%s: %s request came in from %s', new Date().toISOString(), req.method, ip);
     next();
 	});
 
@@ -92,10 +92,10 @@ module.exports = function(_router) {
     if (!isValidPassword(req.body.password)) {
       return reject(req, res, 'invalid_request_error', 'Your password parameter is invalid');
     }
-    if (!isValidName(req.body.firstName)) {
+    if (req.body.firstName && !isValidName(req.body.firstName)) {
       return reject(req, res, 'invalid_request_error', 'Your firstName parameter is invalid');
     }
-    if (!isValidName(req.body.lastName)) {
+    if (req.body.lastName && !isValidName(req.body.lastName)) {
       return reject(req, res, 'invalid_request_error', 'Your lastName parameter is invalid');
     }
 

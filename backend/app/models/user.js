@@ -1,5 +1,7 @@
 var mongoose  = require('mongoose'),
     bcrypt    = require('bcrypt-nodejs');
+mongoose.Promise = require('bluebird');
+
 
 // User-id is auto-generated when pushed to mongodb
 var UserSchema = mongoose.Schema({

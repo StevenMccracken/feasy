@@ -12,13 +12,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
 }));
-app.use('/api', router);
+app.use('/', router);
 
+mongoose.Promise = require('bluebird');
 mongoose.connect(config.database);
 
 app.listen(PORT, (err) => {
-  if (err) {
-    return console.log('Server connection error', err);
-  }
+  if (err) return console.log('Server connection error', err);
+
   console.log(`Epicenter magic happens on port ${PORT}`);
 });
