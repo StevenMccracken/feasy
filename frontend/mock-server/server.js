@@ -6,8 +6,12 @@ var path = require('path');
 
 //var multer = require('multer');
 
-app.use('/', express.static(path.join(__dirname, '../dist')));
+app.use('/', express.static(path.join(__dirname, '../test')));
+app.use('/app', express.static(path.join(__dirname, '../dist')));
+
+// app.post('/app', function(req, res){
+// })
 
 app.listen(3000, "0.0.0.0", function(){
-  console.log('Express has started listening to port 3000')
+  console.log('Express has started listening to port 3000');
 });

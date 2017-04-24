@@ -76,7 +76,8 @@ export class CalendarComponent {
         start: startOfDay(new Date()),
         title: 'An event with no end date',
         color: colors.yellow,
-        actions: this.actions
+        actions: this.actions,
+        draggable: true
     }, {
         start: subDays(endOfMonth(new Date()), 3),
         end: addDays(endOfMonth(new Date()), 3),
