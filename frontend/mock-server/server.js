@@ -6,8 +6,8 @@ var path = require('path');
 
 //var multer = require('multer');
 
-app.use('/', express.static(path.join(__dirname, '../test')));
-app.use('/app', express.static(path.join(__dirname, '../dist')));
+
+app.use('/', express.static(path.join(__dirname, '../dist')));
 
 // app.post('/app', function(req, res){
 // })
