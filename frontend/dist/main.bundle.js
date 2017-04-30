@@ -163,7 +163,8 @@ var CalendarComponent = (function () {
                 start: __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_1_date_fns__["startOfDay"])(new Date()),
                 title: 'An event with no end date',
                 color: colors.yellow,
-                actions: this.actions
+                actions: this.actions,
+                draggable: true
             }, {
                 start: __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_1_date_fns__["subDays"])(__webpack_require__.i(__WEBPACK_IMPORTED_MODULE_1_date_fns__["endOfMonth"])(new Date()), 3),
                 end: __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_1_date_fns__["addDays"])(__webpack_require__.i(__WEBPACK_IMPORTED_MODULE_1_date_fns__["endOfMonth"])(new Date()), 3),

@@ -12,6 +12,6 @@ app.use('/', express.static(path.join(__dirname, '../dist')));
 // app.post('/app', function(req, res){
 // })
 
-app.listen(3000, "0.0.0.0", function(){
+app.listen(3000, function(){
   console.log('Express has started listening to port 3000');
 });
