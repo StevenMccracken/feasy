@@ -42,10 +42,10 @@
     * Request body JSON
     ```json
     {
-	    "success": {
-	      "message": "Valid login credentials",
-	      "token": “JWT <random string>"
-	    }
+      "success": {
+        "message": "Valid login credentials",
+        "token": "JWT <random string>"
+      }
     }
     ```
   * Notes
