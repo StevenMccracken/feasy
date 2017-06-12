@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/StevenMccracken/epicenter.svg?token=bR5pzA9oJMx45zgTnQ8X&branch=master)](https://travis-ci.com/StevenMccracken/epicenter)
+
 # :key: API Documentation :key:
 
 ## Guide Information
