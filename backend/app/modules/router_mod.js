@@ -2,22 +2,22 @@
  * router_mod - @module for HTTP request routing
  */
 
-const LOG 				= require('./log_mod');
-const MIDDLEWARE 	= require('./middleware_mod');
-var router        = null;
+const LOG					= require('./log_mod');
+const MIDDLEWARE	= require('./middleware_mod');
 
+var router = null;
 var routing = function(_router) {
 	router = _router;
 
-  /**
+	/**
 	 * Middleware to log metadata about incoming requests
-   * @param {Object} _request the HTTP request
-   * @param {Object} _response the HTTP response
-   * @param {callback} next the callback to execute after metadata logging
-   */
+	 * @param {Object} _request the HTTP request
+	 * @param {Object} _response the HTTP response
+	 * @param {callback} next the callback to execute after metadata logging
+	 */
 	router.use((_request, _response, _next) => {
 		log(`${_request.method} ${_request.url}`, _request);
-    _next();
+		_next();
 	});
 
 	/**
@@ -27,7 +27,7 @@ var routing = function(_router) {
 	 * @param {Object} _response the HTTP response
 	 */
 	router.route('/').get((_request, _response) => (
-    _response.json({ message: 'This is the REST API for Pyrsuit' })
+		_response.json({ message: 'This is the REST API for Pyrsuit' })
 	));
 
 	/**
@@ -38,8 +38,8 @@ var routing = function(_router) {
 	 * @param {Object} _response the HTTP response
 	 */
 	router.route('/login').post((_request, _response) => (
-	  MIDDLEWARE.authenticate(_request, _response, result => _response.json(result))
-  ));
+		MIDDLEWARE.authenticate(_request, _response, result => _response.json(result))
+	));
 
 	/**
 	 * The POST route for creating a user. Sends an error
@@ -49,11 +49,7 @@ var routing = function(_router) {
 	 * @param {Object} _response the HTTP response
 	 */
 	router.route('/users').post((_request, _response) => (
-    MIDDLEWARE.createUser(
-			_request,
-			_response,
-			result => _response.json(result)
-		)
+		MIDDLEWARE.createUser(_request, _response, result => _response.json(result))
 	));
 
 	/**
@@ -63,11 +59,7 @@ var routing = function(_router) {
 	 * @param {Object} _response the HTTP response
 	 */
 	router.route('/users/:username').get((_request, _response) => (
-    MIDDLEWARE.retrieveUser(
-			_request,
-			_response,
-			result => _response.json(result)
-		)
+		MIDDLEWARE.retrieveUser(_request, _response, result => _response.json(result))
 	));
 
 	/**
@@ -78,7 +70,7 @@ var routing = function(_router) {
 	 * @param {Object} _response the HTTP response
 	 */
 	router.route('/users/:username/username').put((_request, _response) => (
-    MIDDLEWARE.updateUserUsername(
+		MIDDLEWARE.updateUserUsername(
 			_request,
 			_response,
 			result => _response.json(result)
@@ -92,7 +84,7 @@ var routing = function(_router) {
 	 * @param {Object} _response the HTTP response
 	 */
 	router.route('/users/:username/password').put((_request, _response) => (
-    MIDDLEWARE.updateUserPassword(
+		MIDDLEWARE.updateUserPassword(
 			_request,
 			_response,
 			result => _response.json(result)
@@ -106,7 +98,7 @@ var routing = function(_router) {
 	 * @param {Object} _response the HTTP response
 	 */
 	router.route('/users/:username/email').put((_request, _response) => (
-    MIDDLEWARE.updateUserEmail(
+		MIDDLEWARE.updateUserEmail(
 			_request,
 			_response,
 			result => _response.json(result)
@@ -120,7 +112,7 @@ var routing = function(_router) {
 	 * @param {Object} _response the HTTP response
 	 */
 	router.route('/users/:username/firstName').put((_request, _response) => (
-    MIDDLEWARE.updateUserFirstName(
+		MIDDLEWARE.updateUserFirstName(
 			_request,
 			_response,
 			result => _response.json(result)
@@ -134,7 +126,7 @@ var routing = function(_router) {
 	 * @param {Object} _response the HTTP response
 	 */
 	router.route('/users/:username/lastName').put((_request, _response) => (
-    MIDDLEWARE.updateUserLastName(
+		MIDDLEWARE.updateUserLastName(
 			_request,
 			_response,
 			result => _response.json(result)
@@ -148,7 +140,7 @@ var routing = function(_router) {
 	 * @param {Object} _response the HTTP response
 	 */
 	router.route('/users/:username').delete((_request, _response) => (
-    MIDDLEWARE.deleteUser(_request, _response, result => _response.json(result))
+		MIDDLEWARE.deleteUser(_request, _response, result => _response.json(result))
 	));
 
 	/**
@@ -158,12 +150,12 @@ var routing = function(_router) {
 	 * @param {Object} _response the HTTP response
 	 */
 	router.route('/users/:username/assignments').post((_request, _response) => (
-    MIDDLEWARE.createAssignment(
+		MIDDLEWARE.createAssignment(
 			_request,
 			_response,
 			result => _response.json(result)
 		)
-  ));
+	));
 
 	/**
 	 * The GET route for retrieving all of a user's assignments. Sends an error
@@ -173,7 +165,7 @@ var routing = function(_router) {
 	 */
 	router.route('/users/:username/assignments')
 		.get((_request, _response) => (
-	    MIDDLEWARE.getAssignments(
+			MIDDLEWARE.getAssignments(
 				_request,
 				_response,
 				result => _response.json(result)
@@ -189,7 +181,7 @@ var routing = function(_router) {
 	 */
 	router.route('/users/:username/assignments/:assignmentId')
 		.get((_request, _response) => (
-	    MIDDLEWARE.getAssignmentById(
+			MIDDLEWARE.getAssignmentById(
 				_request,
 				_response,
 				result => _response.json(result)
@@ -302,7 +294,7 @@ var routing = function(_router) {
 	 */
 	router.route('/users/:username/assignments/:assignmentId')
 		.delete((_request, _response) => (
-    	MIDDLEWARE.deleteAssignment(
+			MIDDLEWARE.deleteAssignment(
 				_request,
 				_response,
 				result => _response.json(result)

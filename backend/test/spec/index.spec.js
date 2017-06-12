@@ -1,12 +1,12 @@
 var server		= require('../../server.js');
 var request		= require('request');
-const UUIDV4	= require('uuid/v4');
+const UuidV4	= require('uuid/v4');
 
 /**
  * Server will check for TEST env variable and
  * adjust the port according to the environment
  */
-var baseUrl	= 'http://localhost:8080';
+var baseUrl = 'http://localhost:8080';
 if (process.env.TEST) baseUrl = 'http://localhost:3000';
 
 describe('Start server', () => {
@@ -21,7 +21,7 @@ describe('Start server', () => {
 	}); // End base API route
 
 	// Test user information
-	var user1Name = 'grunttest_' + UUIDV4(), user2Name = 'grunttest_' + UUIDV4();
+	var user1Name = 'grunttest_' + UuidV4(), user2Name = 'grunttest_' + UuidV4();
 	var user1Password = 'password', user2Password = 'password';
 	var user1Token, user2Token;
 
@@ -49,7 +49,7 @@ describe('Start server', () => {
 				expect(data.success.token).toBeDefined();
 
 				// Extract token from JSON response to use for other calls
-        user1Token = data.success.token;
+				user1Token = data.success.token;
 				log('Got token for newly created user 1');
 				done();
 			});
@@ -80,7 +80,7 @@ describe('Start server', () => {
 				expect(data.success.token).toBeDefined();
 
 				// Extract token from JSON response to use for other calls
-        user2Token = data.success.token;
+				user2Token = data.success.token;
 				log('Got token for newly created user 2');
 				done();
 			});
@@ -89,19 +89,19 @@ describe('Start server', () => {
 
 	// Test the login route by retrieving an authorization token
 	describe('Login', () => {
-	  var user1AuthParams;
-	  beforeEach(() => {
-      user1AuthParams = {
-        url: `${baseUrl}/login`,
-        form: {
-          username: user1Name,
-          password: user1Password,
-        }
-      };
-	  });
+		var user1AuthParams;
+		beforeEach(() => {
+			user1AuthParams = {
+				url: `${baseUrl}/login`,
+				form: {
+					username: user1Name,
+					password: user1Password,
+				}
+			};
+		});
 
-	  it('returns status code 200 OK on valid credentials', (done) => {
-      request.post(user1AuthParams, (err, response, body) => {
+		it('returns status code 200 OK on valid credentials', (done) => {
+			request.post(user1AuthParams, (err, response, body) => {
 				expect(response.statusCode).toBe(200);
 
 				// Parse JSON response
@@ -109,9 +109,9 @@ describe('Start server', () => {
 				expect(data.success.token).toBeDefined();
 				log('Login', data.success.token);
 				done();
-      });
-	  });
-  }); // End login
+			});
+		});
+	}); // End login
 
 	// Get test user 1 information
 	describe('Get user 1 information', () => {
@@ -119,9 +119,7 @@ describe('Start server', () => {
 		beforeEach(() => {
 			getUserParams = {
 				url: `${baseUrl}/users/${user1Name}`,
-				headers: {
-					Authorization: user1Token
-				}
+				headers: { Authorization: user1Token }
 			};
 		});
 
@@ -141,12 +139,8 @@ describe('Start server', () => {
 		beforeEach(() => {
 			updateUserParams = {
 				url: `${baseUrl}/users/${user1Name}/username`,
-				headers: {
-					Authorization: user1Token
-				},
-				form: {
-          newUsername: newUser1Name
-        }
+				headers: { Authorization: user1Token },
+				form: { newUsername: newUser1Name }
 			};
 		});
 
@@ -175,12 +169,8 @@ describe('Start server', () => {
 		beforeEach(() => {
 			updateUserParams = {
 				url: `${baseUrl}/users/${user1Name}/password`,
-				headers: {
-					Authorization: user1Token
-				},
-				form: {
-          newPassword: newUser1Password
-        }
+				headers: { Authorization: user1Token },
+				form: { newPassword: newUser1Password }
 			};
 		});
 
@@ -201,12 +191,8 @@ describe('Start server', () => {
 		beforeEach(() => {
 			updateUserParams = {
 				url: `${baseUrl}/users/${user1Name}/email`,
-				headers: {
-					Authorization: user1Token
-				},
-				form: {
-          newEmail: `${user1Name}_updated@grunttest.com`
-        }
+				headers: { Authorization: user1Token },
+				form: { newEmail: `${user1Name}_updated@grunttest.com` }
 			};
 		});
 
@@ -225,12 +211,8 @@ describe('Start server', () => {
 		beforeEach(() => {
 			updateUserParams = {
 				url: `${baseUrl}/users/${user1Name}/firstName`,
-				headers: {
-					Authorization: user1Token
-				},
-				form: {
-          newFirstName: 'test updated'
-        }
+				headers: { Authorization: user1Token },
+				form: { newFirstName: 'test updated' }
 			};
 		});
 
@@ -249,12 +231,8 @@ describe('Start server', () => {
 		beforeEach(() => {
 			updateUserParams = {
 				url: `${baseUrl}/users/${user1Name}/lastName`,
-				headers: {
-					Authorization: user1Token
-				},
-				form: {
-          newLastName: 'test updated'
-        }
+				headers: { Authorization: user1Token },
+				form: { newLastName: 'test updated' }
 			};
 		});
 
@@ -274,13 +252,11 @@ describe('Start server', () => {
 		beforeEach(() => {
 			createAssignmentParams = {
 				url: `${baseUrl}/users/${user1Name}/assignments`,
-				headers: {
-					Authorization: user1Token
-				},
+				headers: { Authorization: user1Token },
 				form: {
-          title: 'assignment 1',
+					title: 'assignment 1',
 					dueDate: nowUnixSeconds
-        }
+				}
 			};
 		});
 
@@ -306,17 +282,15 @@ describe('Start server', () => {
 		beforeEach(() => {
 			createAssignmentParams = {
 				url: `${baseUrl}/users/${user2Name}/assignments`,
-				headers: {
-					Authorization: user2Token
-				},
+				headers: { Authorization: user2Token },
 				form: {
-          title: 'assignment 2',
+					title: 'assignment 2',
 					dueDate: nowUnixSeconds,
 					class: 'class',
 					type: 'type',
 					description: 'description',
 					completed: 'true'
-        }
+				}
 			};
 		});
 
@@ -341,9 +315,7 @@ describe('Start server', () => {
 		beforeEach(() => {
 			getAssignmentParams = {
 				url: `${baseUrl}/users/${user1Name}/assignments`,
-				headers: {
-					Authorization: user1Token
-				}
+				headers: { Authorization: user1Token }
 			};
 		});
 
@@ -365,9 +337,7 @@ describe('Start server', () => {
 		beforeEach(() => {
 			getAssignmentParams = {
 				url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}`,
-				headers: {
-					Authorization: user1Token
-				}
+				headers: { Authorization: user1Token }
 			};
 		});
 
@@ -386,12 +356,8 @@ describe('Start server', () => {
 		beforeEach(() => {
 			updateAssignmentParams = {
 				url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/title`,
-				headers: {
-					Authorization: user1Token
-				},
-				form: {
-          newTitle: 'title updated'
-        }
+				headers: { Authorization: user1Token },
+				form: { newTitle: 'title updated' }
 			};
 		});
 
@@ -410,12 +376,8 @@ describe('Start server', () => {
 		beforeEach(() => {
 			updateAssignmentParams = {
 				url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/class`,
-				headers: {
-					Authorization: user1Token
-				},
-				form: {
-          newClass: 'class updated'
-        }
+				headers: { Authorization: user1Token },
+				form: { newClass: 'class updated' }
 			};
 		});
 
@@ -434,12 +396,8 @@ describe('Start server', () => {
 		beforeEach(() => {
 			updateAssignmentParams = {
 				url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/type`,
-				headers: {
-					Authorization: user1Token
-				},
-				form: {
-          newType: 'type updated'
-        }
+				headers: { Authorization: user1Token },
+				form: { newType: 'type updated' }
 			};
 		});
 
@@ -458,12 +416,8 @@ describe('Start server', () => {
 		beforeEach(() => {
 			updateAssignmentParams = {
 				url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/description`,
-				headers: {
-					Authorization: user1Token
-				},
-				form: {
-          newDescription: 'description updated'
-        }
+				headers: { Authorization: user1Token },
+				form: { newDescription: 'description updated' }
 			};
 		});
 
@@ -482,12 +436,8 @@ describe('Start server', () => {
 		beforeEach(() => {
 			updateAssignmentParams = {
 				url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/completed`,
-				headers: {
-					Authorization: user1Token
-				},
-				form: {
-          newCompleted: 'true'
-        }
+				headers: { Authorization: user1Token },
+				form: { newCompleted: 'true' }
 			};
 		});
 
@@ -506,12 +456,8 @@ describe('Start server', () => {
 		beforeEach(() => {
 			updateAssignmentParams = {
 				url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/dueDate`,
-				headers: {
-					Authorization: user1Token
-				},
-				form: {
-          newDueDate: (nowUnixSeconds + 1)
-        }
+				headers: { Authorization: user1Token },
+				form: { newDueDate: (nowUnixSeconds + 1) }
 			};
 		});
 
@@ -530,9 +476,7 @@ describe('Start server', () => {
 		beforeEach(() => {
 			deleteAssignmentParams = {
 				url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}`,
-				headers: {
-					Authorization: user1Token
-				}
+				headers: { Authorization: user1Token }
 			};
 		});
 
@@ -551,9 +495,7 @@ describe('Start server', () => {
 		beforeEach(() => {
 			deleteUserParams = {
 				url: `${baseUrl}/users/${user1Name}`,
-				headers: {
-					Authorization: user1Token
-				}
+				headers: { Authorization: user1Token }
 			};
 		});
 
@@ -566,15 +508,13 @@ describe('Start server', () => {
 		});
 	}); // End delete user 1
 
-	// Delete test user 2. Will delete assignment 2 as well
+	// Delete test user 2. Will delete user 2's assignment as well (assignment 2)
 	describe('Delete user 2', () => {
 		var deleteUserParams;
 		beforeEach(() => {
 			deleteUserParams = {
 				url: `${baseUrl}/users/${user2Name}`,
-				headers: {
-					Authorization: user2Token
-				}
+				headers: { Authorization: user2Token }
 			};
 		});
 

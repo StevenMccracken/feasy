@@ -5,41 +5,30 @@
 const LOG = require('./log_mod');
 const ERROR_CODE = {
 	API_ERROR: {
-  	status: 500,
-  	type: 'api_error',
-  	message: 'There was a problem with our back-end services'
-  },
-
+		status: 500,
+		type:	'api_error',
+		message: 'There was a problem with our back-end services'
+	},
 	AUTHENTICATION_ERROR: {
 		status: 401,
 		type: 'authentication_error',
 		message: 'There was an error while authenticating'
 	},
-
-	INVALID_MEDIA_TYPE: {
-		status: 415,
-		type: 'invalid_media_type',
-		message: 'That type of media file is forbidden'
-	},
-
 	INVALID_REQUEST_ERROR: {
 		status: 400,
 		type: 'invalid_request_error',
 		message: 'One of your request parameters is invalid'
 	},
-
 	LOGIN_ERROR: {
 		status: 403,
 		type: 'login_error',
 		message: 'The username or password is incorrect'
 	},
-
 	RESOURCE_DNE_ERROR: {
 		status: 404,
 		type: 'resource_dne_error',
 		message: 'That resource does not exist'
 	},
-
 	RESOURCE_ERROR: {
 		status: 403,
 		type: 'resource_error',
@@ -135,42 +124,42 @@ var determineBcryptError = function(_source, _request, _response, _error) {
  * @returns {Object} a formalized error JSON
  */
 var determineUserError = function(_source, _request, _response, _error) {
-  var errorJson;
-  switch (_error.name) {
-    case 'CastError':
-      errorJson = error(
-        _source,
-        _request,
-        _response,
-        ERROR_CODE.RESOURCE_DNE_ERROR,
-        'That user does not exist',
-        `${_error.name} (${_error.code}): ${_error.message}`
-      );
+	var errorJson;
+	switch (_error.name) {
+		case 'CastError':
+			errorJson = error(
+				_source,
+				_request,
+				_response,
+				ERROR_CODE.RESOURCE_DNE_ERROR,
+				'That user does not exist',
+				`${_error.name} (${_error.code}): ${_error.message}`
+			);
 
-      break;
+			break;
 		case 'MongoError':
-      errorJson = error(
-        _source,
-        _request,
-        _response,
-        ERROR_CODE.INVALID_REQUEST_ERROR,
-        'A user with that email already exists',
-        `${_error.name} (${_error.code}): ${_error.message}`
-      );
+			errorJson = error(
+				_source,
+				_request,
+				_response,
+				ERROR_CODE.INVALID_REQUEST_ERROR,
+				'A user with that email already exists',
+				`${_error.name} (${_error.code}): ${_error.message}`
+			);
 
-      break;
-    default:
-	    errorJson = error(
-	      _source,
-	      _request,
-	      _response,
-	      ERROR_CODE.API_ERROR,
-	      null,
-	      `${_error.name} (${_error.code}): ${_error.message}`
-	    );
-  }
+			break;
+		default:
+			errorJson = error(
+				_source,
+				_request,
+				_response,
+				ERROR_CODE.API_ERROR,
+				null,
+				`${_error.name} (${_error.code}): ${_error.message}`
+			);
+	}
 
-  return errorJson;
+	return errorJson;
 };
 
 /**
@@ -183,53 +172,53 @@ var determineUserError = function(_source, _request, _response, _error) {
  * @returns {Object} a formalized error JSON
  */
 var determineAssignmentError = function(_source, _request, _response, _error) {
-  var errorJson;
-  switch (_error.name) {
-    case 'CastError':
-      errorJson = error(
-        _source,
-        _request,
-        _response,
-        ERROR_CODE.RESOURCE_DNE_ERROR,
-        'That assignment does not exist',
-        `${_error.name} (${_error.code}): ${_error.message}`
-      );
+	var errorJson;
+	switch (_error.name) {
+		case 'CastError':
+			errorJson = error(
+				_source,
+				_request,
+				_response,
+				ERROR_CODE.RESOURCE_DNE_ERROR,
+				'That assignment does not exist',
+				`${_error.name} (${_error.code}): ${_error.message}`
+			);
 
-      break;
+			break;
 		case 'MongoError':
-      errorJson = error(
-        _source,
-        _request,
-        _response,
-        ERROR_CODE.RESOURCE_ERROR,
-        null,
-        `${_error.name} (${_error.code}): ${_error.message}`
-      );
+			errorJson = error(
+				_source,
+				_request,
+				_response,
+				ERROR_CODE.RESOURCE_ERROR,
+				null,
+				`${_error.name} (${_error.code}): ${_error.message}`
+			);
 
-      break;
+			break;
 		case 'ValidationError':
-      errorJson = error(
-        _source,
-        _request,
-        _response,
-        ERROR_CODE.RESOURCE_ERROR,
-        null,
-        `${_error.name} (${_error.code}): ${_error.message}`
-      );
+			errorJson = error(
+				_source,
+				_request,
+				_response,
+				ERROR_CODE.RESOURCE_ERROR,
+				null,
+				`${_error.name} (${_error.code}): ${_error.message}`
+			);
 
-      break;
-    default:
-    errorJson = error(
-      _source,
-      _request,
-      _response,
-      ERROR_CODE.API_ERROR,
-      null,
-      `${_error.name} (${_error.code}): ${_error.message}`
-    );
-  }
+			break;
+		default:
+			errorJson = error(
+				_source,
+				_request,
+				_response,
+				ERROR_CODE.API_ERROR,
+				null,
+				`${_error.name} (${_error.code}): ${_error.message}`
+			);
+	}
 
-  return errorJson;
+	return errorJson;
 };
 
 module.exports = {

@@ -12,14 +12,14 @@ module.exports = function(grunt) {
 			all:['spec/']
 		},
 		shell: {
-	    mongo: {
-	    	command: "sh startMongoIfNotRunning.sh",
-	      options: {
+			mongo: {
+				command: "sh startMongoIfNotRunning.sh",
+				options: {
 					async: true,
 					stderr: true,
 					stdout: false,
 				}
-	    }
+			}
 		}
 	});
 

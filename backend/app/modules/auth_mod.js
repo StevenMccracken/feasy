@@ -1,12 +1,12 @@
 /**
- * auth_mod - @module for ser authentication
+ * auth_mod - @module for client request authentication
  */
 
-const JWT 		= require('jsonwebtoken');
+const JWT			= require('jsonwebtoken');
 const BCRYPT	= require('bcrypt-nodejs');
-const LOG 		= require('./log_mod');
-const ERROR 	= require('./error_mod');
-const config  = require(process.cwd() + '/config/database.js');
+const LOG			= require('./log_mod');
+const ERROR		= require('./error_mod');
+const config 	= require(process.cwd() + '/config/database.js');
 
 // Handles token storage and verification
 const PASSPORT = require('passport');
@@ -36,7 +36,7 @@ var validatePasswords = function(
 		_givenPassword,
 		_actualPassword,
 		(bcryptCompareError, passwordsMatch) => {
-		 	if (bcryptCompareError === null) _callback(passwordsMatch);
+			if (bcryptCompareError === null) _callback(passwordsMatch);
 			else _errorCallback(bcryptCompareError);
 		}
 	);
@@ -133,15 +133,6 @@ module.exports = {
 };
 
 /**
- * log - Logs a message to the server console
- * @param {String} _message the log message
- * @param {Object} _request the HTTP request
- */
-function log(_message, _request) {
-	LOG.log('Authentication Module', _message, _request);
-}
-
-/**
  * determineJwtError - Determines the specific
  * type of error generated from JWT events
  * @param {String} errorMessage the JWT error message
@@ -152,29 +143,46 @@ function determineJwtError(errorMessage) {
 	 * If token is malformed, sometimes errorMessage will contain 'Unexpected
 	 * token' so shorten the errorMessage so it can work with the switch case
 	 */
-	if (errorMessage != null && errorMessage.indexOf('Unexpected token') !== -1) {
+	if (errorMessage !== null && errorMessage.indexOf('Unexpected token') !== -1) {
 		errorMessage = 'Unexpected token';
 	}
 
-  var reason;
-  switch (errorMessage) {
-    case 'jwt expired': 					reason = 'Expired web token';
-      break;
-		case 'invalid token': 				reason = 'Invalid web token';
+	var reason;
+	switch (errorMessage) {
+		case 'jwt expired':
+			reason = 'Expired web token';
 			break;
-    case 'invalid signature': 		reason = 'Invalid web token';
-      break;
-		case 'jwt malformed': 				reason = 'Invalid web token';
+		case 'invalid token':
+			reason = 'Invalid web token';
 			break;
-		case 'Unexpected token': 			reason = 'Invalid web token';
+		case 'invalid signature':
+			reason = 'Invalid web token';
 			break;
-		case 'No auth token': 				reason = 'Missing web token';
-      break;
-    case 'jwt must be provided':	reason = 'Missing web token';
-      break;
-    default: 											reason = 'Unknown web token error';
-			console.log('JWT ERROR: %s', errorMessage);
-  }
+		case 'jwt malformed':
+			reason = 'Invalid web token';
+			break;
+		case 'Unexpected token':
+			reason = 'Invalid web token';
+			break;
+		case 'No auth token':
+			reason = 'Missing web token';
+			break;
+		case 'jwt must be provided':
+			reason = 'Missing web token';
+			break;
+		default:
+			reason = 'Unknown web token error';
+			log(`Unknown JWT error: ${errorMessage}`);
+	}
 
-  return reason;
+	return reason;
+}
+
+/**
+ * log - Logs a message to the server console
+ * @param {String} _message the log message
+ * @param {Object} _request the HTTP request
+ */
+function log(_message, _request) {
+	LOG.log('Authentication Module', _message, _request);
 }

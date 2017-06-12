@@ -2,17 +2,16 @@
  * server - Initializes the app server and starts listening
  */
 
-var port      	  = 8080;
 const Cors        = require('cors');
 var mongoose      = require('mongoose');
 mongoose.Promise  = require('bluebird');
 const CONFIG      = require('./config/database');
 const Express     = require('express');
 var app           = Express();
-const ROUTER 	    = require('./app/modules/router_mod.js')(Express.Router());
+const ROUTER      = require('./app/modules/router_mod.js')(Express.Router());
 const BODY_PARSER = require('body-parser');
 
-var exports = module.exports = {};
+var port = 8080;
 
 // For purpose of checking travis
 if (process.env.TEST) port = 3000;
@@ -20,11 +19,10 @@ if (process.env.TEST) port = 3000;
 app.use(Cors());
 app.use(
   BODY_PARSER.urlencoded({
-      parameterLimit: 100000000,
-      limit: '10000kb',
-      extended: true
-    }
-  )
+    parameterLimit: 100000000,
+    limit: '10000kb',
+    extended: true
+  })
 );
 
 // Set the base route path
@@ -43,6 +41,6 @@ var server = app.listen(port, (err) => {
   else console.log('Pyrsuit server is listening on port %d', port);
 });
 
-exports.closeServer = () => {
+module.exports.closeServer = () => {
   server.close();
 };
