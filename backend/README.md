@@ -1,4 +1,4 @@
-# INTRODUCTION
+# API Documentation
 * You can send requests to the URL routes below to access data from the server
 * For almost all requests, you must have a specific token within the request’s Headers
 * There must be a key within the request header called “Authorization” (capitalization of the first letter is necessary)
@@ -12,3 +12,19 @@
   * Base route (__GET__ https://api.pyrsuit.com)
   * Login route (__POST__ https://api.pyrsuit.com/login)
   * Create user route (__POST__ https://api.pyrsuit.com/users)
+  
+## Routes
+* __GET__ https://api.pyrsuit.com
+  * Purpose
+    * Test if the server is up and running
+  * Required parameters: _none_
+  * Optional parameters: _none_
+  * Successful request returns
+    * Status code: __200__
+    * Request body JSON
+      ```javascript
+      {
+        "message": "This is the REST API for Pyrsuit"
+      }
+      ```
+* __POST__ https://api.pyrsuit.com/login
