@@ -1,17 +1,8 @@
-var express = require('express');
-var app = express();
-
-
 var path = require('path');
+var express = require('express');
 
-//var multer = require('multer');
-
-
+var app = express();
 app.use('/', express.static(path.join(__dirname, '../dist')));
-
-// app.post('/app', function(req, res){
-// })
-
-app.listen(3000, function(){
-  console.log('Express has started listening to port 3000');
+app.listen(3000, () => {
+  console.log('Frontend server is listening on port 3000');
 });
