@@ -1,15 +1,16 @@
 branches:
   only:
-  - master
   - addTravis
 language: node_js
 node_js:
 - '6'
+services:
+- mongodb
 before_script:
 - cd backend
 - npm install -g grunt-cli
 - npm install
-script: npm test
+script: sudo npm test
 notifications:
   slack: on_failure:always
   slack: epicenter-group:3996sKrTuWBrxopQ24S6BZtG
