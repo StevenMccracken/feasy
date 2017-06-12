@@ -1,62 +1,46 @@
-// This is the BASE -----------------------------------------------------
-var express = require('express'),        // call express
-app = express(),                     // create app using express
-bodyParser = require('body-parser'),
-mongoose = require('mongoose'),      //create mongoose var
-cors = require('cors');// require cors
-mongoose.connect('mongodb://localhost/userDB');//connect to database
+/**
+ * server - Initializes the app server and starts listening
+ */
 
-//configure app with cors
-app.use(cors());
-// configure app with bodyparser
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-//local is 1337
-var port = process.env.PORT || 27017;   //set port
+const Cors = require('cors');
+const Express = require('express');
+const MONGOOSE = require('mongoose');
+MONGOOSE.Promise = require('bluebird');
+const BODY_PARSER = require('body-parser');
+const CONFIG = require('./config/database');
 
-// api routes
-// =============================================================================
-var router = express.Router();              // get router
+var port = 8080;
+const app = Express();
+const ROUTER = require('./app/modules/router_mod')(Express.Router());
 
-//middleware for requests
-router.use(function (req, res, next) {
-    console.log('Somethings is happening'); //for debugging purposes
-    next();//need this or will stop here
+// For purpose of checking travis
+if (process.env.TEST) port = 3000;
+
+app.use(Cors());
+app.use(
+  BODY_PARSER.urlencoded({
+    parameterLimit: 100000000,
+    limit: '10000kb',
+    extended: true
+  })
+);
+
+// Set the base route path
+app.use('/', ROUTER);
+
+// Connect to database server before express server starts
+MONGOOSE.connect(CONFIG.database);
+
+/**
+ * Listens for all incoming requests
+ * @param {Number} port the port to listen on
+ * @param {callback} err the callback that handles any errors
+ */
+var server = app.listen(port, (err) => {
+  if (err) console.log('Server connection error: %s', err);
+  else console.log('Pyrsuit server is listening on port %d', port);
 });
 
-// test route  http://localhost:1337/api)
-router.get('/', function (req, res) {
-    res.json({ message: 'This is the REST Api for Epicenter' });
-});
-
-//routes for users
-var userController = require('./app/controller/user');
-var assignmentController = require('./app/controller/assignments');
-
-
-//http://localhost:1337/api/users
-router.route('/users')
-.post(userController.postUsers)     //create user
-.get(userController.getUsers);      //get all users
-
-//using user id for specific users http://localhost:1337/api/users/user_id
-router.route('/users/:user_id')
-.get(userController.getUserById)    //get a specific user
-//.put(userController.updaterUser)    //update a user
-.delete(userController.deleteUser); //delete a user
-
-//route for all assignments of a user http://localhost:1337/api/users/:user_id/assignments
-router.route('/users/:user_id/assignments')
-.post(assignmentController.createAssignment)
-.get(assignmentController.getAllAssignments);
-
-
-
-// registers routes_____________________________________________________________
-// all of our routes start with /api
-app.use('/api', router);
-
-// starts server
-// =============================================================================
-app.listen(port);
-console.log('Magic happens on port ' + port);
+module.exports.closeServer = () => {
+  server.close();
+};

@@ -1,35 +1,40 @@
-﻿var mongoose = require('mongoose');
-var bcrypt = require('bcrypt-nodejs');
- 
+/**
+ * user - Mongoose database model for a User
+ */
 
-var UserSchema = mongoose.Schema({
-    userId: { type: Number, required: true, index: { unique: true } }, 
-    userName: { type: String, required: true, index: { unique: true } },
-    email: String,
-    password: { type: String, required: true},
-    dateCreated: { type: Date, default: Date.now }
+const MONGOOSE = require('mongoose');
+MONGOOSE.Promise = require('bluebird');
+const BCRYPT = require('bcrypt-nodejs');
 
+// User-id is auto-generated when pushed to mongodb
+var UserSchema = MONGOOSE.Schema({
+  email:          { type: String, required: true, index: { unique: true } },
+  username:       { type: String, required: true, index: { unique: true } },
+  password:       { type: String, required: true },
+  dateCreated:    { type: Date, default: Date.now },
+  firstName:      { type: String },
+  lastName:       { type: String }
 });
 
-//excucute before user.save() is called
-UserSchema.pre('save', function (callback) {
-    var user = this;
-
-    //break out if password hasnt changed
-    if (!user.isModified('password')) return callback();
-
-    //hashing passoword
-    bcrypt.genSalt(5, function (err, salt) {
-        if (err) return callback(err);
-
-        bcrypt.hash(user.password, salt, null, function (err, hash) {
-            if (err) return callback(err);
-            user.password = hash;
-            callback();
+// Executes right before user is saved in the database
+UserSchema.pre('save', function(done) {
+  // Don't do anything if the password is not changed
+  if (!this.isModified('password')) done();
+  else {
+    // Password has changed, so hash the new password
+    BCRYPT.genSalt(5, (genSaltErr, salt) => {
+      if (genSaltErr) done(genSaltErr);
+      else {
+        BCRYPT.hash(this.password, salt, null, (hashErr, hashedPassword) => {
+          if (hashErr) done(hashErr);
+          else {
+            this.password = hashedPassword;
+            done();
+          }
         });
+      }
     });
+  }
 });
 
-
-//export mongoose model to be used
-module.exports = mongoose.model('User', UserSchema);
+module.exports = MONGOOSE.model('User', UserSchema);
