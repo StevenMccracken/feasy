@@ -22,9 +22,32 @@
   * Successful request returns
     * Status code: __200__
     * Request body JSON
-      ```javascript
-      {
-        "message": "This is the REST API for Pyrsuit"
-      }
-      ```
+    ```json
+    {
+      "message": "This is the REST API for Pyrsuit"
+    }
+    ```
 * __POST__ https://api.pyrsuit.com/login
+  * Purpose
+    * Registers the client on the server so that subsequent requests only require a generated token, not their username and password
+  * Required parameters
+    * In the request body:
+      * _username_
+        * Non-empty string containing alphanumeric characters, dashes, or underscores
+      * _password_
+        * Non-empty string containing alphanumeric and special characters
+  * Optional parameters: _none_
+  * Successful request returns
+    * Status code: __200__
+    * Request body JSON
+    ```json
+    {
+	    "success": {
+	      "message": "Valid login credentials",
+	      "token": “JWT <random string>"
+	    }
+    }
+    ```
+  * Notes
+    * Token will be a string starting with the word ___JWT___ followed by one space, and then a random string of uppercase and lowercase characters, numbers, periods, and underscores
+    * This token must be sent in the headers of almost every request
