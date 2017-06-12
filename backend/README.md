@@ -1,4 +1,5 @@
-# API Documentation
+# :boom: API Documentation :boom:
+## Guide Information
 * You can send requests to the URL routes below to access data from the server
 * For almost all requests, you must have a specific token within the request’s Headers
 * There must be a key within the request header called __Authorization__ (capitalization of the first letter is necessary)
@@ -14,22 +15,32 @@
   * Create user route (__POST__ https://api.pyrsuit.com/users)
 * The URLs in this guide that contain brackets ([]) are meant to have those brackets substituted with with actual values
 * The JSON responses in this guide that contain brackets ([]) will have actual values when returned from the server
-  
+## Table of Contents
+<a name="table-of-contents"></a>
+
+  1. [Base route](#base-route)
+  2. [Login](#login)
+
 ## Routes
-* __GET__ https://api.pyrsuit.com
-  * Purpose
-    * Test if the server is up and running
-  * Required parameters: _none_
-  * Optional parameters: _none_
-  * Successful request returns
-    * Status code: __200__
-    * Request body JSON
-    ```json
-    {
-      "message": "This is the REST API for Pyrsuit"
-    }
-    ```
-* __POST__ https://api.pyrsuit.com/login
+### Base route
+<a name="base-route"></a>
+* Route: GET https://api.pyrsuit.com
+* Purpose
+  * Test if the server is up and running
+* Required parameters: _none_
+* Optional parameters: _none_
+* Successful request returns
+  * Status code: __200__
+  * Request body JSON
+  ```json
+  {
+    "message": "This is the REST API for Pyrsuit"
+  }
+  ```
+**[⬆ back to top](#table-of-contents)**
+### Login
+<a name="login"></a>
+  * Route: POST https://api.pyrsuit.com/login
   * Purpose
     * Registers the client on the server so that subsequent requests only require a generated token, not their username and password
   * Required parameters
