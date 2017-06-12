@@ -2,10 +2,10 @@
  * router_mod - @module for HTTP request routing
  */
 
-const LOG         = require('./log_mod');
-const MIDDLEWARE  = require('./middleware_mod');
+const LOG = require('./log_mod');
+const MIDDLEWARE = require('./middleware_mod');
 
-var router = null;
+var router;
 var routing = function(_router) {
   router = _router;
 
@@ -21,8 +21,7 @@ var routing = function(_router) {
   });
 
   /**
-   * The base GET route for the API. This route
-   * does not require token authentication
+   * The base GET route for the API. This route does not require token authentication
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
@@ -70,11 +69,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users/:username/username').put((_request, _response) => (
-    MIDDLEWARE.updateUserUsername(
-      _request,
-      _response,
-      result => _response.json(result)
-    )
+    MIDDLEWARE.updateUserUsername(_request, _response, result => _response.json(result))
   ));
 
   /**
@@ -84,11 +79,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users/:username/password').put((_request, _response) => (
-    MIDDLEWARE.updateUserPassword(
-      _request,
-      _response,
-      result => _response.json(result)
-    )
+    MIDDLEWARE.updateUserPassword(_request, _response, result => _response.json(result))
   ));
 
   /**
@@ -98,11 +89,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users/:username/email').put((_request, _response) => (
-    MIDDLEWARE.updateUserEmail(
-      _request,
-      _response,
-      result => _response.json(result)
-    )
+    MIDDLEWARE.updateUserEmail(_request, _response, result => _response.json(result))
   ));
 
   /**
@@ -112,11 +99,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users/:username/firstName').put((_request, _response) => (
-    MIDDLEWARE.updateUserFirstName(
-      _request,
-      _response,
-      result => _response.json(result)
-    )
+    MIDDLEWARE.updateUserFirstName(_request, _response, result => _response.json(result))
   ));
 
   /**
@@ -126,11 +109,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users/:username/lastName').put((_request, _response) => (
-    MIDDLEWARE.updateUserLastName(
-      _request,
-      _response,
-      result => _response.json(result)
-    )
+    MIDDLEWARE.updateUserLastName(_request, _response, result => _response.json(result))
   ));
 
   /**
@@ -150,11 +129,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users/:username/assignments').post((_request, _response) => (
-    MIDDLEWARE.createAssignment(
-      _request,
-      _response,
-      result => _response.json(result)
-    )
+    MIDDLEWARE.createAssignment(_request, _response, result => _response.json(result))
   ));
 
   /**
@@ -163,15 +138,9 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments')
-    .get((_request, _response) => (
-      MIDDLEWARE.getAssignments(
-        _request,
-        _response,
-        result => _response.json(result)
-      )
-    )
-  );
+  router.route('/users/:username/assignments').get((_request, _response) => (
+    MIDDLEWARE.getAssignments(_request, _response, result => _response.json(result))
+  ));
 
   /**
    * The GET route for retrieving an assignment. Sends an error JSON or
@@ -179,15 +148,9 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/:assignmentId')
-    .get((_request, _response) => (
-      MIDDLEWARE.getAssignmentById(
-        _request,
-        _response,
-        result => _response.json(result)
-      )
-    )
-  );
+  router.route('/users/:username/assignments/:assignmentId') .get((_request, _response) => (
+    MIDDLEWARE.getAssignmentById(_request, _response, result => _response.json(result))
+  ));
 
   /**
    * THE PUT route for updating an assignment's title. Sends an error JSON or
@@ -195,15 +158,9 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/:assignmentId/title')
-    .put((_request, _response) => (
-      MIDDLEWARE.updateAssignmentTitle(
-        _request,
-        _response,
-        result => _response.json(result)
-      )
-    )
-  );
+  router.route('/users/:username/assignments/:assignmentId/title').put((_request, _response) => (
+    MIDDLEWARE.updateAssignmentTitle(_request, _response, result => _response.json(result))
+  ));
 
   /**
    * THE PUT route for updating an assignment's class. Sends an error JSON or
@@ -211,15 +168,9 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/:assignmentId/class')
-    .put((_request, _response) => (
-      MIDDLEWARE.updateAssignmentClass(
-        _request,
-        _response,
-        result => _response.json(result)
-      )
-    )
-  );
+  router.route('/users/:username/assignments/:assignmentId/class').put((_request, _response) => (
+    MIDDLEWARE.updateAssignmentClass(_request, _response, result => _response.json(result))
+  ));
 
   /**
    * THE PUT route for updating an assignment's type. Sends an error JSON or
@@ -227,15 +178,9 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/:assignmentId/type')
-    .put((_request, _response) => (
-      MIDDLEWARE.updateAssignmentType(
-        _request,
-        _response,
-        result => _response.json(result)
-      )
-    )
-  );
+  router.route('/users/:username/assignments/:assignmentId/type').put((_request, _response) => (
+    MIDDLEWARE.updateAssignmentType(_request, _response, result => _response.json(result))
+  ));
 
   /**
    * THE PUT route for updating an assignment's description. Sends an error JSON
@@ -245,11 +190,7 @@ var routing = function(_router) {
    */
   router.route('/users/:username/assignments/:assignmentId/description')
     .put((_request, _response) => (
-      MIDDLEWARE.updateAssignmentDescription(
-        _request,
-        _response,
-        result => _response.json(result)
-      )
+      MIDDLEWARE.updateAssignmentDescription(_request, _response, result => _response.json(result))
     )
   );
 
@@ -262,11 +203,7 @@ var routing = function(_router) {
    */
   router.route('/users/:username/assignments/:assignmentId/completed')
     .put((_request, _response) => (
-      MIDDLEWARE.updateAssignmentCompleted(
-        _request,
-        _response,
-        result => _response.json(result)
-      )
+      MIDDLEWARE.updateAssignmentCompleted(_request, _response, result => _response.json(result))
     )
   );
 
@@ -276,15 +213,9 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/:assignmentId/dueDate')
-    .put((_request, _response) => (
-      MIDDLEWARE.updateAssignmentDueDate(
-        _request,
-        _response,
-        result => _response.json(result)
-      )
-    )
-  );
+  router.route('/users/:username/assignments/:assignmentId/dueDate').put((_request, _response) => (
+    MIDDLEWARE.updateAssignmentDueDate(_request, _response, result => _response.json(result))
+  ));
 
   /**
    * The DELETE route for deleting an assignment. Sends an error JSON or a
@@ -292,15 +223,9 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/:assignmentId')
-    .delete((_request, _response) => (
-      MIDDLEWARE.deleteAssignment(
-        _request,
-        _response,
-        result => _response.json(result)
-      )
-    )
-  );
+  router.route('/users/:username/assignments/:assignmentId').delete((_request, _response) => (
+    MIDDLEWARE.deleteAssignment(_request, _response, result => _response.json(result))
+  ));
 
   return router;
 }

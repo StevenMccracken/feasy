@@ -3,11 +3,11 @@
  * requests, call database controllers, and handles errors
  */
 
-const LOG         = require('./log_mod');
-const AUTH        = require('./auth_mod.js');
-const ERROR       = require('./error_mod');
-const USERS       = require('../controller/user.js');
-const ASSIGNMENTS = require('../controller/assignment.js');
+const LOG = require('./log_mod');
+const AUTH = require('./auth_mod');
+const ERROR = require('./error_mod');
+const USERS = require('../controller/user');
+const ASSIGNMENTS = require('../controller/assignment');
 
 /**
  * auth - Authorizes a user and generates a JSON web token for the user
@@ -92,15 +92,9 @@ var authenticate = function(_request, _response, _callback) {
             } // End (validatePasswordsErr)
           ); // End AUTH.validatePasswords()
         }
-      }, // End user
+      }, // End (user)
       (getUserErr) => {
-        response = ERROR.determineUserError(
-          SOURCE,
-          _request,
-          _response,
-          getUserErr
-        );
-
+        response = ERROR.determineUserError(SOURCE, _request, _response, getUserErr);
         _callback(response);
       } // End (getUserErr)
     ); // End USERS.getByUsername()
@@ -166,9 +160,9 @@ var createUser = function(_request, _response, _callback) {
         } else {
           // Username is available. Build user JSON with request body data
           var userInfo = {
+            email: _request.body.email,
             username: _request.body.username,
-            password: _request.body.password,
-            email: _request.body.email
+            password: _request.body.password
           };
 
           if (hasValidFirstName) userInfo.firstName = _request.body.firstName;
@@ -193,26 +187,14 @@ var createUser = function(_request, _response, _callback) {
               _callback(response);
             }, // End (newUser)
             (createUserErr) => {
-              response = ERROR.determineUserError(
-                SOURCE,
-                _request,
-                _response,
-                createUserErr
-              );
-
+              response = ERROR.determineUserError(SOURCE, _request, _response, createUserErr);
               _callback(response);
             } // End (createUserErr)
           ); // End USERS.create()
         }
       }, // End (user)
       (getUserErr) => {
-        response = ERROR.determineUserError(
-          SOURCE,
-          _request,
-          _response,
-          getUserErr
-        );
-
+        response = ERROR.determineUserError(SOURCE, _request, _response, getUserErr);
         _callback(response);
       } // End (getUserErr)
     ); // End USERS.getByUsername()
@@ -266,13 +248,7 @@ var retrieveUser = function(_request, _response, _callback) {
             } else _callback(userInfo);
           }, // End (userInfo)
           (getUserInfoErr) => {
-            response = ERROR.determineUserError(
-              SOURCE,
-              _request,
-              _response,
-              getUserInfoErr
-            );
-
+            response = ERROR.determineUserError(SOURCE, _request, _response, getUserInfoErr);
             _callback(response);
           } // End (getUserInfoErr)
         ); // End USERS.getByUsername()
@@ -396,13 +372,7 @@ var updateUserUsername = function(_request, _response, _callback) {
               }
             }, // End (userInfo)
             (getUserInfoErr) => {
-              response = ERROR.determineUserError(
-                SOURCE,
-                _request,
-                _response,
-                getUserInfoErr
-              );
-
+              response = ERROR.determineUserError(SOURCE, _request, _response, getUserInfoErr);
               _callback(response);
             } // End (getUserInfoErr)
           ); // End USERS.getByUsername()
@@ -540,13 +510,7 @@ var updateUserPassword = function(_request, _response, _callback) {
               }
             }, // End (userInfo)
             (getUserInfoErr) => {
-              response = ERROR.determineUserError(
-                SOURCE,
-                _request,
-                _response,
-                getUserInfoErr
-              );
-
+              response = ERROR.determineUserError(SOURCE, _request, _response, getUserInfoErr);
               _callback(response);
             } // End (getUserInfoErr)
           ); // End USERS.getByUsername()
@@ -604,9 +568,7 @@ function updateUserAttribute(
        _callback(response);
      } else {
        // URL parameters are valid. Create newAttribute var
-       var newAttributeName =
-          'new' + _attribute.charAt(0).toUpperCase() + _attribute.slice(1);
-
+       var newAttributeName = `new${_attribute.charAt(0).toUpperCase()}${_attribute.slice(1)}`;
 
        // Check request body parameter with provided verify function
        if (!_verifyAttributeFunction(_request.body[newAttributeName])) {
@@ -644,9 +606,7 @@ function updateUserAttribute(
                  newValue = _request.body[newAttributeName].trim();
                } else newValue = _request.body[newAttributeName];
 
-               if (
-                 newValue === userInfo[_attribute]
-               ) {
+               if (newValue === userInfo[_attribute]) {
                  // Request body parameter is identical to existing user attribute
                  response = ERROR.error(
                    SOURCE,
@@ -687,13 +647,7 @@ function updateUserAttribute(
              }
            }, // End (userInfo)
            (getUserErr) => {
-             response = ERROR.determineUserError(
-               SOURCE,
-               _request,
-               _response,
-               getUserErr
-             );
-
+             response = ERROR.determineUserError(SOURCE, _request, _response, getUserErr);
              _callback(response);
            } // End (getUserErr)
          ); // End USERS.getByUsername()
@@ -885,26 +839,14 @@ var deleteUser = function(_request, _response, _callback) {
                   ); // End ASSIGNMENTS.removeAllByUser()
                 }, // End ()
                 (deleteUserErr) => {
-                  response = ERROR.determineUserError(
-                    SOURCE,
-                    _request,
-                    _response,
-                    deleteUserErr
-                  );
-
+                  response = ERROR.determineUserError(SOURCE, _request, _response, deleteUserErr);
                   _callback(response);
                 } // End (deleteUserErr)
               ); // End USERS.removeByUsername()
             }
           }, // End (user)
           (getUserInfoErr) => {
-            response = ERROR.determineUserError(
-              SOURCE,
-              _request,
-              _response,
-              getUserInfoErr
-            );
-
+            response = ERROR.determineUserError(SOURCE, _request, _response, getUserInfoErr);
             _callback(response);
           } // End (getUserInfoErr)
         ); // End USERS.getByUsername()
@@ -915,8 +857,7 @@ var deleteUser = function(_request, _response, _callback) {
 }; // End deleteUser()
 
 /**
- * createAssignment - Creates a new assignment
- * for a user and returns the created assignment
+ * createAssignment - Creates a new assignment for a user and returns the created assignment
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {callback} _callback the callback to return the response
@@ -956,12 +897,14 @@ var createAssignment = function(_request, _response, _callback) {
         _callback(response);
       } else {
         // URL request parameters are valid. Check request body parameters
-        var hasValidClass = false, hasValidType = false,
-          hasValidDescription = false, hasValidCompleted = false;
+        var hasValidClass = false, hasValidType = false, hasValidDescription = false,
+          hasValidCompleted = false;
 
         var invalidParams = [];
         if (!isValidString(_request.body.title)) invalidParams.push('title');
         if (!isValidInteger(_request.body.dueDate)) invalidParams.push('dueDate');
+
+        // Check optional parameters
         if (_request.body.class !== undefined) {
           if (!isValidString(_request.body.class)) invalidParams.push('class');
           else hasValidClass = true;
@@ -973,17 +916,14 @@ var createAssignment = function(_request, _response, _callback) {
         }
 
         if (_request.body.description !== undefined) {
-          if (!isValidString(_request.body.description)) {
-            invalidParams.push('description');
-          } else hasValidDescription = true;
+          if (!isValidString(_request.body.description)) invalidParams.push('description');
+          else hasValidDescription = true;
         }
 
         if (_request.body.completed !== undefined) {
-          if (
-            _request.body.completed !== 'true' &&
-            _request.body.completed !== 'false'
-          ) invalidParams.push('completed');
-          else hasValidCompleted = true
+          if (_request.body.completed !== 'true' && _request.body.completed !== 'false') {
+            invalidParams.push('completed');
+          } else hasValidCompleted = true
         }
 
         if (invalidParams.length > 0) {
@@ -1004,6 +944,7 @@ var createAssignment = function(_request, _response, _callback) {
             dueDate: new Date(parseInt(_request.body.dueDate) * 1000)
           };
 
+          // Add completed boolean value to assignment info from request parameter string
           if (hasValidCompleted && _request.body.completed === 'true') {
             assignmentInfo.completed = true;
           } else if (hasValidCompleted && _request.body.completed === 'false') {
@@ -1013,9 +954,7 @@ var createAssignment = function(_request, _response, _callback) {
           // Check for optional parameters
           if (hasValidClass) assignmentInfo.class = _request.body.class;
           if (hasValidType) assignmentInfo.type = _request.body.type;
-          if (hasValidDescription) {
-            assignmentInfo.description = _request.body.description;
-          }
+          if (hasValidDescription) assignmentInfo.description = _request.body.description;
 
           // Save assignment to database
           ASSIGNMENTS.create(
@@ -1023,7 +962,7 @@ var createAssignment = function(_request, _response, _callback) {
             (createdAssignment) => {
               // Set response status code
               _response.status(201);
-              _callback(createdAssignment)
+              _callback(createdAssignment);
             }, // End (createdAssignment)
             (createAssignmentErr) => {
               response = ERROR.determineAssignmentError(
@@ -1087,12 +1026,9 @@ var getAssignments = function(_request, _response, _callback) {
         ASSIGNMENTS.getAll(
           client._id,
           (assignments) => {
-            // Assignments are in array. Iterate over them and add them to JSON
+            // Assignments are in array. Iterate over them and add them to response JSON
             response = {};
-            for (let assignment of assignments) {
-              response[assignment._id] = assignment;
-            }
-
+            for (let assignment of assignments) response[assignment._id] = assignment;
             _callback(response);
           }, // End (assignments)
           (getAssignmentsErr) => {
@@ -1187,8 +1123,7 @@ var getAssignmentById = function(_request, _response, _callback) {
 }; // End getAssignmentById()
 
 /**
- * updateAssignmentAttribute - Updates an
- * assignments's attribute information in the database
+ * updateAssignmentAttribute - Updates an assignments's attribute information in the database
  * @param {Object} _client the user Mongoose object
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
@@ -1211,13 +1146,8 @@ function updateAssignmentAttribute(
 
   // Token is valid. Check request parameters in the URL
   var invalidParams = [];
-  if (!isValidUsername(_request.params.username)) {
-    invalidParams.push('username');
-  }
-
-  if (!isValidObjectId(_request.params.assignmentId)) {
-    invalidParams.push('assignmentId');
-  }
+  if (!isValidUsername(_request.params.username)) invalidParams.push('username');
+  if (!isValidObjectId(_request.params.assignmentId)) invalidParams.push('assignmentId');
 
   if (invalidParams.length > 0) {
     response = ERROR.error(
@@ -1248,8 +1178,7 @@ function updateAssignmentAttribute(
        _callback(response);
      } else {
        // URL parameters are valid. Create newAttribute var
-       var newAttributeName =
-          'new' + _attribute.charAt(0).toUpperCase() + _attribute.slice(1);
+       var newAttributeName = `new${_attribute.charAt(0).toUpperCase()}${_attribute.slice(1)}`;
 
        // Check request body attribute with provided verify function
        if (!_verifyAttributeFunction(_request.body[newAttributeName])) {
@@ -1285,9 +1214,7 @@ function updateAssignmentAttribute(
                } else newValue = _request.body[newAttributeName];
 
                // If new value is the same as existing attribute, don't update
-               if (
-                 newValue === assignment[_attribute]
-               ) {
+               if (newValue === assignment[_attribute]) {
                  response = ERROR.error(
                    SOURCE,
                    _request,
@@ -1342,8 +1269,7 @@ function updateAssignmentAttribute(
 }; // End updateAssignmentAttribute()
 
 /**
- * updateAssignmentTitle - Updates an
- * assignments's title information in the database
+ * updateAssignmentTitle - Updates an assignments's title information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {callback} _callback the callback to send the database response
@@ -1373,8 +1299,7 @@ var updateAssignmentTitle = function(_request, _response, _callback) {
 }; // End updateAssignmentTitle()
 
 /**
- * updateAssignmentClass - Updates an
- * assignments's class information in the database
+ * updateAssignmentClass - Updates an assignments's class information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {callback} _callback the callback to send the database response
@@ -1404,8 +1329,7 @@ var updateAssignmentClass = function(_request, _response, _callback) {
 }; // End updateAssignmentClass()
 
 /**
- * updateAssignmentType - Updates an
- * assignments's type information in the database
+ * updateAssignmentType - Updates an assignments's type information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {callback} _callback the callback to send the database response
@@ -1435,8 +1359,7 @@ var updateAssignmentType = function(_request, _response, _callback) {
 }; // End updateAssignmentType()
 
 /**
- * updateAssignmentDescription - Updates an
- * assignments's description information in the database
+ * updateAssignmentDescription - Updates an assignments's description information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {callback} _callback the callback to send the database response
@@ -1466,8 +1389,7 @@ var updateAssignmentDescription = function(_request, _response, _callback) {
 }; // End updateAssignmentDescription()
 
 /**
- * updateAssignmentCompleted - Updates an
- * assignment's completed information in the database
+ * updateAssignmentCompleted - Updates an assignment's completed information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {callback} _callback the callback to send the database response
@@ -1484,13 +1406,8 @@ function updateAssignmentCompleted(_request, _response, _callback) {
     (client) => {
       // Token is valid. Check request parameters in the URL
       var invalidParams = [];
-      if (!isValidUsername(_request.params.username)) {
-        invalidParams.push('username');
-      }
-
-      if (!isValidObjectId(_request.params.assignmentId)) {
-        invalidParams.push('assignmentId');
-      }
+      if (!isValidUsername(_request.params.username)) invalidParams.push('username');
+      if (!isValidObjectId(_request.params.assignmentId)) invalidParams.push('assignmentId');
 
       if (invalidParams.length > 0) {
         response = ERROR.error(
@@ -1521,10 +1438,7 @@ function updateAssignmentCompleted(_request, _response, _callback) {
            _callback(response);
          } else {
            // URL parameters are valid. Check newCompleted parameter
-           if (
-             _request.body.newCompleted !== 'true' &&
-             _request.body.newCompleted !== 'false'
-           ) {
+           if (_request.body.newCompleted !== 'true' && _request.body.newCompleted !== 'false') {
              response = ERROR.error(
                SOURCE,
                _request,
@@ -1551,10 +1465,7 @@ function updateAssignmentCompleted(_request, _response, _callback) {
                    _callback(response);
                  } else {
                    // Create boolean value from request body string value
-                   var newCompletedBoolean;
-                   if (_request.body.newCompleted === 'true') {
-                     newCompletedBoolean = true;
-                   } else newCompletedBoolean = false;
+                   var newCompletedBoolean = _request.body.newCompleted === 'true' ? true : false;
 
                    // Check if new value is the same as existing value
                    if (newCompletedBoolean === assignment.completed) {
@@ -1616,8 +1527,7 @@ function updateAssignmentCompleted(_request, _response, _callback) {
 }; // End updateAssignmentCompleted()
 
 /**
- * updateAssignmentDueDate - Updates an
- * assignment's due date information in the database
+ * updateAssignmentDueDate - Updates an assignment's due date information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {callback} _callback the callback to send the database response
@@ -1634,13 +1544,8 @@ function updateAssignmentDueDate(_request, _response, _callback) {
     (client) => {
       // Token is valid. Check request parameters in the URL
       var invalidParams = [];
-      if (!isValidUsername(_request.params.username)) {
-        invalidParams.push('username');
-      }
-
-      if (!isValidObjectId(_request.params.assignmentId)) {
-        invalidParams.push('assignmentId');
-      }
+      if (!isValidUsername(_request.params.username)) invalidParams.push('username');
+      if (!isValidObjectId(_request.params.assignmentId)) invalidParams.push('assignmentId');
 
       if (invalidParams.length > 0) {
         response = ERROR.error(
@@ -1776,13 +1681,8 @@ var deleteAssignment = function(_request, _response, _callback) {
     (client) => {
       // Token is valid. Check request parameters in the URL
       var invalidParams = [];
-      if (!isValidUsername(_request.params.username)) {
-        invalidParams.push('username');
-      }
-
-      if (!isValidObjectId(_request.params.assignmentId)) {
-        invalidParams.push('assignmentId');
-      }
+      if (!isValidUsername(_request.params.username)) invalidParams.push('username');
+      if (!isValidObjectId(_request.params.assignmentId)) invalidParams.push('assignmentId');
 
       if (invalidParams.length > 0) {
         response = ERROR.error(
@@ -1795,10 +1695,7 @@ var deleteAssignment = function(_request, _response, _callback) {
 
         _callback(response);
       } else {
-        /**
-         * URL request parameters are valid. Check that
-         * the client is deleting their own assignment
-         */
+        // URL request parameters are valid. Check that the client is deleting their own assignment
          if (client.username !== _request.params.username) {
            // Client attempted to delete an assignment that was not their own
            response = ERROR.error(
@@ -1914,10 +1811,7 @@ function isValidUsername(_username) {
  * @returns {Boolean} validity of _email
  */
 function isValidEmail(_email) {
-  /**
-   * Evaluates to true if true if _email is not null,
-   * not undefined, and matches valid email formats
-   */
+  // Evaluates to true if true if _email is not null, not undefined, and matches valid email formats
   return _email !== null &&
     _email !== undefined &&
     (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/).test(_email);
@@ -1933,9 +1827,7 @@ function isValidPassword(_password) {
    * Evaluates to true if _password is not null, not undefined, not
    * empty, and only contains alphanumeric and special characters
    */
-  return _password !== null &&
-    _password !== undefined &&
-    (/^[\w\S]+$/).test(_password);
+  return _password !== null && _password !== undefined && (/^[\w\S]+$/).test(_password);
 }
 
 /**
@@ -1948,9 +1840,7 @@ function isValidName(_name) {
    * Evaluates to true if name is not null, not undefined, not
    * empty, and only contains alphanumeric characters and spaces
    */
-  return _name !== null &&
-    _name !== undefined &&
-    (/^[\w\s]+$/).test(_name.trim());
+  return _name !== null && _name !== undefined && (/^[\w\s]+$/).test(_name.trim());
 }
 
 /**
@@ -1960,9 +1850,7 @@ function isValidName(_name) {
  */
 function isValidString(_string) {
   // Evaluates to true if _string is not null, not undefined, and not empty
-  return _string !== null &&
-    _string !== undefined &&
-    (/^[\w\W]+$/).test(_string.trim());
+  return _string !== null && _string !== undefined && (/^[\w\W]+$/).test(_string.trim());
 }
 
 /**
@@ -1971,10 +1859,7 @@ function isValidString(_string) {
  * @returns {Boolean} validity of _number
  */
 function isValidInteger(_number) {
-  /**
-   * Evalutes to true if _number is not null, not
-   * undefined, noty empty, and strictly numeric
-   */
+  // Evalutes to true if _number is not null, not undefined, not empty, and only numeric
   return _number !== null & _number !== undefined && (/^\d+$/).test(_number);
 }
 

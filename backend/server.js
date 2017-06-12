@@ -2,16 +2,16 @@
  * server - Initializes the app server and starts listening
  */
 
-const Cors        = require('cors');
-var mongoose      = require('mongoose');
-mongoose.Promise  = require('bluebird');
-const CONFIG      = require('./config/database');
-const Express     = require('express');
-var app           = Express();
-const ROUTER      = require('./app/modules/router_mod.js')(Express.Router());
+const Cors = require('cors');
+const Express = require('express');
+const MONGOOSE = require('mongoose');
+MONGOOSE.Promise = require('bluebird');
 const BODY_PARSER = require('body-parser');
+const CONFIG = require('./config/database');
 
 var port = 8080;
+const app = Express();
+const ROUTER = require('./app/modules/router_mod')(Express.Router());
 
 // For purpose of checking travis
 if (process.env.TEST) port = 3000;
@@ -28,8 +28,8 @@ app.use(
 // Set the base route path
 app.use('/', ROUTER);
 
-// Configure database before server starts
-mongoose.connect(CONFIG.database);
+// Connect to database server before express server starts
+MONGOOSE.connect(CONFIG.database);
 
 /**
  * Listens for all incoming requests

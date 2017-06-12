@@ -1,18 +1,15 @@
-var server    = require('../../server.js');
-var request   = require('request');
-const UuidV4  = require('uuid/v4');
+const UuidV4 = require('uuid/v4');
+const REQUEST = require('request');
+const SERVER = require('../../server');
 
-/**
- * Server will check for TEST env variable and
- * adjust the port according to the environment
- */
+// Server will check for TEST env variable and adjust the port according to the environment
 var baseUrl = 'http://localhost:8080';
 if (process.env.TEST) baseUrl = 'http://localhost:3000';
 
 describe('Start server', () => {
   describe('Base API route', () => {
     it('returns status code 200', (done) => {
-      request.get(baseUrl, (error, response, body) => {
+      REQUEST.get(baseUrl, (error, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Base API route', body);
         done();
@@ -40,7 +37,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 201 on successful creation', (done) => {
-      request.post(createUserParams, (err, response, body) => {
+      REQUEST.post(createUserParams, (err, response, body) => {
         expect(response.statusCode).toBe(201);
         log('Create user 1', body);
 
@@ -71,7 +68,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 201 on successful creation', (done) => {
-      request.post(createUserParams, (err, response, body) => {
+      REQUEST.post(createUserParams, (err, response, body) => {
         expect(response.statusCode).toBe(201);
         log('Create user 2', body);
 
@@ -101,7 +98,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 OK on valid credentials', (done) => {
-      request.post(user1AuthParams, (err, response, body) => {
+      REQUEST.post(user1AuthParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
 
         // Parse JSON response
@@ -124,7 +121,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 if user exists', (done) => {
-      request.get(getUserParams, (err, response, body) => {
+      REQUEST.get(getUserParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Get user 1 information', body);
         done();
@@ -145,7 +142,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful update', (done) => {
-      request.put(updateUserParams, (err, response, body) => {
+      REQUEST.put(updateUserParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
 
         // Parse JSON response for new token
@@ -175,7 +172,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful update', (done) => {
-      request.put(updateUserParams, (err, response, body) => {
+      REQUEST.put(updateUserParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
 
         user1Password = newUser1Password;
@@ -197,7 +194,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful update', (done) => {
-      request.put(updateUserParams, (err, response, body) => {
+      REQUEST.put(updateUserParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Update user 1\'s email', body);
         done();
@@ -217,7 +214,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful update', (done) => {
-      request.put(updateUserParams, (err, response, body) => {
+      REQUEST.put(updateUserParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Update user 1\'s first name', body);
         done();
@@ -237,7 +234,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful update', (done) => {
-      request.put(updateUserParams, (err, response, body) => {
+      REQUEST.put(updateUserParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Update user 1\'s last name', body);
         done();
@@ -261,7 +258,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful creation', (done) => {
-      request.post(createAssignmentParams, (err, response, body) => {
+      REQUEST.post(createAssignmentParams, (err, response, body) => {
         expect(response.statusCode).toBe(201);
 
         // Parse JSON response for the assignment id
@@ -295,7 +292,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful creation', (done) => {
-      request.post(createAssignmentParams, (err, response, body) => {
+      REQUEST.post(createAssignmentParams, (err, response, body) => {
         expect(response.statusCode).toBe(201);
 
         // Parse JSON response for the assignment id
@@ -320,7 +317,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful retrieval', (done) => {
-      request.get(getAssignmentParams, (err, response, body) => {
+      REQUEST.get(getAssignmentParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
 
         // Parse JSON response for assignments created by user 1
@@ -342,7 +339,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 if assignment exists', (done) => {
-      request.get(getAssignmentParams, (err, response, body) => {
+      REQUEST.get(getAssignmentParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Get assignment 1 information', body);
         done();
@@ -362,7 +359,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful update', (done) => {
-      request.put(updateAssignmentParams, (err, response, body) => {
+      REQUEST.put(updateAssignmentParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Update assignment 1\'s title', body);
         done();
@@ -382,7 +379,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful update', (done) => {
-      request.put(updateAssignmentParams, (err, response, body) => {
+      REQUEST.put(updateAssignmentParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Update assignment 1\'s class', body);
         done();
@@ -402,7 +399,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful update', (done) => {
-      request.put(updateAssignmentParams, (err, response, body) => {
+      REQUEST.put(updateAssignmentParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Update assignment 1\'s type', body);
         done();
@@ -422,7 +419,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful update', (done) => {
-      request.put(updateAssignmentParams, (err, response, body) => {
+      REQUEST.put(updateAssignmentParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Update assignment 1\'s description', body);
         done();
@@ -442,7 +439,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful update', (done) => {
-      request.put(updateAssignmentParams, (err, response, body) => {
+      REQUEST.put(updateAssignmentParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Update assignment 1\'s completed', body);
         done();
@@ -462,7 +459,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful update', (done) => {
-      request.put(updateAssignmentParams, (err, response, body) => {
+      REQUEST.put(updateAssignmentParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Update assignment 1\'s due date', body);
         done();
@@ -481,7 +478,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful deletion', (done) => {
-      request.delete(deleteAssignmentParams, (err, response, body) => {
+      REQUEST.delete(deleteAssignmentParams, (err, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Delete assignment 1', body);
         done();
@@ -500,7 +497,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful deletion', (done) => {
-      request.delete(deleteUserParams, (error, response, body) => {
+      REQUEST.delete(deleteUserParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Delete user 1', body);
         done();
@@ -519,7 +516,7 @@ describe('Start server', () => {
     });
 
     it('returns status code 200 on successful deletion', (done) => {
-      request.delete(deleteUserParams, (error, response, body) => {
+      REQUEST.delete(deleteUserParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
         log('Delete user 2', body);
         done();
@@ -530,7 +527,7 @@ describe('Start server', () => {
   // Close the server running for the test
   describe('Close server', () => {
     it('shuts down the test server', (done) => {
-      server.closeServer();
+      SERVER.closeServer();
       log('Close server', 'done');
       done();
     });

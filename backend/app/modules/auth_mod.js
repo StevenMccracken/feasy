@@ -2,11 +2,11 @@
  * auth_mod - @module for client request authentication
  */
 
-const JWT     = require('jsonwebtoken');
-const BCRYPT  = require('bcrypt-nodejs');
-const LOG     = require('./log_mod');
-const ERROR   = require('./error_mod');
-const config  = require(process.cwd() + '/config/database.js');
+const LOG = require('./log_mod');
+const JWT = require('jsonwebtoken');
+const ERROR = require('./error_mod');
+const BCRYPT = require('bcrypt-nodejs');
+const CONFIG = require(`${process.cwd()}/config/secret`);
 
 // Handles token storage and verification
 const PASSPORT = require('passport');
@@ -19,12 +19,7 @@ require('../../config/passport')(PASSPORT);
  * @param {callback} _callback the callback to handle successful comparison
  * @param {callback} _errorCallback the callback to handle any errors
  */
-var validatePasswords = function(
-  _givenPassword,
-  _actualPassword,
-  _callback,
-  _errorCallback
-) {
+var validatePasswords = function(_givenPassword, _actualPassword, _callback, _errorCallback) {
   const SOURCE = 'validatePasswords()';
   log(SOURCE);
 
@@ -32,14 +27,10 @@ var validatePasswords = function(
    * Username and password exist in the database, so
    * compare the password argument to the database record
    */
-  BCRYPT.compare(
-    _givenPassword,
-    _actualPassword,
-    (bcryptCompareError, passwordsMatch) => {
-      if (bcryptCompareError === null) _callback(passwordsMatch);
-      else _errorCallback(bcryptCompareError);
-    }
-  );
+  BCRYPT.compare(_givenPassword, _actualPassword, (bcryptCompareError, passwordsMatch) => {
+    if (bcryptCompareError === null) _callback(passwordsMatch);
+    else _errorCallback(bcryptCompareError);
+  });
 };
 
 /**
@@ -50,20 +41,16 @@ var validatePasswords = function(
  */
 var hashPassword = function(_password, _callback, _errorCallback) {
   const SOURCE = 'hashPassword()';
-  var response;
-
   log(SOURCE);
 
   // Generate salt to hash the password, use 5 rounds of salting
   BCRYPT.genSalt(5, (bcryptGenSaltError, salt) => {
-    if (bcryptGenSaltError != null) {
-      _errorCallback(bcryptGenSaltError);
-    } else {
+    if (bcryptGenSaltError === null) {
       BCRYPT.hash(_password, salt, null, (bcryptHashError, hashedPassword) => {
-        if (bcryptHashError != null) _errorCallback(bcryptHashError);
-        else _callback(hashedPassword);
+        if (bcryptHashError === null) _callback(hashedPassword);
+        else _errorCallback(bcryptHashError);
       });
-    }
+    } else _errorCallback(bcryptGenSaltError);
   });
 };
 
@@ -122,7 +109,7 @@ var verifyToken = function(_request, _response, _callback, _errorCallback) {
  * @returns {String} a JSON web token
  */
 function generateToken(_userInfo) {
-  return JWT.sign(_userInfo, config.secret, { expiresIn: '24h' });
+  return JWT.sign(_userInfo, CONFIG.secret, { expiresIn: '24h' });
 }
 
 module.exports = {
@@ -133,8 +120,7 @@ module.exports = {
 };
 
 /**
- * determineJwtError - Determines the specific
- * type of error generated from JWT events
+ * determineJwtError - Determines the specific type of error generated from JWT events
  * @param {String} errorMessage the JWT error message
  * @returns {String} a more clearly worded error message
  */

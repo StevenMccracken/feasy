@@ -2,11 +2,10 @@
  * assignment - Database controller for the Assignment model
  */
 
-var LOG         = require('../modules/log_mod.js');
-var ASSIGNMENT  = require('../models/assignment.js');
+const LOG = require('../modules/log_mod.js');
+const ASSIGNMENT = require('../models/assignment.js');
 
-const UNIVERSAL_PROJECTION =
-  '_id title class type description completed dueDate dateCreated';
+const UNIVERSAL_PROJECTION = '_id title class type description completed dueDate dateCreated';
 
 /**
  * create - Saves a new assignment for a user in the database
@@ -24,13 +23,11 @@ var create = function(_assignmentInfo, _callback, _errorCallback) {
   newAssignment.dueDate = _assignmentInfo.dueDate;
   newAssignment.completed = _assignmentInfo.completed;
 
-  if (_assignmentInfo.class !== undefined) {
-    newAssignment.class = _assignmentInfo.class.trim();
-  } else newAssignment.class = '';
+  if (_assignmentInfo.class !== undefined) newAssignment.class = _assignmentInfo.class.trim();
+  else newAssignment.class = '';
 
-  if (_assignmentInfo.type !== undefined) {
-    newAssignment.type = _assignmentInfo.type.trim();
-  } else newAssignment.type = '';
+  if (_assignmentInfo.type !== undefined) newAssignment.type = _assignmentInfo.type.trim();
+  else newAssignment.type = '';
 
   if (_assignmentInfo.description !== undefined) {
     newAssignment.description = _assignmentInfo.description.trim();
@@ -48,22 +45,14 @@ var create = function(_assignmentInfo, _callback, _errorCallback) {
  * @param {callback} _callback the callback to return the assignment
  * @param {callback} _errorCallback the callback to return any errors
  */
-var getById = function(
-  _assignmentId,
-  _callback,
-  _errorCallback
-) {
+var getById = function(_assignmentId, _callback, _errorCallback) {
   const SOURCE = 'getById()';
   log(SOURCE);
 
-  ASSIGNMENT.findById(
-    _assignmentId,
-    UNIVERSAL_PROJECTION,
-    (getAssignmentErr, assignment) => {
-      if (getAssignmentErr === null) _callback(assignment);
-      else _errorCallback(getAssignmentErr);
-    }
-  );
+  ASSIGNMENT.findById(_assignmentId, UNIVERSAL_PROJECTION, (getAssignmentErr, assignment) => {
+    if (getAssignmentErr === null) _callback(assignment);
+    else _errorCallback(getAssignmentErr);
+  });
 };
 
 /**
@@ -87,21 +76,15 @@ var getAll = function(_userId, _callback, _errorCallback) {
 };
 
 /**
- * getAllByAttribute - Retrieves all assignments
- * based on a desired attribute posted by a specific user
+ * getAllByAttribute - Retrieves all assignments based
+ * on a desired attribute posted by a specific user
  * @param {Object} _userId the ObjectId of the user who created the assignments
  * @param {String} _attribute the desired attribute of the assignment
  * @param {String} _value the value that the attribute should be equal to
  * @param {callback} _callback the callback to return the array of assignments
  * @param {callback} _errorCallback the callback to return any errors
  */
-var getAllByAttribute = function(
-  _userId,
-  _attribute,
-  _value,
-  _callback,
-  _errorCallback
-) {
+var getAllByAttribute = function(_userId, _attribute, _value, _callback, _errorCallback) {
   const SOURCE = 'getAllByAttribute()';
   log(SOURCE);
 
@@ -122,12 +105,7 @@ var getAllByAttribute = function(
  * @param {callback} _callback the callback to return the assignment attribute
  * @param {callback} _errorCallback the callback to return any errors
  */
-var getAttribute = function(
-  _assignmentId,
-  _attribute,
-  _callback,
-  _errorCallback
-) {
+var getAttribute = function(_assignmentId, _attribute, _callback, _errorCallback) {
   const SOURCE = 'getAttribute()';
   log(SOURCE);
 
@@ -145,19 +123,11 @@ var getAttribute = function(
  * updateAttribute - Updates a specific attribute of an assignment
  * @param {Object} _assignment the Mongoose object
  * @param {String} _attribute the specific attribute of the assignment to update
- * @param {String|Date|Boolean} _newValue the
- * updated value of the assignment attribute
- * @param {callback} _callback the callback
- * to return the assignment mongoose object
+ * @param {String|Date|Boolean} _newValue the updated value of the assignment attribute
+ * @param {callback} _callback the callback to return the assignment mongoose object
  * @param {callback} _errorCallback the callback to return any errors
  */
-var updateAttribute = function(
-  _assignment,
-  _attribute,
-  _newValue,
-  _callback,
-  _errorCallback
-) {
+var updateAttribute = function(_assignment, _attribute, _newValue, _callback, _errorCallback) {
   const SOURCE = 'updateAttribute()';
   log(SOURCE);
 
@@ -172,8 +142,7 @@ var updateAttribute = function(
 };
 
 /**
- * update - Executes a database save on an
- * assignment object to update any new attributes
+ * update - Executes a database save on an assignment object to update any new attributes
  * @param {Object} _assignment the Mongoose object
  * @param {callback} _callback the callback to return the updated assignment
  * @param {callback} _errorCallback the callback to return any errors

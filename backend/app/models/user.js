@@ -2,18 +2,18 @@
  * user - Mongoose database model for a User
  */
 
-var mongoose      = require('mongoose');
-mongoose.Promise  = require('bluebird');
-const BCRYPT      = require('bcrypt-nodejs');
+const MONGOOSE = require('mongoose');
+MONGOOSE.Promise = require('bluebird');
+const BCRYPT = require('bcrypt-nodejs');
 
 // User-id is auto-generated when pushed to mongodb
-var UserSchema = mongoose.Schema({
-  username:       { type: String, required: true, index: { unique: true } },
+var UserSchema = MONGOOSE.Schema({
   email:          { type: String, required: true, index: { unique: true } },
+  username:       { type: String, required: true, index: { unique: true } },
   password:       { type: String, required: true },
+  dateCreated:    { type: Date, default: Date.now },
   firstName:      { type: String },
-  lastName:       { type: String },
-  dateCreated:    { type: Date, default: Date.now }
+  lastName:       { type: String }
 });
 
 // Executes right before user is saved in the database
@@ -37,4 +37,4 @@ UserSchema.pre('save', function(done) {
   }
 });
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = MONGOOSE.model('User', UserSchema);

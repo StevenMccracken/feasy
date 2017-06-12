@@ -2,10 +2,10 @@
  * passport - @module for passport authentication configuration
  */
 
-const CONFIG      = require('./database');
-const USER_DB     = require('../app/controller/user.js');
-const EXTRACTJWT  = require('passport-jwt').ExtractJwt;
+const CONFIG = require('./secret');
+const USERS = require('../app/controller/user');
 const JwtStrategy = require('passport-jwt').Strategy;
+const EXTRACTJWT = require('passport-jwt').ExtractJwt;
 
 /**
  * exports - Defines how to generate and validate JSON web tokens
@@ -13,9 +13,10 @@ const JwtStrategy = require('passport-jwt').Strategy;
  */
 module.exports = function(passport) {
   // JSON containing criteria used to compare incoming JWTs to existing JWTs
-  var options = {};
-  options.secretOrKey = CONFIG.secret;
-  options.jwtFromRequest = EXTRACTJWT.fromAuthHeader();
+  var options = {
+    secretOrKey: CONFIG.secret,
+    jwtFromRequest: EXTRACTJWT.fromAuthHeader()
+  };
 
   /**
    * Use this strategy to compare JWTs from HTTP requests
@@ -23,13 +24,12 @@ module.exports = function(passport) {
    */
   passport.use(new JwtStrategy(options, (jwtPayload, done) => {
     // Try to retrieve the user corresponding to the username in the payload
-    USER_DB.getByUsername(
+    USERS.getByUsername(
       jwtPayload._doc.username,
       false,
       (userInfo) => {
-        if (userInfo !== null) {
-          done(null, userInfo);
-        } else {
+        if (userInfo !== null) done(null, userInfo);
+        else {
           /**
            * The user was not found in the database so
            * return a null error and user with the callback

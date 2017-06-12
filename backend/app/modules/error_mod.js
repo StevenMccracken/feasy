@@ -3,6 +3,7 @@
  */
 
 const LOG = require('./log_mod');
+
 const ERROR_CODE = {
   API_ERROR: {
     status: 500,
@@ -46,14 +47,7 @@ const ERROR_CODE = {
  * @param {String} _serverMessage a custom error message for the server log
  * @returns {Object} a formal error JSON for the client
  */
-var error = function(
-  _source,
-  _request,
-  _response,
-  _error,
-  _customErrorMessage,
-  _serverMessage
-) {
+var error = function(_source, _request, _response, _error, _customErrorMessage, _serverMessage) {
   const ERROR_JSON = {
     error: {
       type: _error.type,
@@ -78,8 +72,7 @@ var error = function(
 };
 
 /**
- * determineBcryptError - Determines the
- * correct error JSON for a given bcrypt error
+ * determineBcryptError - Determines the correct error JSON for a given bcrypt error
  * @param {String} _source the function where the error occurred
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
