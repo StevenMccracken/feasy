@@ -10,8 +10,9 @@ before_script:
 - cd backend
 - npm install -g grunt-cli
 - npm install
-script: sudo npm test
+script: npm test
 notifications:
+  email: false
   slack: on_failure:always
   slack: epicenter-group:3996sKrTuWBrxopQ24S6BZtG
   slack:
