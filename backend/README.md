@@ -1,4 +1,4 @@
-# :boom: API Documentation :boom:
+# :fire::lock: API Documentation :lock::fire:
 
 ## Guide Information
 * You can send requests to the URL routes below to access data from the server
@@ -54,7 +54,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "message": "This is the REST API for Pyrsuit"
@@ -76,7 +76,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -111,7 +111,7 @@
       * Non-empty string containing alphanumeric characters and spaces
 * Successful request returns
   * Status code: __201__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -138,7 +138,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "username": "[username value]",
@@ -169,7 +169,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -201,7 +201,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -230,7 +230,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -259,7 +259,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -288,7 +288,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -314,7 +314,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -353,7 +353,7 @@
       * Non-empty string equal to __true__ or __false__
 * Successful request returns
   * Status code: __201__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "__v": 0,
@@ -391,7 +391,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "[assignment 1 _id value]": {
@@ -428,7 +428,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "_id": "[_id value]",
@@ -464,7 +464,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -495,7 +495,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -526,7 +526,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -557,7 +557,7 @@
   * Optional parameters: _none_
   * Successful request returns
     * Status code: __200__
-    * Request body JSON
+    * Response body JSON
     ```json
     {
       "success": {
@@ -588,7 +588,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -620,7 +620,7 @@
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
-  * Request body JSON
+  * Response body JSON
   ```json
   {
     "success": {
@@ -648,7 +648,7 @@
   * Optional parameters: _none_
   * Successful request returns
     * Status code: __200__
-    * Request body JSON
+    * Response body JSON
     ```json
     {
       "success": {
@@ -660,4 +660,3 @@
 **[⬆ back to top](#table-of-contents)**
 <a name="errors"></a>
 ### Error types
-

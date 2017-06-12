@@ -7,7 +7,7 @@ const LOG = require('./log_mod');
 const ERROR_CODE = {
   API_ERROR: {
     status: 500,
-    type:	'api_error',
+    type: 'api_error',
     message: 'There was a problem with our back-end services'
   },
   AUTHENTICATION_ERROR: {
