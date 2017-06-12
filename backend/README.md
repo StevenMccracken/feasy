@@ -17,8 +17,8 @@
 * The URLs in this guide that contain brackets ([]) are meant to have those brackets substituted with with actual values
 * The JSON responses in this guide that contain brackets ([]) will have actual values when returned from the server
 
-## Table of Contents
 <a name="table-of-contents"></a>
+## Table of Contents
 
 1. [Base route](#base-route)
 2. [Login](#login)
@@ -44,7 +44,9 @@
 
 ## Routes
 
-### Base route <a name="base-route"></a>
+<a name="base-route"></a>
+### Base route
+
 * Route: __GET__ https://api.pyrsuit.com
 * Purpose
   * Test if the server is up and running
@@ -60,7 +62,9 @@
   ```
 
 **[⬆ back to top](#table-of-contents)**
-### Login <a name="login"></a>
+<a name="login"></a>
+### Login
+
 * Route: __POST__ https://api.pyrsuit.com/login
 * Purpose: Registers the client on the server so that subsequent requests only require a generated token, not their username and password
 * Required parameters
@@ -86,7 +90,9 @@
   * This token must be sent in the headers of almost every request
 
 **[⬆ back to top](#table-of-contents)**
-### Create a user <a name="create-user"></a>
+<a name="create-user"></a>
+### Create a user
+
 * Route: __POST__ https://api.pyrsuit.com/users
 * Purpose: Create a new user
 * Required parameters
@@ -118,7 +124,9 @@
   * _firstName_ and _lastName_ attributes will be saved as empty strings for the user information if they are not included in the request body
 
 **[⬆ back to top](#table-of-contents)**
-### Retrieve a user's information <a name="get-user"></a>
+<a name="get-user"></a>
+### Retrieve a user's information
+
 * Route: __GET__ https://api.pyrsuit.com/users/[username]
 * Purpose: Get information about a user like their id, email, name, etc
 * Required parameters
@@ -144,7 +152,9 @@
   * _firstName_ and _lastName_ could be empty strings if the user has not created/updated that information
 
 **[⬆ back to top](#table-of-contents)**
-### Change a user's username <a name="update-username"></a>
+<a name="update-username"></a>
+### Change a user's username
+
 * Route: __PUT__ https://api.pyrsuit.com/users/[username]/username
 * Purpose: Update a user's username to a new value
 * Required parameters
@@ -174,7 +184,9 @@
   * Use the new token provided in the success body response for future requests
 
 **[⬆ back to top](#table-of-contents)**
-### Change a user's password <a name="update-password"></a>
+<a name="update-password"></a>
+### Change a user's password
+
 * Route: __PUT__ https://api.pyrsuit.com/users/[username]/password
 * Purpose: Update a user's password to a new value
 * Required parameters
@@ -201,7 +213,9 @@
   * The _newPassword_ value must be __different__ from the existing password in the database
 
 **[⬆ back to top](#table-of-contents)**
-### Change a user's email <a name="update-email"></a>
+<a name="update-email"></a>
+### Change a user's email
+
 * Route: __PUT__ https://api.pyrsuit.com/users/[username]/email
 * Purpose: Update a user's email to a new value
 * Required parameters
@@ -228,7 +242,9 @@
   * The _newEmail_ value must be __different__ from the existing email in the database
 
 **[⬆ back to top](#table-of-contents)**
-### Change a user's first name <a name="update-firstName"></a>
+<a name="update-firstName"></a>
+### Change a user's first name
+
 * Route: __PUT__ https://api.pyrsuit.com/users/[username]/firstName
 * Purpose: Update a user's first name to a new value
 * Required parameters
@@ -255,7 +271,9 @@
   * The _newFirstName_ value must be __different__ from the existing first name in the database
 
 **[⬆ back to top](#table-of-contents)**
-### Change a user's last name <a name="update-lastName"></a>
+<a name="update-lastName"></a>
+### Change a user's last name
+
 * Route: __PUT__ https://api.pyrsuit.com/users/[username]/lastName
 * Purpose: Update a user's last name to a new value
 * Required parameters
@@ -282,7 +300,9 @@
   * The _newLastName_ value must be __different__ from the existing last name in the database
 
 **[⬆ back to top](#table-of-contents)**
-### Delete a user <a name="delete-user"></a>
+<a name="delete-user"></a>
+### Delete a user
+
 * Route: __DELETE__ https://api.pyrsuit.com/users/[username]
 * Purpose: Delete a user's account and all their assignments
 * Required parameters
@@ -304,7 +324,9 @@
   ```
 
 **[⬆ back to top](#table-of-contents)**
-### Create an assignment <a name="create-assignment"></a>
+<a name="create-assignment"></a>
+### Create an assignment
+
 * Route: __POST__ https://api.pyrsuit.com/users/[username]/assignments
 * Purpose: Create an assignment for a user
 * Required parameters
@@ -355,7 +377,9 @@
   * UTC standard format is YYYY-MM-DDTHH:MM:SSZ
 
 **[⬆ back to top](#table-of-contents)**
-### Get a user's assignments <a name="get-assignments"></a>
+<a name="get-assignments"></a>
+### Get a user's assignments
+
 * Route: __GET__ https://api.pyrsuit.com/users/[username]/assignments
 * Purpose: Retrieve all assignments created by a user
 * Required parameters
@@ -388,7 +412,9 @@
   * UTC standard format is YYYY-MM-DDTHH:MM:SSZ
 
 **[⬆ back to top](#table-of-contents)**
-### Get an assignment's information <a name="get-assignment"></a>
+<a name="get-assignment"></a>
+### Get an assignment's information
+
 * Route: __GET__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]
 * Purpose: Retrieve a specific assignment created by a user
 * Required parameters
@@ -419,7 +445,9 @@
   * UTC standard format is YYYY-MM-DDTHH:MM:SSZ
 
 **[⬆ back to top](#table-of-contents)**
-### Change an assignment's title <a name="update-title"></a>
+<a name="update-title"></a>
+### Change an assignment's title
+
 * Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/title
 * Purpose: Update an assignment's title to a new value
 * Required parameters
@@ -448,7 +476,9 @@
   * The _newTitle_ value must be __different__ from the existing title in the database
 
 **[⬆ back to top](#table-of-contents)**
-### Change an assignment's class <a name="update-class"></a>
+<a name="update-class"></a>
+### Change an assignment's class
+
 * Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/class
 * Purpose: Update an assignment's class to a new value
 * Required parameters
@@ -477,7 +507,9 @@
   * The _newClass_ value must be __different__ from the existing class in the database
 
 **[⬆ back to top](#table-of-contents)**
-### Change an assignment's type <a name="update-type"></a>
+<a name="update-type"></a>
+### Change an assignment's type
+
 * Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/type
 * Purpose: Update an assignment's type to a new value
 * Required parameters
@@ -506,7 +538,9 @@
   * The _newType_ value must be __different__ from the existing type in the database
 
 **[⬆ back to top](#table-of-contents)**
-### Change an assignment's description <a name="update-description"></a>
+<a name="update-description"></a>
+### Change an assignment's description
+
 * Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/description
 * Purpose: Update an assignment's description to a new value
   * Required parameters
@@ -535,7 +569,9 @@
     * The _newDescription_ value must be __different__ from the existing description in the database
 
 **[⬆ back to top](#table-of-contents)**
-### Change an assignment's completed <a name="update-completed"></a>
+<a name="update-completed"></a>
+### Change an assignment's completed
+
 * Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/completed
 * Purpose: Update an assignment to be completed or incomplete
 * Required parameters
@@ -564,7 +600,9 @@
   * The _newCompleted_ value must be __different__ from the existing completed in the database
 
 **[⬆ back to top](#table-of-contents)**
-### Change an assignment's due date <a name="update-dueDate"></a>
+<a name="update-dueDate"></a>
+### Change an assignment's due date
+
 * Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/dueDate
 * Purpose: Update an assignment's due date to a new value
 * Required parameters
@@ -594,7 +632,9 @@
   * The _newDueDate_ value must be __different__ from the existing due date in the database
 
 **[⬆ back to top](#table-of-contents)**
-### Delete an assignment <a name="delete-assignment"></a>
+<a name="delete-assignment"></a>
+### Delete an assignment
+
 * Route: __DELETE__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]
 * Purpose: Delete a specific assignment
   * Required parameters
@@ -618,4 +658,6 @@
     ```
 
 **[⬆ back to top](#table-of-contents)**
-### Error types <a name="errors"></a>
+<a name="errors"></a>
+### Error types
+
