@@ -1,6 +1,7 @@
-const uuidV4 = require('uuid/v4');
+/**
+ * database - Database configuration
+ */
 
 module.exports = {
-  'secret': uuidV4(),
-  'database': 'mongodb://localhost/userDB'
+  database: 'mongodb://localhost/userDB'
 };

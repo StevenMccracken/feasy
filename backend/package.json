@@ -1,7 +1,7 @@
 {
-  "name": "epicenter-backend",
-  "version": "0.0.0",
-  "description": "Epicenter backend",
+  "name": "Pyrsuit",
+  "version": "0.1.0",
+  "description": "Pyrsuit backend",
   "main": "server.js",
   "author": {
     "name": "Daniel Olivera, Steven McCracken"
@@ -17,5 +17,17 @@
     "passport": "^0.3.2",
     "passport-jwt": "^2.2.1",
     "uuid": "^3.0.1"
+  },
+  "devDependencies": {
+    "grunt": "^1.0.1",
+    "grunt-cli": "^1.2.0",
+    "grunt-jasmine-node": "^0.3.1",
+    "grunt-shell-spawn": "^0.3.10",
+    "jasmine-node": "^1.14.5",
+    "request": "^2.81.0"
+  },
+  "scripts": {
+    "test": "grunt startMongo testAPI shell:mongo:kill",
+    "start": "node server.js"
   }
 }

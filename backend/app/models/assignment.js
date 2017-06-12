@@ -1,15 +1,19 @@
-﻿var mongoose = require('mongoose');
-mongoose.Promise = require('bluebird');
+/**
+ * assignment - Mongoose database model for an Assignment
+ */
 
-var AssignmentSchema = mongoose.Schema({
-    title:          { type: String, required: true },
-    class:          { type: String },
-    type:           { type: String },
-    dueDate:        { type: Date, required: true },
-    description:    { type: String },
-    completed:      { type: Boolean },
-    username:       { type: String, required: true},
-    dateCreated:    { type: Date, default: Date.now }
+const MONGOOSE = require('mongoose');
+MONGOOSE.Promise = require('bluebird');
+
+var AssignmentSchema = MONGOOSE.Schema({
+  title:        { type: String, required: true },
+  dueDate:      { type: Date, required: true },
+  completed:    { type: Boolean, required: true },
+  userId:       { type: String, required: true },
+  dateCreated:  { type: Date, default: Date.now },
+  class:        { type: String },
+  type:         { type: String },
+  description:  { type: String }
 });
 
-module.exports = mongoose.model('Assignment', AssignmentSchema);
+module.exports = MONGOOSE.model('Assignment', AssignmentSchema);
