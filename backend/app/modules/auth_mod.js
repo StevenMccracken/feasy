@@ -2,11 +2,11 @@
  * auth_mod - @module for client request authentication
  */
 
-const JWT			= require('jsonwebtoken');
-const BCRYPT	= require('bcrypt-nodejs');
-const LOG			= require('./log_mod');
-const ERROR		= require('./error_mod');
-const config 	= require(process.cwd() + '/config/database.js');
+const JWT     = require('jsonwebtoken');
+const BCRYPT  = require('bcrypt-nodejs');
+const LOG     = require('./log_mod');
+const ERROR   = require('./error_mod');
+const config  = require(process.cwd() + '/config/database.js');
 
 // Handles token storage and verification
 const PASSPORT = require('passport');
@@ -20,26 +20,26 @@ require('../../config/passport')(PASSPORT);
  * @param {callback} _errorCallback the callback to handle any errors
  */
 var validatePasswords = function(
-	_givenPassword,
-	_actualPassword,
-	_callback,
-	_errorCallback
+  _givenPassword,
+  _actualPassword,
+  _callback,
+  _errorCallback
 ) {
-	const SOURCE = 'validatePasswords()';
-	log(SOURCE);
+  const SOURCE = 'validatePasswords()';
+  log(SOURCE);
 
-	/**
-	 * Username and password exist in the database, so
-	 * compare the password argument to the database record
-	 */
-	BCRYPT.compare(
-		_givenPassword,
-		_actualPassword,
-		(bcryptCompareError, passwordsMatch) => {
-			if (bcryptCompareError === null) _callback(passwordsMatch);
-			else _errorCallback(bcryptCompareError);
-		}
-	);
+  /**
+   * Username and password exist in the database, so
+   * compare the password argument to the database record
+   */
+  BCRYPT.compare(
+    _givenPassword,
+    _actualPassword,
+    (bcryptCompareError, passwordsMatch) => {
+      if (bcryptCompareError === null) _callback(passwordsMatch);
+      else _errorCallback(bcryptCompareError);
+    }
+  );
 };
 
 /**
@@ -49,22 +49,22 @@ var validatePasswords = function(
  * @param {type} _errorCallback the callback to handle error result
  */
 var hashPassword = function(_password, _callback, _errorCallback) {
-	const SOURCE = 'hashPassword()';
-	var response;
+  const SOURCE = 'hashPassword()';
+  var response;
 
-	log(SOURCE);
+  log(SOURCE);
 
-	// Generate salt to hash the password, use 5 rounds of salting
-	BCRYPT.genSalt(5, (bcryptGenSaltError, salt) => {
-		if (bcryptGenSaltError != null) {
-			_errorCallback(bcryptGenSaltError);
-		} else {
-			BCRYPT.hash(_password, salt, null, (bcryptHashError, hashedPassword) => {
-				if (bcryptHashError != null) _errorCallback(bcryptHashError);
-				else _callback(hashedPassword);
-			});
-		}
-	});
+  // Generate salt to hash the password, use 5 rounds of salting
+  BCRYPT.genSalt(5, (bcryptGenSaltError, salt) => {
+    if (bcryptGenSaltError != null) {
+      _errorCallback(bcryptGenSaltError);
+    } else {
+      BCRYPT.hash(_password, salt, null, (bcryptHashError, hashedPassword) => {
+        if (bcryptHashError != null) _errorCallback(bcryptHashError);
+        else _callback(hashedPassword);
+      });
+    }
+  });
 };
 
 /**
@@ -75,45 +75,45 @@ var hashPassword = function(_password, _callback, _errorCallback) {
  * @param {callback} _errorCallback the callback to handle error result
  */
 var verifyToken = function(_request, _response, _callback, _errorCallback) {
-	const SOURCE = 'verifyToken()';
-	var serverLog, clientMessage;
+  const SOURCE = 'verifyToken()';
+  var serverLog, clientMessage;
 
-	// Verify the client's token
-	PASSPORT.authenticate(
-		'jwt',
-		{ session: false },
-		(passportErr, userInfo, tokenErr) => {
-			// Assume that an error occurred and try to determine the error
-			var errorOccurred = true;
-			if (passportErr !== null) {
-				// An error occurred during the passport authenticate function call
-				serverLog = passportErr;
-				clientMessage = null;
-			} else if (tokenErr !== undefined) {
-				// The token in the request body is invalid
-				serverLog = tokenErr.message
-				clientMessage = determineJwtError(tokenErr.message);
-			} else if (!userInfo) {
-				// There is no userInfo associated with the token
-				serverLog = 'User for this token cannot be found';
-				clientMessage = null;
-			} else errorOccurred = false;
+  // Verify the client's token
+  PASSPORT.authenticate(
+    'jwt',
+    { session: false },
+    (passportErr, userInfo, tokenErr) => {
+      // Assume that an error occurred and try to determine the error
+      var errorOccurred = true;
+      if (passportErr !== null) {
+        // An error occurred during the passport authenticate function call
+        serverLog = passportErr;
+        clientMessage = null;
+      } else if (tokenErr !== undefined) {
+        // The token in the request body is invalid
+        serverLog = tokenErr.message
+        clientMessage = determineJwtError(tokenErr.message);
+      } else if (!userInfo) {
+        // There is no userInfo associated with the token
+        serverLog = 'User for this token cannot be found';
+        clientMessage = null;
+      } else errorOccurred = false;
 
-			if (!errorOccurred) _callback(userInfo);
-			else {
-				var response = ERROR.error(
-					SOURCE,
-					_request,
-					_response,
-					ERROR.CODE.AUTHENTICATION_ERROR,
-					clientMessage,
-					serverLog
-				);
+      if (!errorOccurred) _callback(userInfo);
+      else {
+        var response = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.AUTHENTICATION_ERROR,
+          clientMessage,
+          serverLog
+        );
 
-				_errorCallback(response);
-			}
-		}
-	)(_request, _response);
+        _errorCallback(response);
+      }
+    }
+  )(_request, _response);
 };
 
 /**
@@ -122,14 +122,14 @@ var verifyToken = function(_request, _response, _callback, _errorCallback) {
  * @returns {String} a JSON web token
  */
 function generateToken(_userInfo) {
-	return JWT.sign(_userInfo, config.secret, { expiresIn: '24h' });
+  return JWT.sign(_userInfo, config.secret, { expiresIn: '24h' });
 }
 
 module.exports = {
-	validatePasswords: validatePasswords,
-	hashPassword: hashPassword,
-	verifyToken: verifyToken,
-	generateToken: generateToken
+  validatePasswords: validatePasswords,
+  hashPassword: hashPassword,
+  verifyToken: verifyToken,
+  generateToken: generateToken
 };
 
 /**
@@ -139,43 +139,43 @@ module.exports = {
  * @returns {String} a more clearly worded error message
  */
 function determineJwtError(errorMessage) {
-	/**
-	 * If token is malformed, sometimes errorMessage will contain 'Unexpected
-	 * token' so shorten the errorMessage so it can work with the switch case
-	 */
-	if (errorMessage !== null && errorMessage.indexOf('Unexpected token') !== -1) {
-		errorMessage = 'Unexpected token';
-	}
+  /**
+   * If token is malformed, sometimes errorMessage will contain 'Unexpected
+   * token' so shorten the errorMessage so it can work with the switch case
+   */
+  if (errorMessage !== null && errorMessage.indexOf('Unexpected token') !== -1) {
+    errorMessage = 'Unexpected token';
+  }
 
-	var reason;
-	switch (errorMessage) {
-		case 'jwt expired':
-			reason = 'Expired web token';
-			break;
-		case 'invalid token':
-			reason = 'Invalid web token';
-			break;
-		case 'invalid signature':
-			reason = 'Invalid web token';
-			break;
-		case 'jwt malformed':
-			reason = 'Invalid web token';
-			break;
-		case 'Unexpected token':
-			reason = 'Invalid web token';
-			break;
-		case 'No auth token':
-			reason = 'Missing web token';
-			break;
-		case 'jwt must be provided':
-			reason = 'Missing web token';
-			break;
-		default:
-			reason = 'Unknown web token error';
-			log(`Unknown JWT error: ${errorMessage}`);
-	}
+  var reason;
+  switch (errorMessage) {
+    case 'jwt expired':
+      reason = 'Expired web token';
+      break;
+    case 'invalid token':
+      reason = 'Invalid web token';
+      break;
+    case 'invalid signature':
+      reason = 'Invalid web token';
+      break;
+    case 'jwt malformed':
+      reason = 'Invalid web token';
+      break;
+    case 'Unexpected token':
+      reason = 'Invalid web token';
+      break;
+    case 'No auth token':
+      reason = 'Missing web token';
+      break;
+    case 'jwt must be provided':
+      reason = 'Missing web token';
+      break;
+    default:
+      reason = 'Unknown web token error';
+      log(`Unknown JWT error: ${errorMessage}`);
+  }
 
-	return reason;
+  return reason;
 }
 
 /**
@@ -184,5 +184,5 @@ function determineJwtError(errorMessage) {
  * @param {Object} _request the HTTP request
  */
 function log(_message, _request) {
-	LOG.log('Authentication Module', _message, _request);
+  LOG.log('Authentication Module', _message, _request);
 }

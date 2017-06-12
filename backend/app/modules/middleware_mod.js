@@ -3,9 +3,9 @@
  * requests, call database controllers, and handles errors
  */
 
-const LOG 				= require('./log_mod');
+const LOG         = require('./log_mod');
 const AUTH        = require('./auth_mod.js');
-const ERROR 		  = require('./error_mod');
+const ERROR       = require('./error_mod');
 const USERS       = require('../controller/user.js');
 const ASSIGNMENTS = require('../controller/assignment.js');
 
@@ -18,23 +18,23 @@ const ASSIGNMENTS = require('../controller/assignment.js');
 var authenticate = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'authenticate()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Check request parameters
+  // Check request parameters
   var missingParams = [];
   if (_request.body.username === undefined) invalidParams.push('username');
   if (_request.body.password === undefined) invalidParams.push('password');
   if (missingParams.length > 0) {
     response = ERROR.error(
-			SOURCE,
-			_request,
-			_response,
-			ERROR.CODE.INVALID_REQUEST_ERROR,
-			`Invalid parameters: ${missingParams.join()}`
-		);
+      SOURCE,
+      _request,
+      _response,
+      ERROR.CODE.INVALID_REQUEST_ERROR,
+      `Invalid parameters: ${missingParams.join()}`
+    );
 
-		_callback(response);
-	} else {
+    _callback(response);
+  } else {
     // Parameters are valid. Retrieve user info from database
     USERS.getByUsername(
       _request.body.username,
@@ -69,13 +69,13 @@ var authenticate = function(_request, _response, _callback) {
                 _callback(response);
               } else {
                 response = ERROR.error(
-        					SOURCE,
-        					_request,
-        					_response,
-        					ERROR.CODE.LOGIN_ERROR,
-        					null,
-        					`Passwords do not match for '${_request.body.username}'`
-        				);
+                  SOURCE,
+                  _request,
+                  _response,
+                  ERROR.CODE.LOGIN_ERROR,
+                  null,
+                  `Passwords do not match for '${_request.body.username}'`
+                );
 
                 _callback(response);
               }
@@ -104,7 +104,7 @@ var authenticate = function(_request, _response, _callback) {
         _callback(response);
       } // End (getUserErr)
     ); // End USERS.getByUsername()
-	}
+  }
 }; // End authenticate()
 
 /**
@@ -116,11 +116,11 @@ var authenticate = function(_request, _response, _callback) {
 var createUser = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'createUser()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Check request paramerters
+  // Check request paramerters
   var invalidParams = [];
-	if (!isValidUsername(_request.body.username)) invalidParams.push('username');
+  if (!isValidUsername(_request.body.username)) invalidParams.push('username');
   if (!isValidPassword(_request.body.password)) invalidParams.push('password');
   if (!isValidEmail(_request.body.email)) invalidParams.push('email');
 
@@ -136,18 +136,18 @@ var createUser = function(_request, _response, _callback) {
     else hasValidLastName = true;
   }
 
-	if (invalidParams.length > 0) {
-		response = ERROR.error(
-			SOURCE,
-			_request,
-			_response,
-			ERROR.CODE.INVALID_REQUEST_ERROR,
-			`Invalid parameters: ${invalidParams.join()}`
-		);
+  if (invalidParams.length > 0) {
+    response = ERROR.error(
+      SOURCE,
+      _request,
+      _response,
+      ERROR.CODE.INVALID_REQUEST_ERROR,
+      `Invalid parameters: ${invalidParams.join()}`
+    );
 
-		_callback(response);
-	} else {
-		// Parameters are valid, so check if username already exists
+    _callback(response);
+  } else {
+    // Parameters are valid, so check if username already exists
     USERS.getByUsername(
       _request.body.username,
       false,
@@ -228,15 +228,15 @@ var createUser = function(_request, _response, _callback) {
 var retrieveUser = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'retrieveUser()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Check request paramerters
-    	if (!isValidUsername(_request.params.username)) {
+      if (!isValidUsername(_request.params.username)) {
         response = ERROR.error(
           SOURCE,
           _request,
@@ -291,15 +291,15 @@ var retrieveUser = function(_request, _response, _callback) {
 var updateUserUsername = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'updateUserUsername()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Check first request parameter
-    	if (!isValidUsername(_request.params.username)) {
+      if (!isValidUsername(_request.params.username)) {
         response = ERROR.error(
           SOURCE,
           _request,
@@ -311,28 +311,28 @@ var updateUserUsername = function(_request, _response, _callback) {
         _callback(response);
       } else if (client.username !== _request.params.username) {
         // Client attempted to update a user other than themselves
-				response = ERROR.error(
-					SOURCE,
-					_request,
-					_response,
-					ERROR.CODE.INVALID_REQUEST_ERROR,
-					'You cannot update another user',
-					`${client.username} tried to update ${_request.params.username}`
-				);
+        response = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          'You cannot update another user',
+          `${client.username} tried to update ${_request.params.username}`
+        );
 
         _callback(response);
       } else {
         // URL request parameter is valid. Check newUsername parameter
         if (!isValidUsername(_request.body.newUsername)) {
           response = ERROR.error(
-      			SOURCE,
-      			_request,
-      			_response,
-      			ERROR.CODE.INVALID_REQUEST_ERROR,
-      			'Invalid newUsername parameter'
-      		);
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.INVALID_REQUEST_ERROR,
+            'Invalid newUsername parameter'
+          );
 
-      		_callback(response);
+          _callback(response);
         } else {
           // All request parameters are valid. Get the user from the database
           USERS.getByUsername(
@@ -355,14 +355,14 @@ var updateUserUsername = function(_request, _response, _callback) {
                 // Verify that new username is different from existing username
                 if (_request.body.newUsername === client.username) {
                   response = ERROR.error(
-              			SOURCE,
-              			_request,
-              			_response,
-              			ERROR.CODE.INVALID_REQUEST_ERROR,
-              			'Unchanged newUsername parameter'
-              		);
+                    SOURCE,
+                    _request,
+                    _response,
+                    ERROR.CODE.INVALID_REQUEST_ERROR,
+                    'Unchanged newUsername parameter'
+                  );
 
-              		_callback(response);
+                  _callback(response);
                 } else {
                   // Update username information
                   USERS.updateAttribute(
@@ -422,15 +422,15 @@ var updateUserUsername = function(_request, _response, _callback) {
 var updateUserPassword = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'updateUserPassword()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Check first request parameter
-    	if (!isValidUsername(_request.params.username)) {
+      if (!isValidUsername(_request.params.username)) {
         response = ERROR.error(
           SOURCE,
           _request,
@@ -442,28 +442,28 @@ var updateUserPassword = function(_request, _response, _callback) {
         _callback(response);
       } else if (client.username !== _request.params.username) {
         // Client attempted to update a user other than themselves
-				response = ERROR.error(
-					SOURCE,
-					_request,
-					_response,
-					ERROR.CODE.INVALID_REQUEST_ERROR,
-					'You cannot update another user',
-					`${client.username} tried to update ${_request.params.username}`
-				);
+        response = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          'You cannot update another user',
+          `${client.username} tried to update ${_request.params.username}`
+        );
 
         _callback(response);
       } else {
         // URL request parameter is valid. Check newPassword parameter
         if (!isValidPassword(_request.body.newPassword)) {
           response = ERROR.error(
-      			SOURCE,
-      			_request,
-      			_response,
-      			ERROR.CODE.INVALID_REQUEST_ERROR,
-      			'Invalid newPassword parameter'
-      		);
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.INVALID_REQUEST_ERROR,
+            'Invalid newPassword parameter'
+          );
 
-      		_callback(response);
+          _callback(response);
         } else {
           // All request parameters are valid. Get the user object
           USERS.getByUsername(
@@ -490,14 +490,14 @@ var updateUserPassword = function(_request, _response, _callback) {
                   (passwordsMatch) => {
                     if (passwordsMatch) {
                       response = ERROR.error(
-                  			SOURCE,
-                  			_request,
-                  			_response,
-                  			ERROR.CODE.INVALID_REQUEST_ERROR,
-                  			'Unchanged newPassword parameter'
-                  		);
+                        SOURCE,
+                        _request,
+                        _response,
+                        ERROR.CODE.INVALID_REQUEST_ERROR,
+                        'Unchanged newPassword parameter'
+                      );
 
-                  		_callback(response);
+                      _callback(response);
                     } else {
                       // Update password information
                       USERS.updateAttribute(
@@ -577,10 +577,10 @@ function updateUserAttribute(
 ) {
   var response;
   const SOURCE = 'updateUserAttribute()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
   // Token is valid. Check request parameter in the URL
-	if (!isValidUsername(_request.params.username)) {
+  if (!isValidUsername(_request.params.username)) {
     response = ERROR.error(
       SOURCE,
       _request,
@@ -592,14 +592,14 @@ function updateUserAttribute(
     // URL request parameter is valid. Check that the client is updating themself
      if (_client.username !== _request.params.username) {
        // Client attempted to update another user's attribute
-				response = ERROR.error(
-					SOURCE,
-					_request,
-					_response,
-					ERROR.CODE.INVALID_REQUEST_ERROR,
-					'You cannot update another user',
-					`${_client.username} tried to update ${_request.params.username}`
-				);
+        response = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          'You cannot update another user',
+          `${_client.username} tried to update ${_request.params.username}`
+        );
 
        _callback(response);
      } else {
@@ -711,13 +711,13 @@ function updateUserAttribute(
 var updateUserEmail = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'updateUserEmail()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Update the user email
       updateUserAttribute(
         client,
@@ -741,13 +741,13 @@ var updateUserEmail = function(_request, _response, _callback) {
 var updateUserFirstName = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'updateUserFirstName()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Update the user first name
       updateUserAttribute(
         client,
@@ -771,13 +771,13 @@ var updateUserFirstName = function(_request, _response, _callback) {
 var updateUserLastName = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'updateUserLastName()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Update the user last name
       updateUserAttribute(
         client,
@@ -801,15 +801,15 @@ var updateUserLastName = function(_request, _response, _callback) {
 var deleteUser = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'deleteUser()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Check request parameters
-    	if (!isValidUsername(_request.params.username)) {
+      if (!isValidUsername(_request.params.username)) {
         response = ERROR.error(
           SOURCE,
           _request,
@@ -821,14 +821,14 @@ var deleteUser = function(_request, _response, _callback) {
         _callback(response);
       } else if (client.username !== _request.params.username) {
         // Client attempted to delete a user other than themselves
-				response = ERROR.error(
-					SOURCE,
-					_request,
-					_response,
-					ERROR.CODE.INVALID_REQUEST_ERROR,
-					'You cannot delete another user',
-					`${client.username} tried to delete ${_request.params.username}`
-				);
+        response = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          'You cannot delete another user',
+          `${client.username} tried to delete ${_request.params.username}`
+        );
 
         _callback(response);
       } else {
@@ -924,15 +924,15 @@ var deleteUser = function(_request, _response, _callback) {
 var createAssignment = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'createAssignment()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Check username parameter
-    	if (!isValidUsername(_request.params.username)) {
+      if (!isValidUsername(_request.params.username)) {
         response = ERROR.error(
           SOURCE,
           _request,
@@ -944,14 +944,14 @@ var createAssignment = function(_request, _response, _callback) {
         _callback(response);
       } else if (client.username !== _request.params.username) {
         // Client attempted to create an assignment for another user
-				response = ERROR.error(
-					SOURCE,
-					_request,
-					_response,
-					ERROR.CODE.INVALID_REQUEST_ERROR,
-					'You cannot create another user\'s assignments',
-					`${client.username} tried to create an assignment for ${_request.params.username}'s'`
-				);
+        response = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          'You cannot create another user\'s assignments',
+          `${client.username} tried to create an assignment for ${_request.params.username}'s'`
+        );
 
         _callback(response);
       } else {
@@ -959,8 +959,8 @@ var createAssignment = function(_request, _response, _callback) {
         var hasValidClass = false, hasValidType = false,
           hasValidDescription = false, hasValidCompleted = false;
 
-      	var invalidParams = [];
-      	if (!isValidString(_request.body.title)) invalidParams.push('title');
+        var invalidParams = [];
+        if (!isValidString(_request.body.title)) invalidParams.push('title');
         if (!isValidInteger(_request.body.dueDate)) invalidParams.push('dueDate');
         if (_request.body.class !== undefined) {
           if (!isValidString(_request.body.class)) invalidParams.push('class');
@@ -986,17 +986,17 @@ var createAssignment = function(_request, _response, _callback) {
           else hasValidCompleted = true
         }
 
-      	if (invalidParams.length > 0) {
-      		response = ERROR.error(
-      			SOURCE,
-      			_request,
-      			_response,
-      			ERROR.CODE.INVALID_REQUEST_ERROR,
-      			`Invalid parameters: ${invalidParams.join()}`
-      		);
+        if (invalidParams.length > 0) {
+          response = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.INVALID_REQUEST_ERROR,
+            `Invalid parameters: ${invalidParams.join()}`
+          );
 
-      		_callback(response);
-      	} else {
+          _callback(response);
+        } else {
           // Request parameters are valid. Build assignment JSON
           var assignmentInfo = {
             userId: client._id.toString(),
@@ -1052,15 +1052,15 @@ var createAssignment = function(_request, _response, _callback) {
 var getAssignments = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'getAssignments()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Check username parameter
-    	if (!isValidUsername(_request.params.username)) {
+      if (!isValidUsername(_request.params.username)) {
         response = ERROR.error(
           SOURCE,
           _request,
@@ -1072,14 +1072,14 @@ var getAssignments = function(_request, _response, _callback) {
         _callback(response);
       } else if (client.username !== _request.params.username) {
         // Client attempted to get assignments of another user
-				response = ERROR.error(
-					SOURCE,
-					_request,
-					_response,
-					ERROR.CODE.INVALID_REQUEST_ERROR,
-					'You cannot get another user\'s assignments',
-					`${client.username} tried to get assignments of ${_request.params.username}`
-				);
+        response = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          'You cannot get another user\'s assignments',
+          `${client.username} tried to get assignments of ${_request.params.username}`
+        );
 
         _callback(response);
       } else {
@@ -1207,11 +1207,11 @@ function updateAssignmentAttribute(
 ) {
   var response;
   const SOURCE = 'updateAssignmentAttribute()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
   // Token is valid. Check request parameters in the URL
   var invalidParams = [];
-	if (!isValidUsername(_request.params.username)) {
+  if (!isValidUsername(_request.params.username)) {
     invalidParams.push('username');
   }
 
@@ -1236,14 +1236,14 @@ function updateAssignmentAttribute(
      */
      if (_client.username !== _request.params.username) {
        // Client attempted to update an assignment that was not their own
-				response = ERROR.error(
-					SOURCE,
-					_request,
-					_response,
-					ERROR.CODE.INVALID_REQUEST_ERROR,
-					'You cannot update another user\'s assignment',
-					`${_client.username} tried to update ${_request.params.username}'s assignment`
-				);
+        response = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          'You cannot update another user\'s assignment',
+          `${_client.username} tried to update ${_request.params.username}'s assignment`
+        );
 
        _callback(response);
      } else {
@@ -1351,13 +1351,13 @@ function updateAssignmentAttribute(
 var updateAssignmentTitle = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'updateAssignmentTitle()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Update the assignment title
       updateAssignmentAttribute(
         client,
@@ -1382,13 +1382,13 @@ var updateAssignmentTitle = function(_request, _response, _callback) {
 var updateAssignmentClass = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'updateAssignmentClass()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Update the assignment class
       updateAssignmentAttribute(
         client,
@@ -1413,13 +1413,13 @@ var updateAssignmentClass = function(_request, _response, _callback) {
 var updateAssignmentType = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'updateAssignmentType()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Update the assignment type
       updateAssignmentAttribute(
         client,
@@ -1444,13 +1444,13 @@ var updateAssignmentType = function(_request, _response, _callback) {
 var updateAssignmentDescription = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'updateAssignmentDescription()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Update the assignment description
       updateAssignmentAttribute(
         client,
@@ -1475,16 +1475,16 @@ var updateAssignmentDescription = function(_request, _response, _callback) {
 function updateAssignmentCompleted(_request, _response, _callback) {
   var response;
   const SOURCE = 'updateAssignmentCompleted()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
   // Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Check request parameters in the URL
       var invalidParams = [];
-    	if (!isValidUsername(_request.params.username)) {
+      if (!isValidUsername(_request.params.username)) {
         invalidParams.push('username');
       }
 
@@ -1509,14 +1509,14 @@ function updateAssignmentCompleted(_request, _response, _callback) {
          */
          if (client.username !== _request.params.username) {
            // Client attempted to update an assignment that was not their own
-    				response = ERROR.error(
-    					SOURCE,
-    					_request,
-    					_response,
-    					ERROR.CODE.INVALID_REQUEST_ERROR,
-    					'You cannot update another user\'s assignment',
-    					`${client.username} tried to update ${_request.params.username}'s assignment`
-    				);
+            response = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.INVALID_REQUEST_ERROR,
+              'You cannot update another user\'s assignment',
+              `${client.username} tried to update ${_request.params.username}'s assignment`
+            );
 
            _callback(response);
          } else {
@@ -1625,16 +1625,16 @@ function updateAssignmentCompleted(_request, _response, _callback) {
 function updateAssignmentDueDate(_request, _response, _callback) {
   var response;
   const SOURCE = 'updateAssignmentDueDate()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
   // Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Check request parameters in the URL
       var invalidParams = [];
-    	if (!isValidUsername(_request.params.username)) {
+      if (!isValidUsername(_request.params.username)) {
         invalidParams.push('username');
       }
 
@@ -1659,14 +1659,14 @@ function updateAssignmentDueDate(_request, _response, _callback) {
          */
          if (client.username !== _request.params.username) {
            // Client attempted to update an assignment that was not their own
-    				response = ERROR.error(
-    					SOURCE,
-    					_request,
-    					_response,
-    					ERROR.CODE.INVALID_REQUEST_ERROR,
-    					'You cannot update another user\'s assignment',
-    					`${client.username} tried to update ${_request.params.username}'s assignment`
-    				);
+            response = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.INVALID_REQUEST_ERROR,
+              'You cannot update another user\'s assignment',
+              `${client.username} tried to update ${_request.params.username}'s assignment`
+            );
 
            _callback(response);
          } else {
@@ -1767,16 +1767,16 @@ function updateAssignmentDueDate(_request, _response, _callback) {
 var deleteAssignment = function(_request, _response, _callback) {
   var response;
   const SOURCE = 'deleteAssignment()';
-	log(SOURCE, _request);
+  log(SOURCE, _request);
 
-	// Verify client's web token first
-	AUTH.verifyToken(
-		_request,
-		_response,
-		(client) => {
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
       // Token is valid. Check request parameters in the URL
       var invalidParams = [];
-    	if (!isValidUsername(_request.params.username)) {
+      if (!isValidUsername(_request.params.username)) {
         invalidParams.push('username');
       }
 
@@ -1801,14 +1801,14 @@ var deleteAssignment = function(_request, _response, _callback) {
          */
          if (client.username !== _request.params.username) {
            // Client attempted to delete an assignment that was not their own
-   				response = ERROR.error(
-   					SOURCE,
-   					_request,
-   					_response,
-   					ERROR.CODE.INVALID_REQUEST_ERROR,
-   					'You cannot delete another user\'s assignment',
-   					`${client.username} tried to delete ${_request.params.username}'s assignment`
-   				);
+           response = ERROR.error(
+             SOURCE,
+             _request,
+             _response,
+             ERROR.CODE.INVALID_REQUEST_ERROR,
+             'You cannot delete another user\'s assignment',
+             `${client.username} tried to delete ${_request.params.username}'s assignment`
+           );
 
            _callback(response);
          } else {
@@ -1898,11 +1898,11 @@ module.exports = {
  * @returns {Boolean} validity of _username
  */
 function isValidUsername(_username) {
-	/**
-	 * Evaluates to true if _username is not null, not undefined, not
-	 * empty, and only contains alphanumeric characters, dashes, or
-	 * underscores. It must start with two alphanumeric characters
-	 */
+  /**
+   * Evaluates to true if _username is not null, not undefined, not
+   * empty, and only contains alphanumeric characters, dashes, or
+   * underscores. It must start with two alphanumeric characters
+   */
   return _username !== null &&
     _username !== undefined &&
     (/^[a-zA-Z0-9]{2,}[\w\-]*$/).test(_username);
@@ -1914,13 +1914,13 @@ function isValidUsername(_username) {
  * @returns {Boolean} validity of _email
  */
 function isValidEmail(_email) {
-	/**
+  /**
    * Evaluates to true if true if _email is not null,
    * not undefined, and matches valid email formats
    */
   return _email !== null &&
     _email !== undefined &&
-		(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/).test(_email);
+    (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/).test(_email);
 }
 
 /**
@@ -1929,10 +1929,10 @@ function isValidEmail(_email) {
  * @returns {Boolean} validity of _password
  */
 function isValidPassword(_password) {
-	/**
-	 * Evaluates to true if _password is not null, not undefined, not
-	 * empty, and only contains alphanumeric and special characters
-	 */
+  /**
+   * Evaluates to true if _password is not null, not undefined, not
+   * empty, and only contains alphanumeric and special characters
+   */
   return _password !== null &&
     _password !== undefined &&
     (/^[\w\S]+$/).test(_password);
@@ -1998,5 +1998,5 @@ function isValidObjectId(_id) {
  * @param {Object} _request the HTTP request
  */
 function log(_message, _request) {
-	LOG.log('Middleware Module', _message, _request);
+  LOG.log('Middleware Module', _message, _request);
 }

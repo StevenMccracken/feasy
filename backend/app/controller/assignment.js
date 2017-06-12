@@ -237,5 +237,5 @@ module.exports = {
  * @param {String} _message the log message
  */
 function log(_message) {
-	LOG.log('Assignment Controller', _message);
+  LOG.log('Assignment Controller', _message);
 }
