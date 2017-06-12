@@ -1,335 +1,242 @@
-var User    = require('../models/user.js'),
-    bcrypt  = require('bcrypt-nodejs');
+/**
+ * user - Database controller for the User model
+ */
 
-var exports = module.exports = {};
+var LOG     = require('../modules/log_mod.js');
+var USER    = require('../models/user.js');
+var BCRYPT  = require('bcrypt-nodejs');
 
 /**
- * Gets all users from the database
- * @param {callback} callback - the callback that handles the database response
+ * create - Saves a new user in the database
+ * @param {Object} _userInfo JSON containing the user attributes
+ * @param {callback} _callback the callback to return the newly saved user
+ * @param {callback} _errorCallback the callback to return any errors
  */
-exports.getUsers = function(callback) {
-  User.find({}, '_id email username firstName lastName', (err, users) => {
-    if (err) {
-      var dbReason = err.message == null ? 'unknown' : err.message;
-      return callback(fail('getUsers', dbReason, 'api_error', 'There was a problem with our back-end services'));
-    }
+var create = function(_userInfo, _callback, _errorCallback) {
+  const SOURCE = 'create()';
+  log(SOURCE);
 
-    callback(users);
+  var newUser = new USER();
+  newUser.email = _userInfo.email.trim();
+  newUser.username = _userInfo.username.trim();
+  newUser.password = _userInfo.password.trim();
+
+  if (_userInfo.firstName !== undefined) {
+    newUser.firstName = _userInfo.firstName.trim();
+  } else newUser.firstName = '';
+
+  if (_userInfo.lastName !== undefined) {
+    newUser.lastName = _userInfo.lastName.trim();
+  } else newUser.lastName = '';
+
+  newUser.save((saveUserErr) => {
+    if (saveUserErr === null) _callback(newUser);
+    else _errorCallback(saveUserErr);
   });
 };
 
 /**
- * Gets a user from the database
- * @param {String} attribute - the attribute of the user to select on
- * @param {String} value - the value to search for in the query
- * @param {callback} callback - the callback that handles the database response
+ * get - Retrieves a user from the database
+ * based on a specific attribute of that user
+ * @param {string|ObjectId} _attribute the attribute to select the user on
+ * @param {string|Date} _value the value that the specific attribute should equal
+ * @param {String} _projection the space-separated attributes to retrieve
+ * @param {callback} _callback the callback to return the user
+ * @param {callback} _errorCallback the callback to return any errors
  */
-exports.getUser = function(attribute, value, callback) {
-  User.findOne({ [attribute]: value }, '_id username email firstName lastName', (err, user) => {
-    var dbReason, errorType, explanation;
+var get = function(
+  _attribute,
+  _value,
+  _projection,
+  _callback,
+  _errorCallback
+) {
+  const SOURCE = 'get()';
+  log(SOURCE);
 
-    if (err) {
-      // Determine type of error
-      var errorCode = err.code == null ? -1 : err.code;
-      switch (errorCode) {
-        default:
-          dbReason    = 'unknown';
-          errorType   = 'api_error';
-          explanation = 'There was a problem with our back-end services';
-      }
-
-      return callback(fail('getUser', dbReason, errorType, explanation));
+  USER.findOne(
+    { [_attribute]: _value },
+    _projection,
+    (getUserErr, userInfo) => {
+      if (getUserErr === null) _callback(userInfo);
+      else _errorCallback(getUserErr);
     }
+  );
+};
 
-    if (!user) {
-      dbReason    = 'user does not exist';
-      errorType   = 'resource_dne_error';
-      explanation = 'That user does not exist';
-      return callback(fail('getUser', dbReason, errorType, explanation));
+/**
+ * getByUsername - Retrieves a user by their username
+ * @param {String} _username the username of the user
+ * @param {Boolean} _includePassword includes or excludes
+ * the password with the user information from the database
+ * @param {callback} _callback the callback to return the user
+ * @param {callback} _errorCallback the callback to return any errors
+ */
+var getByUsername = function(
+  _username,
+  _includePassword,
+  _callback,
+  _errorCallback
+) {
+  const SOURCE = 'getByUsername()';
+  log(SOURCE);
+
+  var projection;
+  if (_includePassword) {
+    projection = '_id username password email firstName lastName';
+  } else projection = '_id username email firstName lastName';
+
+  get(
+    'username',
+    _username,
+    projection,
+    userInfo => _callback(userInfo),
+    getUserInfoErr => _errorCallback(getUserInfoErr)
+  );
+};
+
+/**
+ * getAttribute - Retrieves a specific attribute of a user
+ * @param {String} _username the username of the user
+ * @param {String} _attribute the desired attribute of the user
+ * @param {callback} _callback the callback to return the user attribute
+ * @param {callback} _errorCallback the callback to return any errors
+ */
+var getAttribute = function(
+  _username,
+  _attribute,
+  _callback,
+  _errorCallback
+) {
+  const SOURCE = 'getAttribute()';
+  log(SOURCE);
+
+  USER.findOne(
+    { 'username': _username },
+    _attribute,
+    (getUserErr, userInfo) => {
+      if (getUserErr !== null) _errorCallback(getUserErr);
+      else _callback(userInfo);
     }
+  );
+};
 
-    callback(user);
+/**
+ * updateAttribute - Updates a specific attribute of a user
+ * @param {Object} _user User assignment object
+ * @param {String} _attribute the specific attribute of the user to update
+ * @param {string|Date} _newValue the updated value of the user attribute
+ * @param {callback} _callback the callback to return the user attribute
+ * @param {callback} _errorCallback the callback to return any errors
+ */
+var updateAttribute = function(
+  _user,
+  _attribute,
+  _newValue,
+  _callback,
+  _errorCallback
+) {
+  const SOURCE = 'updateAttribute()';
+  log(SOURCE);
+
+  if (typeof _newValue === 'string') _user[_attribute] = _newValue.trim();
+  else _user[_attribute] = _newValue;
+
+  update(
+    _user,
+    updatedUserInfo => _callback(updatedUserInfo),
+    saveUserErr => _errorCallback(saveUserErr)
+  );
+};
+
+/**
+ * update - Executes a database save on a
+ * user object to update any new attributes
+ * @param {Object} _user User assignment object
+ * @param {callback} _callback the callback to return the updated user attributes
+ * @param {callback} _errorCallback the callback to return any errors
+ */
+var update = function(_user, _callback, _errorCallback) {
+  const SOURCE = 'update()';
+  log(SOURCE);
+
+  _user.save((saveUserInfoErr) => {
+    if (saveUserInfoErr === null) _callback(_user);
+    else _errorCallback(saveUserInfoErr);
   });
 };
 
 /**
- * Gets a sepcific user from the database by their username
- * @param {String} username - the username to search by
- * @param {callback} callback - the callback that handles the database response
+ * clearAttribute - Resets a string attribute of a given user
+ * @param {Object} _user the Mongoose object
+ * @param {String} _attribute the desired attribute to clear
+ * @param {callback} _callback the callback to return the updated assignment
+ * @param {callback} _errorCallback the callback to return any errors
  */
-exports.getUserByUsername = function(username, callback) {
-  exports.getUser('username', username, (result) => {
-    callback(result);
+var clearAttribute = function(
+  _user,
+  _attribute,
+  _callback,
+  _errorCallback
+) {
+  const SOURCE = 'clearAttribute()';
+  log(SOURCE);
+
+  if (typeof _attribute === 'string') _user[_attribute] = '';
+  update(
+    _user,
+    updatedUser => _callback(updatedUser),
+    updateUserErr => _errorCallback(updateUserErr)
+  );
+}
+
+/**
+ * removeByUsername - Deletes a user from the user database
+ * @param {String} _username the username of the user to delete
+ * @param {callback} _callback the callback to return successful deletion
+ * @param {callback} _errorCallback the callback to return any errors
+ */
+var removeByUsername = function(_username, _callback, _errorCallback) {
+  const SOURCE = 'removeByUsername()';
+  log(SOURCE);
+
+  USER.remove({ username: _username }, (removeUserErr) => {
+    if (removeUserErr === null) _callback();
+    else _errorCallback(removeUserErr);
+  });
+}
+
+/**
+ * remove - Deletes a user from the user database
+ * @param {Object} _user JSON of the user attributes
+ * @param {callback} _callback the callback to return successful deletion
+ * @param {callback} _errorCallback the callback to return any errors
+ */
+var remove = function(_user, _callback, _errorCallback) {
+  const SOURCE = 'remove()';
+  log(SOURCE);
+
+  _user.remove((removeUserErr) => {
+    if (removeUserErr === null) _callback();
+    else _errorCallback(removeUserErr);
   });
 };
 
-/**
- * Creates a user in the database
- * @param {Object} req - the HTTP request (required parameters: username, email, password)
- * @param {callback} callback - the callback that handles the database response
- */
-exports.createUser = function(req, callback) {
-  var newUser = new User();
-  newUser.username   = req.body.username;
-  newUser.email      = req.body.email;
-  newUser.password   = req.body.password;
-  if (req.body.firstName)  newUser.firstName   = req.body.firstName;
-  if (req.body.lastName)   newUser.lastName    = req.body.lastName;
-
-  newUser.save((err) => {
-    if (err) {
-      // Determine type of error
-      var dbReason, errorType, explanation;
-      var errorCode = err.code == null ? -1 : err.code;
-
-      switch (errorCode) {
-        case 11000:
-          dbReason    = 'user already exists';
-          errorType   = 'resource_error';
-          explanation = 'That user already exists';
-          break;
-        default:
-          dbReason    = 'unknown';
-          errorType   = 'api_error';
-          explanation = 'There was a problem with our back-end services';
-      }
-
-      return callback(fail('createUser', dbReason, errorType, explanation));
-    }
-
-    callback(newUser); // Adding new user was successful, return their info
-  });
+module.exports = {
+  create: create,
+  get: get,
+  getAttribute: getAttribute,
+  getByUsername: getByUsername,
+  update: update,
+  updateAttribute: updateAttribute,
+  remove: remove,
+  removeByUsername: removeByUsername
 };
 
 /**
- * Updates a user in the database.
- * If one desires to update a parameter p, then parameter new_p is required
- * @param {Object} req - the HTTP request (required parameters: username)
- * @param {callback} callback - the callback that handles the database response
+ * log - Logs a message to the server console
+ * @param {String} _message the log message
  */
-exports.updateUser = function(req, callback) {
-  // Retrieve the specific user by their username
-  User.findOne({ username: req.params.username }, (err, user) => {
-    var dbReason, errorType, explanation;
-    if (err) {
-      // Determine type of error
-      var errorCode = err.code == null ? -1 : err.code;
-
-      // TODO: discover more error codes to provide more specific feedback
-      switch (errorCode) {
-        default:
-          reason      = 'unknown';
-          errorType   = 'api_error';
-          explanation = 'There was a problem with our back-end services';
-      }
-
-      return callback(fail('updateUser', dbReason, errorType, explanation));
-    }
-
-    if (user === null) {
-      dbReason    = 'user does not exist';
-      errorType   = 'resource_dne_error';
-      explanation = 'That user does not exist';
-      return callback(fail('updateUser', dbReason, errorType, explanation));
-    }
-
-    // Update user attributes if the client requested to change them
-    if (req.body.new_username) { // If the user actually wants to change their username
-      if (user.username === req.body.new_username) { // Fail if the new username is the same
-        dbReason    = 'username is unchanged';
-        errorType   = 'resource_error';
-        explanation = 'The new username is the same as the existing username';
-        return callback(fail('updateUser', dbReason, errorType, explanation));
-      }
-
-      user.username = req.body.new_username;
-    }
-
-    if (req.body.new_email) { // If the user actually wants to change their email
-      if (user.email === req.body.new_email) { // Fail if the new email is the same
-        dbReason    = 'email is unchanged';
-        errorType   = 'resource_error';
-        explanation = 'The new email is the same as the existing email';
-        return callback(fail('updateUser', dbReason, errorType, explanation));
-      }
-
-      user.email = req.body.new_email;
-    }
-
-    if (req.body.new_firstName) { // If the user actually wants to change their first name
-      if (user.firstName === req.body.new_firstName) { // Fail if the new first name is the same
-        dbReason    = 'first name is unchanged';
-        errorType   = 'resource_error';
-        explanation = 'The new first name is the same as the existing first name';
-        return callback(fail('updateUser', dbReason, errorType, explanation));
-      }
-
-      user.firstName = req.body.new_firstName;
-    }
-
-    if (req.body.new_lastName) { // If the user actually wants to change their last name
-      if (user.lastName === req.body.new_lastName) { // Fail if the new last name is the same
-        dbReason    = 'last name is unchanged';
-        errorType   = 'resource_error';
-        explanation = 'The new first name is the same as the existing last name';
-        return callback(fail('updateUser', dbReason, errorType, explanation));
-      }
-
-      user.lastName = req.body.new_lastName;
-    }
-
-    user.save((err) => {
-      if (err) {
-        // Determine type of error
-        var errorCode = err.code == null ? -1 : err.code;
-
-        // TODO: discover more error codes to provide more specific feedback
-        switch (errorCode) {
-          case 11000:
-            dbReason    = 'user already exists';
-            errorType   = 'resource_error';
-            explanation = 'Another user with that username already exists';
-            break;
-          default:
-            dbReason    = 'unknown';
-            errorType   = 'api_error';
-            explanation = 'There was a problem with our back-end services';
-        }
-
-        return callback(fail('updateUser', dbReason, errorType, explanation));
-      }
-    });
-
-    var responseJSON = {
-      success: {
-        message: 'User successfully updated',
-      }
-    }
-    callback(responseJSON);
-  });
-};
-
-/**
- * Deletes a user from the database
- * @param {Object} req - the HTTP request (required parameters: username)
- * @param {callback} callback - the callback that handles the database response
- */
-exports.deleteUser = function(req, callback) {
-  User.remove({ username: req.params.username }, (err, dbResult) => {
-    var dbReason, errorType, explanation;
-    if (err) {
-      // Determine type of error
-      var errorCode = err.code == null ? -1 : err.code;
-
-      // TODO: discover more error codes to provide more specific feedback
-      switch (errorCode) {
-        default:
-          dbReason    = 'unknown';
-          errorType   = 'api_error';
-          explanation = 'There was a problem with our back-end services';
-      }
-
-      return callback(fail('deleteUser', dbReason, errorType, explanation));
-    }
-
-    if (false) { // TODO: Check if nothing was actually deleted (aka user_id was never in the database)
-      dbReason    = 'username does not exist';
-      errorType   = 'resource_dne_error';
-      explanation = 'That user does not exist';
-      return callback(fail('deleteUser', dbReason, errorType, explanation));
-    }
-
-    var responseJSON = {
-      success: {
-        message: 'User successfully deleted',
-      }
-    }
-
-    callback(responseJSON);
-  });
-};
-
-/**
- * Validates user login information
- * @param {Object} req - the HTTP request (required parameters: username, password)
- * @param {callback} callback - the callback that handles the database response
- */
-exports.validateCredentials = function(req, callback) {
-  // Retrieve the specific user by their username
-  User.findOne({ 'username': req.body.username }, (err, user) => {
-    var dbReason, errorType, explanation;
-    if (err) {
-      // Determine type of error
-      var errorCode = err.code == null ? -1 : err.code;
-
-      // TODO: discover more error codes to provide more specific feedback
-      switch (errorCode) {
-        default:
-          dbReason    = 'unknown';
-          errorType   = 'api_error';
-          explanation = 'There was a problem with our back-end services';
-      }
-
-      return callback(fail('validateCredentials', dbReason, errorType, explanation));
-    }
-
-    if (user === null) {
-      dbReason    = 'user does not exist';
-      errorType   = 'login_error';
-      explanation = 'The username or password is incorrect';
-      return callback(fail('validateCredentials', dbReason, errorType, explanation));
-    }
-
-    bcrypt.compare(req.body.password, user.password, (err, res) => {
-      if (err) {
-        // Determine type of error
-        var errorCode = err.code == null ? -1 : err.code;
-
-        // TODO: discover more error codes to provide more specific feedback
-        switch (errorCode) {
-          default:
-            dbReason    = 'unknown';
-            errorType   = 'api_error';
-            explanation = 'There was a problem with our back-end services';
-        }
-
-        return callback(fail('validateCredentials', dbReason, errorType, explanation));
-      }
-
-      if (!res) {
-        dbReason    = 'password entered for ' + user.username + ' is invalid';
-        errorType   = 'login_error';
-        explanation = 'The username or password is incorrect';
-        return callback(fail('validateCredentials', dbReason, errorType, explanation));
-      }
-
-      var successJson = {
-        success: {
-          message: 'Valid login credentials',
-        }
-      };
-
-      callback(successJson);
-    });
-  });
-};
-
-/**
- * Creates a detailed JSON message when a failure occurs and logs the error
- * @param {string} source - the name of the function where the error occurred
- * @param {string} reason - the detailed reason the function received an error (kept private on the server)
- * @param {string} errorType - the standardized error type
- * @param {string} details - a more clear explanation of what went wrong (for the client)
- * @returns {Object}
- */
-function fail(source, reason, errorType, details) {
-  console.log('%s function failed because: %s', source, reason);
-  var responseJSON = {
-    error: {
-      type: errorType,
-      message: details,
-    }
-  };
-
-  return responseJSON;
+function log(_message) {
+	LOG.log('User Controller', _message);
 }

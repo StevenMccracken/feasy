@@ -1,7 +1,10 @@
-var mongoose  = require('mongoose'),
-    bcrypt    = require('bcrypt-nodejs');
-mongoose.Promise = require('bluebird');
+/**
+ * user - Mongoose database model for a User
+ */
 
+var mongoose      = require('mongoose');
+mongoose.Promise  = require('bluebird');
+const BCRYPT      = require('bcrypt-nodejs');
 
 // User-id is auto-generated when pushed to mongodb
 var UserSchema = mongoose.Schema({
@@ -14,21 +17,24 @@ var UserSchema = mongoose.Schema({
 });
 
 // Executes right before user is saved in the database
-UserSchema.pre('save', function(callback) {
-  // If user didn't update password, break out
-  if (!this.isModified('password')) return callback();
-
-  // Password has changed, so hash the new password
-  bcrypt.genSalt(5, (err, salt) => {
-    if (err) return callback(err);
-
-    bcrypt.hash(this.password, salt, null, (err, hash) => {
-      if (err) return callback(err);
-
-      this.password = hash;
-      callback();
+UserSchema.pre('save', function(done) {
+  // Don't do anything if the password is not changed
+  if (!this.isModified('password')) done();
+  else {
+    // Password has changed, so hash the new password
+    BCRYPT.genSalt(5, (genSaltErr, salt) => {
+      if (genSaltErr) done(genSaltErr);
+      else {
+        BCRYPT.hash(this.password, salt, null, (hashErr, hashedPassword) => {
+          if (hashErr) done(hashErr);
+          else {
+            this.password = hashedPassword;
+            done();
+          }
+        });
+      }
     });
-  });
+  }
 });
 
 module.exports = mongoose.model('User', UserSchema);
