@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+
 import { Assignment } from '../objects/assignment';
-import { ASSIGNMENTS } from '../mock-data/mock-assignment';
 import { AssignmentService } from '../services/assignment.service';
 
 @Component({
@@ -19,19 +19,22 @@ export class HealthbarComponent implements OnInit {
     quizCounts:     number[] = [ 0, 0, 0 ];
     projectCounts:  number[] = [ 0, 0, 0 ];
 
-    constructor(private assignmentService: AssignmentService) {}
+    constructor(private assignmentService: AssignmentService) { }
 
-    /*
-    This method returns the assignments that are due in the next 10 days.
-    It filters any number of Assignment objects as input and returns those
-    same objects if their due date is within 10 days of the current time.
-    */
+    // TODO: Add assignment service calls
+    /**
+     * This method returns the assignments that are due in the next 10 days.
+     * It filters any number of Assignment objects as input and returns those
+     * same objects if their due date is within 10 days of the current time.
+     * @param  {Assignment[]} assignments [description]
+     * @param  {number}       dayLimit    [description]
+     * @return {Assignment[]}             [description]
+     */
     getAssignments_DueSoon(assignments: Assignment[], dayLimit: number): Assignment[] {
-        return assignments.filter(function (assignment) {
-            return (((assignment.due - Math.round(+new Date()/1000))/86400).valueOf() <= dayLimit);
-        });
+        return assignments;
     }
 
+    // TODO: Add assignment service calls
     /*
     This method returns the "due date category" of an assignment based on it's actual due date.
     If the assignment is due within the category 0 limit, the category will be 0.
@@ -42,8 +45,8 @@ export class HealthbarComponent implements OnInit {
         let dueDateCategory = -1; // Default value if due date is further than category2Limit days away
 
         // Turn the assignment due date into days until it is due
-        let daysOut = Math.floor(((assignment.due - Math.round(+new Date()/1000))/86400).valueOf());
-        console.log(assignment.name + " is " + daysOut + " days away");
+        let daysOut = Math.floor((assignment.dueDate.valueOf() - (+new Date()).valueOf()) / 86400000);
+        console.log(assignment.title + " is " + daysOut + " days away");
         if(daysOut <= category0Limit) {
             dueDateCategory = 0;
         } else if(daysOut > category0Limit && daysOut <= category1Limit) {
@@ -54,6 +57,7 @@ export class HealthbarComponent implements OnInit {
         return dueDateCategory;
     }
 
+    // TODO: Add assignment service calls
     /*
     This method counts the number of each assignment type based on their "due date category".
     It tallies the assignments of each type based on when they are due.
@@ -83,13 +87,10 @@ export class HealthbarComponent implements OnInit {
         }
     }
 
-    ngOnInit() {
+    ngOnInit(): void {
         // Get all assignments for a specific user
-        let allAssignments = ASSIGNMENTS;
-        // TODO: Fix this commented out call to assignmentService
-        /* let allAssignments = new Array<Assignment>();
-        this.assignmentService.getAssignments(2)
-        .then(a => allAssignments = a);*/
+        let allAssignments = [];
+        // TODO: Add assignment service calls
 
         // Filter out assignments that are more than 10 days away
         let assignmentsDueSoon = this.getAssignments_DueSoon(allAssignments, 10);

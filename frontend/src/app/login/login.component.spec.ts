@@ -1,25 +1,25 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { HealthbarComponent } from './healthbar.component';
+import { LoginComponent } from './login.component';
 
-describe('HealthbarComponent', () => {
-    let component: HealthbarComponent;
-    let fixture: ComponentFixture<HealthbarComponent>;
+describe('LoginComponent', () => {
+    let component: LoginComponent;
+    let fixture: ComponentFixture<LoginComponent>;
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            declarations: [ HealthbarComponent ]
+            declarations: [ LoginComponent ]
         })
         .compileComponents();
     }));
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(HealthbarComponent);
+        fixture = TestBed.createComponent(LoginComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });
 
-    it('should create', () => {
+    it('should be created', () => {
         expect(component).toBeTruthy();
     });
 });

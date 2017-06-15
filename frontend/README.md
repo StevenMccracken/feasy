@@ -10,7 +10,7 @@ Use 'ng serve -host 0.0.0.0' when hosting the server remotely.
 
 ## Code scaffolding
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive/pipe/service/class/module`.
+Run `ng g component component-name` to generate a new component. You can also use `ng g directive/pipe/service/class/module`.
 
 ## Build
 
