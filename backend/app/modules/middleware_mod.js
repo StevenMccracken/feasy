@@ -22,8 +22,8 @@ var authenticate = function(_request, _response, _callback) {
 
   // Check request parameters
   var missingParams = [];
-  if (_request.body.username === undefined) invalidParams.push('username');
-  if (_request.body.password === undefined) invalidParams.push('password');
+  if (_request.body.username === undefined) missingParams.push('username');
+  if (_request.body.password === undefined) missingParams.push('password');
   if (missingParams.length > 0) {
     response = ERROR.error(
       SOURCE,
