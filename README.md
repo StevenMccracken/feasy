@@ -68,14 +68,14 @@
 ### Login
 
 * Route: __POST__ https://api.pyrsuit.com/login
-* Purpose: Registerss the client on the server so that subsequent requests only require a generated token, not their username and password
+* Purpose: Registers the client on the server so that subsequent requests only require a generated token, not their username and password
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
   * In the request body
-  * `username`
-    * Non-empty string containing alphanumeric characters, dashes, or underscores
-  * `password`
-    * Non-empty string containing alphanumeric and special characters
+    * `username`
+      * Non-empty string containing alphanumeric characters, dashes, or underscores
+    * `password`
+      * Non-empty string containing alphanumeric and special characters
 * Optional parameters: _none_
 * Successful request returns
   * Status code: __200__
