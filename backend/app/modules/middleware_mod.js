@@ -474,7 +474,7 @@ var updateUserPassword = function(_request, _response, _callback) {
 
                 _callback(errorJson);
               } else {
-                // Verify that new password is different from existing password
+                // Verify that old password is identical to existing password
                 AUTH.validatePasswords(
                   _request.body.oldPassword.trim(),
                   userInfo.password,
