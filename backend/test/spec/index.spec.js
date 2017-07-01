@@ -3,281 +3,286 @@ const REQUEST = require('request');
 const SERVER = require('../../server');
 
 // Server will check for TEST env variable and adjust the port according to the environment
-var baseUrl = 'http://localhost:8080';
+let baseUrl = 'http://localhost:8080';
 if (process.env.TEST) baseUrl = 'http://localhost:3000';
 
 describe('Start server', () => {
-  describe('Base API route', () => {
-    it('returns status code 200', (done) => {
+  let start = Date.now();
+
+  let baseApiRoute = 'Base API route';
+  describe(baseApiRoute, () => {
+    it('gets the welcome message and returns status code 200', (done) => {
       REQUEST.get(baseUrl, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Base API route', body);
+        log(baseApiRoute, body);
         done();
       });
     });
   }); // End base API route
 
   // Test user information
-  var user1Name = 'grunttest_' + UuidV4(), user2Name = 'grunttest_' + UuidV4();
-  var user1Password = 'password', user2Password = 'password';
-  var user1Token, user2Token;
+  let user1Name = 'grunttest_' + UuidV4(), user2Name = 'grunttest_' + UuidV4();
+  let user1Password = 'password', user2Password = 'password';
+  let user1Token, user2Token;
 
   // Create the first test user
-  describe('Create user 1', () => {
-    var createUserParams;
+  let createUser1 = 'Create user 1';
+  describe(createUser1, () => {
+    let requestParams;
     beforeEach(() => {
-      createUserParams = {
+      requestParams = {
         url: `${baseUrl}/users`,
         form: {
           username: user1Name,
           password: user1Password,
-          email: `${user1Name}@grunttest.com`
-        }
+          email: `${user1Name}@grunttest.com`,
+        },
       };
     });
 
-    it('returns status code 201 on successful creation', (done) => {
-      REQUEST.post(createUserParams, (err, response, body) => {
+    it('creates a new user and returns status code 201', (done) => {
+      REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(201);
-        log('Create user 1', body);
+        log(createUser1, body);
 
-        // Parse JSON response
-        var data = JSON.parse(body);
+        // Parse JSON response for the token
+        let data = JSON.parse(body);
         expect(data.success.token).toBeDefined();
-
-        // Extract token from JSON response to use for other calls
         user1Token = data.success.token;
-        log('Got token for newly created user 1');
         done();
       });
     });
   }); // End create user 1
 
   // Create the second test user
-  describe('Create user 2', () => {
-    var createUserParams;
+  let createUser2 = 'Create user 2';
+  describe(createUser2, () => {
+    let requestParams;
     beforeEach(() => {
-      createUserParams = {
+      requestParams = {
         url: `${baseUrl}/users`,
         form: {
           username: user2Name,
           password: user2Password,
-          email: `${user2Name}@grunttest.com`
-        }
+          email: `${user2Name}@grunttest.com`,
+        },
       };
     });
 
-    it('returns status code 201 on successful creation', (done) => {
-      REQUEST.post(createUserParams, (err, response, body) => {
+    it('creates a new user and returns status code 201', (done) => {
+      REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(201);
-        log('Create user 2', body);
+        log(createUser2, body);
 
-        // Parse JSON response
-        var data = JSON.parse(body);
+        // Parse JSON response for the token
+        let data = JSON.parse(body);
         expect(data.success.token).toBeDefined();
-
-        // Extract token from JSON response to use for other calls
         user2Token = data.success.token;
-        log('Got token for newly created user 2');
         done();
       });
     });
   }); // End create user 2
 
-  // Test the login route by retrieving an authorization token
-  describe('Login', () => {
-    var user1AuthParams;
+  // Send login credentials to get a token
+  let login = 'Login';
+  describe(login, () => {
+    let requestParams;
     beforeEach(() => {
-      user1AuthParams = {
+      requestParams = {
         url: `${baseUrl}/login`,
         form: {
           username: user1Name,
           password: user1Password,
-        }
+        },
       };
     });
 
-    it('returns status code 200 OK on valid credentials', (done) => {
-      REQUEST.post(user1AuthParams, (err, response, body) => {
+    it('generates a token and returns status code 200', (done) => {
+      REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
+        log(login, body);
 
-        // Parse JSON response
-        var data = JSON.parse(body);
+        // Parse JSON response for the token
+        let data = JSON.parse(body);
         expect(data.success.token).toBeDefined();
-        log('Login', data.success.token);
         done();
       });
     });
   }); // End login
 
-  // Get test user 1 information
-  describe('Get user 1 information', () => {
-    var getUserParams;
+  // Get user 1's information
+  let getUser1Info = 'Get user 1\'s information';
+  describe(getUser1Info, () => {
+    let requestParams;
     beforeEach(() => {
-      getUserParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}`,
-        headers: { Authorization: user1Token }
+        headers: { Authorization: user1Token },
       };
     });
 
-    it('returns status code 200 if user exists', (done) => {
-      REQUEST.get(getUserParams, (err, response, body) => {
+    it('gets user\'s information and returns status code 200', (done) => {
+      REQUEST.get(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Get user 1 information', body);
+        log(getUser1Info, body);
         done();
       });
     });
   }); // End get user 1 information
 
-  // Update test user 1's username
-  describe('Update user 1\'s username', () => {
-    var newUser1Name = `${user1Name}_updated`;
-    var updateUserParams;
+  // Update user 1's username
+  let updateUser1Username = 'Update user 1\'s username';
+  describe(updateUser1Username, () => {
+    let newUser1Name = `${user1Name}_updated`;
+    let requestParams;
     beforeEach(() => {
-      updateUserParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/username`,
         headers: { Authorization: user1Token },
-        form: { newUsername: newUser1Name }
+        form: { newUsername: newUser1Name },
       };
     });
 
-    it('returns status code 200 on successful update', (done) => {
-      REQUEST.put(updateUserParams, (err, response, body) => {
+    it('updates user\'s username and returns status code 200', (done) => {
+      REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
+        log(updateUser1Username, body);
 
-        // Parse JSON response for new token
-        var data = JSON.parse(body);
+        // Parse JSON response for the token
+        let data = JSON.parse(body);
         expect(data.success.token).toBeDefined();
-
-        // Retrieve new token from JSON response for future requests
-        user1Token = data.success.token;
         user1Name = newUser1Name;
-
-        log('Update user 1\'s username', data.success.token);
+        user1Token = data.success.token;
         done();
       });
     });
-  }); // End update test user 1's username
+  }); // End update user 1's username
 
-  // Update test user 1's password
-  describe('Update user 1\'s password', () => {
-    var newUser1Password = `${user1Password}_updated`;
-    var updateUserParams;
+  // Update user 1's password
+  let updateUser1Password = 'Update user 1\'s password';
+  describe(updateUser1Password, () => {
+    let newUser1Password = `${user1Password}_updated`;
+    let requestParams;
     beforeEach(() => {
-      updateUserParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/password`,
         headers: { Authorization: user1Token },
-        form: { newPassword: newUser1Password }
+        form: {
+          oldPassword: user1Password,
+          newPassword: newUser1Password,
+        },
       };
     });
 
-    it('returns status code 200 on successful update', (done) => {
-      REQUEST.put(updateUserParams, (err, response, body) => {
+    it('updates user\'s password and returns status code 200', (done) => {
+      REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-
+        log(updateUser1Password, body);
         user1Password = newUser1Password;
-        log('Update user 1\'s password', body);
         done();
       });
     });
-  }); // End update test user 1's password
+  }); // End update user 1's password
 
-  // Update test user 1's email
-  describe('Update user 1\'s email', () => {
-    var updateUserParams;
+  // Update user 1's email
+  let updateUser1Email = 'Update user 1\'s email';
+  describe(updateUser1Email, () => {
+    let requestParams;
     beforeEach(() => {
-      updateUserParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/email`,
         headers: { Authorization: user1Token },
-        form: { newEmail: `${user1Name}_updated@grunttest.com` }
+        form: { newEmail: `${user1Name}_updated@grunttest.com` },
       };
     });
 
-    it('returns status code 200 on successful update', (done) => {
-      REQUEST.put(updateUserParams, (err, response, body) => {
+    it('updates user\'s email and returns status code 200', (done) => {
+      REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Update user 1\'s email', body);
+        log(updateUser1Email, body);
         done();
       });
     });
-  }); // End update test user 1's email
+  }); // End update user 1's email
 
-  // Update test user 1's first name
-  describe('Update user 1\'s first name', () => {
-    var updateUserParams;
+  // Update user 1's first name
+  let updateUser1FirstName = 'Update user 1\'s first name';
+  describe(updateUser1FirstName, () => {
+    let requestParams;
     beforeEach(() => {
-      updateUserParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/firstName`,
         headers: { Authorization: user1Token },
-        form: { newFirstName: 'test updated' }
+        form: { newFirstName: 'test updated' },
       };
     });
 
-    it('returns status code 200 on successful update', (done) => {
-      REQUEST.put(updateUserParams, (err, response, body) => {
+    it('updates user\'s first name and returns status code 200', (done) => {
+      REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Update user 1\'s first name', body);
+        log(updateUser1FirstName, body);
         done();
       });
     });
-  }); // End update test user 1's first name
+  }); // End update user 1's first name
 
-  // Update test user 1's last name
-  describe('Update user 1\'s last name', () => {
-    var updateUserParams;
+  // Update user 1's last name
+  let updateUser1LastName = 'Update user 1\'s last name';
+  describe(updateUser1LastName, () => {
+    let requestParams;
     beforeEach(() => {
-      updateUserParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/lastName`,
         headers: { Authorization: user1Token },
-        form: { newLastName: 'test updated' }
+        form: { newLastName: 'test updated' },
       };
     });
 
-    it('returns status code 200 on successful update', (done) => {
-      REQUEST.put(updateUserParams, (err, response, body) => {
+    it('updates user\'s last name and returns status code 200', (done) => {
+      REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Update user 1\'s last name', body);
+        log(updateUser1LastName, body);
         done();
       });
     });
-  }); // End update test user 1's last name
+  }); // End update user 1's last name
 
-  // Create an assignment
-  var assignment1Id, nowUnixSeconds = Math.floor(Date.now() / 1000);
-  describe('Create assignment 1', () => {
-    var createAssignmentParams;
+  // Create assignment 1
+  let createAssignment1 = 'Create assignment 1';
+  let assignment1Id, nowUnixSeconds = Math.floor(Date.now() / 1000);
+  describe(createAssignment1, () => {
+    let requestParams;
     beforeEach(() => {
-      createAssignmentParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments`,
         headers: { Authorization: user1Token },
         form: {
           title: 'assignment 1',
-          dueDate: nowUnixSeconds
-        }
+          dueDate: nowUnixSeconds,
+        },
       };
     });
 
-    it('returns status code 200 on successful creation', (done) => {
-      REQUEST.post(createAssignmentParams, (err, response, body) => {
+    it('creates an assignment and returns status code 201', (done) => {
+      REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(201);
+        log(createAssignment1, body);
 
         // Parse JSON response for the assignment id
-        var data = JSON.parse(body);
+        let data = JSON.parse(body);
         expect(data._id).toBeDefined();
         assignment1Id = data._id;
-
-        log('Create assignment 1', body);
         done();
       });
     });
   }); // End create assignment 1
 
-  // Create another assignment
-  var assignment2Id;
-  describe('Create assignment 2', () => {
-    var createAssignmentParams;
+  // Create assignment 2
+  let createAssignment2 = 'Create assignment 2', assignment2Id;
+  describe(createAssignment2, () => {
+    let requestParams;
     beforeEach(() => {
-      createAssignmentParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user2Name}/assignments`,
         headers: { Authorization: user2Token },
         form: {
@@ -286,252 +291,264 @@ describe('Start server', () => {
           class: 'class',
           type: 'type',
           description: 'description',
-          completed: 'true'
-        }
+          completed: 'true',
+        },
       };
     });
 
-    it('returns status code 200 on successful creation', (done) => {
-      REQUEST.post(createAssignmentParams, (err, response, body) => {
+    it('creates an assignment and returns status code 201', (done) => {
+      REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(201);
+        log(createAssignment2, body);
 
         // Parse JSON response for the assignment id
-        var data = JSON.parse(body);
+        let data = JSON.parse(body);
         expect(data._id).toBeDefined();
         assignment2Id = data._id;
-
-        log('Create assignment 2', body);
         done();
       });
     });
   }); // End create assignment 2
 
-  // Get all of user 1's assignments
-  describe('Get user 1\'s assignments', () => {
-    var getAssignmentParams;
+  // Get user 1's assignments
+  let getUser1Assignments = 'Get user 1\'s assignments';
+  describe(getUser1Assignments, () => {
+    let requestParams;
     beforeEach(() => {
-      getAssignmentParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments`,
-        headers: { Authorization: user1Token }
+        headers: { Authorization: user1Token },
       };
     });
 
-    it('returns status code 200 on successful retrieval', (done) => {
-      REQUEST.get(getAssignmentParams, (err, response, body) => {
+    it('gets the assignments and returns status code 200', (done) => {
+      REQUEST.get(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        // Parse JSON response for assignments created by user 1
-        var data = JSON.parse(body);
-        log('Get user 1\'s assignments', `Count = ${Object.keys(data).length}`);
+        // Parse JSON response for the assignments
+        let data = JSON.parse(body);
+        log(getUser1Assignments, `Count = ${Object.keys(data).length}`);
         done();
       });
     });
   }); // End get user 1's assignments
 
-  // Get assignment 1 information
-  describe('Get assignment 1 information', () => {
-    var getAssignmentParams;
+  // Get assignment 1
+  let getAssignment1 = 'Get assignment 1';
+  describe(getAssignment1, () => {
+    let requestParams;
     beforeEach(() => {
-      getAssignmentParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}`,
-        headers: { Authorization: user1Token }
+        headers: { Authorization: user1Token },
       };
     });
 
-    it('returns status code 200 if assignment exists', (done) => {
-      REQUEST.get(getAssignmentParams, (err, response, body) => {
+    it('gets the assignment and returns status code 200', (done) => {
+      REQUEST.get(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Get assignment 1 information', body);
+        log(getAssignment1, body);
         done();
       });
     });
-  }); // End get assignment 1 information
+  }); // End get assignment 1
 
   // Update assignment 1's title
-  describe('Update assignment 1\'s title', () => {
-    var updateAssignmentParams;
+  let updateAssignment1Title = 'Update assignment 1\'s title';
+  describe(updateAssignment1Title, () => {
+    let requestParams;
     beforeEach(() => {
-      updateAssignmentParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/title`,
         headers: { Authorization: user1Token },
-        form: { newTitle: 'title updated' }
+        form: { newTitle: 'title updated' },
       };
     });
 
-    it('returns status code 200 on successful update', (done) => {
-      REQUEST.put(updateAssignmentParams, (err, response, body) => {
+    it('updates the assignment\'s title and returns status code 200', (done) => {
+      REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Update assignment 1\'s title', body);
+        log(updateAssignment1Title, body);
         done();
       });
     });
   }); // End update assignment 1's title
 
   // Update assignment 1's class
-  describe('Update assignment 1\'s class', () => {
-    var updateAssignmentParams;
+  let updateAssignment1Class = 'Update assignment 1\'s class';
+  describe(updateAssignment1Class, () => {
+    let requestParams;
     beforeEach(() => {
-      updateAssignmentParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/class`,
         headers: { Authorization: user1Token },
-        form: { newClass: 'class updated' }
+        form: { newClass: 'class updated' },
       };
     });
 
-    it('returns status code 200 on successful update', (done) => {
-      REQUEST.put(updateAssignmentParams, (err, response, body) => {
+    it('updates the assignment\'s class and returns status code 200', (done) => {
+      REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Update assignment 1\'s class', body);
+        log(updateAssignment1Class, body);
         done();
       });
     });
   }); // End update assignment 1's class
 
   // Update assignment 1's type
-  describe('Update assignment 1\'s type', () => {
-    var updateAssignmentParams;
+  let updateAssignment1Type = 'Update assignment 1\'s type';
+  describe(updateAssignment1Type, () => {
+    let requestParams;
     beforeEach(() => {
-      updateAssignmentParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/type`,
         headers: { Authorization: user1Token },
-        form: { newType: 'type updated' }
+        form: { newType: 'type updated' },
       };
     });
 
-    it('returns status code 200 on successful update', (done) => {
-      REQUEST.put(updateAssignmentParams, (err, response, body) => {
+    it('updates the assignment\'s type and returns status code 200', (done) => {
+      REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Update assignment 1\'s type', body);
+        log(updateAssignment1Type, body);
         done();
       });
     });
   }); // End update assignment 1's type
 
   // Update assignment 1's description
-  describe('Update assignment 1\'s description', () => {
-    var updateAssignmentParams;
+  let updateAssignment1Description = 'Update assignment 1\'s description';
+  describe(updateAssignment1Description, () => {
+    let requestParams;
     beforeEach(() => {
-      updateAssignmentParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/description`,
         headers: { Authorization: user1Token },
-        form: { newDescription: 'description updated' }
+        form: { newDescription: 'description updated' },
       };
     });
 
-    it('returns status code 200 on successful update', (done) => {
-      REQUEST.put(updateAssignmentParams, (err, response, body) => {
+    it('update the assignment\'s description and returns status code 200', (done) => {
+      REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Update assignment 1\'s description', body);
+        log(updateAssignment1Description, body);
         done();
       });
     });
   }); // End update assignment 1's description
 
   // Update assignment 1's completed
-  describe('Update assignment 1\'s completed', () => {
-    var updateAssignmentParams;
+  let updateAssignment1Completed = 'Update assignment 1\'s completed';
+  describe(updateAssignment1Completed, () => {
+    let requestParams;
     beforeEach(() => {
-      updateAssignmentParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/completed`,
         headers: { Authorization: user1Token },
-        form: { newCompleted: 'true' }
+        form: { newCompleted: 'true' },
       };
     });
 
-    it('returns status code 200 on successful update', (done) => {
-      REQUEST.put(updateAssignmentParams, (err, response, body) => {
+    it('updates the assignment\'s compmleted and returns status code 200', (done) => {
+      REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Update assignment 1\'s completed', body);
+        log(updateAssignment1Completed, body);
         done();
       });
     });
   }); // End update assignment 1's completed
 
   // Update assignment 1's due date
-  describe('Update assignment 1\'s due date', () => {
-    var updateAssignmentParams;
+  let updateAssignment1DueDate = 'Update assignment 1\'s due date';
+  describe(updateAssignment1DueDate, () => {
+    let requestParams;
     beforeEach(() => {
-      updateAssignmentParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}/dueDate`,
         headers: { Authorization: user1Token },
-        form: { newDueDate: (nowUnixSeconds + 1) }
+        form: { newDueDate: (nowUnixSeconds + 1) },
       };
     });
 
     it('returns status code 200 on successful update', (done) => {
-      REQUEST.put(updateAssignmentParams, (err, response, body) => {
+      REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Update assignment 1\'s due date', body);
+        log(updateAssignment1DueDate, body);
         done();
       });
     });
   }); // End update assignment 1's due date
 
   // Delete assignment 1
-  describe('Get assignment 1 information', () => {
-    var deleteAssignmentParams;
+  let deleteAssignment1 = 'Delete assignment 1';
+  describe(deleteAssignment1, () => {
+    let requestParams;
     beforeEach(() => {
-      deleteAssignmentParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments/${assignment1Id}`,
-        headers: { Authorization: user1Token }
+        headers: { Authorization: user1Token },
       };
     });
 
-    it('returns status code 200 on successful deletion', (done) => {
-      REQUEST.delete(deleteAssignmentParams, (err, response, body) => {
+    it('deletes the assignment and returns status code 200', (done) => {
+      REQUEST.delete(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Delete assignment 1', body);
+        log(deleteAssignment1, body);
         done();
       });
     });
   }); // End delete assignment 1
 
-  // Delete test user 1
-  describe('Delete user 1', () => {
-    var deleteUserParams;
+  // Delete user 1
+  let deleteUser1 = 'Delete user 1';
+  describe(deleteUser1, () => {
+    let requestParams;
     beforeEach(() => {
-      deleteUserParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user1Name}`,
-        headers: { Authorization: user1Token }
+        headers: { Authorization: user1Token },
       };
     });
 
-    it('returns status code 200 on successful deletion', (done) => {
-      REQUEST.delete(deleteUserParams, (error, response, body) => {
+    it('deletes the user and returns status code 200', (done) => {
+      REQUEST.delete(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Delete user 1', body);
+        log(deleteUser1, body);
         done();
       });
     });
   }); // End delete user 1
 
-  // Delete test user 2. Will delete user 2's assignment as well (assignment 2)
-  describe('Delete user 2', () => {
-    var deleteUserParams;
+  // Delete user 2
+  let deleteUser2 = 'Delete user 2';
+  describe(deleteUser2, () => {
+    let requestParams;
     beforeEach(() => {
-      deleteUserParams = {
+      requestParams = {
         url: `${baseUrl}/users/${user2Name}`,
-        headers: { Authorization: user2Token }
+        headers: { Authorization: user2Token },
       };
     });
 
-    it('returns status code 200 on successful deletion', (done) => {
-      REQUEST.delete(deleteUserParams, (error, response, body) => {
+    it('deletes the user and returns status code 200', (done) => {
+      REQUEST.delete(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log('Delete user 2', body);
+        log(deleteUser2, body);
         done();
       });
     });
   }); // End delete user 2
 
-  // Close the server running for the test
-  describe('Close server', () => {
+  // Close the server
+  let closeServer = 'Close server';
+  describe(closeServer, () => {
     it('shuts down the test server', (done) => {
       SERVER.closeServer();
-      log('Close server', 'done');
+      log(closeServer, 'closed');
+      log('Test duration', `${(Date.now() - start) / 1000} seconds`);
       done();
     });
-  }); // End close server
+  }); // End close the server
 }); // End start server
 
 /**

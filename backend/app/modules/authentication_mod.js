@@ -1,5 +1,5 @@
 /**
- * auth_mod - @module for client request authentication
+ * authentication_mod - @module for client request authentication
  */
 
 const LOG = require('./log_mod');
@@ -37,7 +37,7 @@ var validatePasswords = function(_givenPassword, _actualPassword, _callback, _er
  * hash - Salts and hashes a password
  * @param {String} _password the password to hash
  * @param {callback} _callback the callback to handle success result
- * @param {type} _errorCallback the callback to handle error result
+ * @param {callback} _errorCallback the callback to handle error result
  */
 var hashPassword = function(_password, _callback, _errorCallback) {
   const SOURCE = 'hashPassword()';
@@ -63,44 +63,15 @@ var hashPassword = function(_password, _callback, _errorCallback) {
  */
 var verifyToken = function(_request, _response, _callback, _errorCallback) {
   const SOURCE = 'verifyToken()';
-  var serverLog, clientMessage;
+  log(SOURCE, _request);
 
   // Verify the client's token
-  PASSPORT.authenticate(
-    'jwt',
-    { session: false },
-    (passportErr, userInfo, tokenErr) => {
-      // Assume that an error occurred and try to determine the error
-      var errorOccurred = true;
-      if (passportErr !== null) {
-        // An error occurred during the passport authenticate function call
-        serverLog = passportErr;
-        clientMessage = null;
-      } else if (tokenErr !== undefined) {
-        // The token in the request body is invalid
-        serverLog = tokenErr.message
-        clientMessage = determineJwtError(tokenErr.message);
-      } else if (!userInfo) {
-        // There is no userInfo associated with the token
-        serverLog = 'User for this token cannot be found';
-        clientMessage = null;
-      } else errorOccurred = false;
-
-      if (!errorOccurred) _callback(userInfo);
-      else {
-        var response = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.AUTHENTICATION_ERROR,
-          clientMessage,
-          serverLog
-        );
-
-        _errorCallback(response);
-      }
-    }
-  )(_request, _response);
+  PASSPORT.authenticate('jwt', { session: false }, (passportError, userInfo, tokenError) => {
+    if (passportError !== null) _errorCallback(passportError, null, false);
+    else if (tokenError !== undefined) _errorCallback(null, tokenError, false);
+    else if (!userInfo) _errorCallback(null, null, true);
+    else errorOccurred = _callback(userInfo);
+  })(_request, _response);
 };
 
 /**
@@ -116,53 +87,8 @@ module.exports = {
   validatePasswords: validatePasswords,
   hashPassword: hashPassword,
   verifyToken: verifyToken,
-  generateToken: generateToken
+  generateToken: generateToken,
 };
-
-/**
- * determineJwtError - Determines the specific type of error generated from JWT events
- * @param {String} errorMessage the JWT error message
- * @returns {String} a more clearly worded error message
- */
-function determineJwtError(errorMessage) {
-  /**
-   * If token is malformed, sometimes errorMessage will contain 'Unexpected
-   * token' so shorten the errorMessage so it can work with the switch case
-   */
-  if (errorMessage !== null && errorMessage.indexOf('Unexpected token') !== -1) {
-    errorMessage = 'Unexpected token';
-  }
-
-  var reason;
-  switch (errorMessage) {
-    case 'jwt expired':
-      reason = 'Expired web token';
-      break;
-    case 'invalid token':
-      reason = 'Invalid web token';
-      break;
-    case 'invalid signature':
-      reason = 'Invalid web token';
-      break;
-    case 'jwt malformed':
-      reason = 'Invalid web token';
-      break;
-    case 'Unexpected token':
-      reason = 'Invalid web token';
-      break;
-    case 'No auth token':
-      reason = 'Missing web token';
-      break;
-    case 'jwt must be provided':
-      reason = 'Missing web token';
-      break;
-    default:
-      reason = 'Unknown web token error';
-      log(`Unknown JWT error: ${errorMessage}`);
-  }
-
-  return reason;
-}
 
 /**
  * log - Logs a message to the server console

@@ -17,7 +17,7 @@ var create = function(_assignmentInfo, _callback, _errorCallback) {
   const SOURCE = 'create()';
   log(SOURCE);
 
-  var newAssignment = new ASSIGNMENT();
+  let newAssignment = new ASSIGNMENT();
   newAssignment.title = _assignmentInfo.title.trim();
   newAssignment.userId = _assignmentInfo.userId.trim();
   newAssignment.dueDate = _assignmentInfo.dueDate;
@@ -33,9 +33,9 @@ var create = function(_assignmentInfo, _callback, _errorCallback) {
     newAssignment.description = _assignmentInfo.description.trim();
   } else newAssignment.description = '';
 
-  newAssignment.save((saveAssignmentErr) => {
-    if (saveAssignmentErr === null) _callback(newAssignment);
-    else _errorCallback(saveAssignmentErr);
+  newAssignment.save((saveAssignmentError) => {
+    if (saveAssignmentError === null) _callback(newAssignment);
+    else _errorCallback(saveAssignmentError);
   });
 };
 
@@ -49,9 +49,9 @@ var getById = function(_assignmentId, _callback, _errorCallback) {
   const SOURCE = 'getById()';
   log(SOURCE);
 
-  ASSIGNMENT.findById(_assignmentId, UNIVERSAL_PROJECTION, (getAssignmentErr, assignment) => {
-    if (getAssignmentErr === null) _callback(assignment);
-    else _errorCallback(getAssignmentErr);
+  ASSIGNMENT.findById(_assignmentId, UNIVERSAL_PROJECTION, (getAssignmentError, assignment) => {
+    if (getAssignmentError === null) _callback(assignment);
+    else _errorCallback(getAssignmentError);
   });
 };
 
@@ -68,9 +68,9 @@ var getAll = function(_userId, _callback, _errorCallback) {
   ASSIGNMENT.find(
     { userId: _userId.toString() },
     UNIVERSAL_PROJECTION,
-    (getAssignmentsErr, assignments) => {
-      if (getAssignmentsErr === null) _callback(assignments);
-      else _errorCallback(getAssignmentsErr);
+    (getAssignmentsError, assignments) => {
+      if (getAssignmentsError === null) _callback(assignments);
+      else _errorCallback(getAssignmentsError);
     }
   );
 };
@@ -91,9 +91,9 @@ var getAllByAttribute = function(_userId, _attribute, _value, _callback, _errorC
   ASSIGNMENT.find(
     { userId: _userId.toString(), [_attribute]: _value },
     UNIVERSAL_PROJECTION,
-    (getAssignmentsErr, assignments) => {
-      if (getAssignmentsErr === null) _callback(assignments);
-      else _errorCallback(getAssignmentsErr);
+    (getAssignmentsError, assignments) => {
+      if (getAssignmentsError === null) _callback(assignments);
+      else _errorCallback(getAssignmentsError);
     }
   );
 };
@@ -112,9 +112,9 @@ var getAttribute = function(_assignmentId, _attribute, _callback, _errorCallback
   ASSIGNMENT.findById(
     _assignmentId,
     _attribute,
-    (getAssignmentAttributeErr, assignmentAttribute) => {
-      if (getAssignmentAttributeErr === null) _callback(assignmentAttribute);
-      else _errorCallback(getAssignmentAttributeErr);
+    (getAssignmentAttributeError, assignmentAttribute) => {
+      if (getAssignmentAttributeError === null) _callback(assignmentAttribute);
+      else _errorCallback(getAssignmentAttributeError);
     }
   );
 };
@@ -137,7 +137,7 @@ var updateAttribute = function(_assignment, _attribute, _newValue, _callback, _e
   update(
     _assignment,
     updatedAssignmentInfo => _callback(updatedAssignmentInfo),
-    saveAssignmentErr => _errorCallback(saveAssignmentErr)
+    saveAssignmentError => _errorCallback(saveAssignmentError)
   );
 };
 
@@ -151,9 +151,9 @@ var update = function(_assignment, _callback, _errorCallback) {
   const SOURCE = 'update()';
   log(SOURCE);
 
-  _assignment.save((saveAssignmentInfoErr) => {
-    if (saveAssignmentInfoErr === null) _callback(_assignment);
-    else _errorCallback(saveAssignmentInfoErr);
+  _assignment.save((saveAssignmentInfoError) => {
+    if (saveAssignmentInfoError === null) _callback(_assignment);
+    else _errorCallback(saveAssignmentInfoError);
   });
 };
 
@@ -167,9 +167,9 @@ var remove = function(_assignment, _callback, _errorCallback) {
   const SOURCE = 'remove()';
   log(SOURCE);
 
-  _assignment.remove((removeAssignmentErr) => {
-    if (removeAssignmentErr === null) _callback();
-    else _errorCallback(removeAssignmentErr);
+  _assignment.remove((removeAssignmentError) => {
+    if (removeAssignmentError === null) _callback();
+    else _errorCallback(removeAssignmentError);
   });
 };
 
@@ -183,9 +183,9 @@ var removeAllByUser = function(_userId, _callback, _errorCallback) {
   const SOURCE = 'removeAllByUser()';
   log(SOURCE);
 
-  ASSIGNMENT.remove({ userId: _userId.toString() }, (removeAssignmentsErr) => {
-    if (removeAssignmentsErr === null) _callback();
-    else _errorCallback(removeAssignmentsErr);
+  ASSIGNMENT.remove({ userId: _userId.toString() }, (removeAssignmentsError) => {
+    if (removeAssignmentsError === null) _callback();
+    else _errorCallback(removeAssignmentsError);
   });
 };
 
@@ -198,7 +198,7 @@ module.exports = {
   update: update,
   updateAttribute: updateAttribute,
   remove: remove,
-  removeAllByUser: removeAllByUser
+  removeAllByUser: removeAllByUser,
 };
 
 /**

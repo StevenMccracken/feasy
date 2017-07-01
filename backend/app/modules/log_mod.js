@@ -21,5 +21,5 @@ var log = function(_source, _message, _request = null) {
 };
 
 module.exports = {
-  log: log
+  log: log,
 };

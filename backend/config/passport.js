@@ -13,9 +13,9 @@ const EXTRACTJWT = require('passport-jwt').ExtractJwt;
  */
 module.exports = function(passport) {
   // JSON containing criteria used to compare incoming JWTs to existing JWTs
-  var options = {
+  let options = {
     secretOrKey: CONFIG.secret,
-    jwtFromRequest: EXTRACTJWT.fromAuthHeader()
+    jwtFromRequest: EXTRACTJWT.fromAuthHeader(),
   };
 
   /**
@@ -30,10 +30,7 @@ module.exports = function(passport) {
       (userInfo) => {
         if (userInfo !== null) done(null, userInfo);
         else {
-          /**
-           * The user was not found in the database so
-           * return a null error and user with the callback
-           */
+          // The user was not found in the database
           console.log(
             '%s not found while authenticating with JWT strategy',
             jwtPayload._doc.username
@@ -42,7 +39,7 @@ module.exports = function(passport) {
           done(null, null);
         }
       },
-      getUserInfoErr => done(null, null)
+      getUserInfoError => done(null, null)
     );
   }));
 };

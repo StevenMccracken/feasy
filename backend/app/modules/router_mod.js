@@ -5,7 +5,7 @@
 const LOG = require('./log_mod');
 const MIDDLEWARE = require('./middleware_mod');
 
-var router;
+let router;
 var routing = function(_router) {
   router = _router;
 
@@ -148,7 +148,7 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/:assignmentId') .get((_request, _response) => (
+  router.route('/users/:username/assignments/:assignmentId').get((_request, _response) => (
     MIDDLEWARE.getAssignmentById(_request, _response, result => _response.json(result))
   ));
 
@@ -228,7 +228,7 @@ var routing = function(_router) {
   ));
 
   return router;
-}
+};
 
 /**
  * log - Logs a message to the server console

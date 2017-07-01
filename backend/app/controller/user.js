@@ -15,7 +15,7 @@ var create = function(_userInfo, _callback, _errorCallback) {
   const SOURCE = 'create()';
   log(SOURCE);
 
-  var newUser = new USER();
+  let newUser = new USER();
   newUser.email = _userInfo.email.trim();
   newUser.username = _userInfo.username.trim();
   newUser.password = _userInfo.password.trim();
@@ -27,9 +27,9 @@ var create = function(_userInfo, _callback, _errorCallback) {
   if (_userInfo.lastName !== undefined) newUser.lastName = _userInfo.lastName.trim();
   else newUser.lastName = '';
 
-  newUser.save((saveUserErr) => {
-    if (saveUserErr === null) _callback(newUser);
-    else _errorCallback(saveUserErr);
+  newUser.save((saveUserError) => {
+    if (saveUserError === null) _callback(newUser);
+    else _errorCallback(saveUserError);
   });
 };
 
@@ -45,9 +45,9 @@ var get = function(_attribute, _value, _projection, _callback, _errorCallback) {
   const SOURCE = 'get()';
   log(SOURCE);
 
-  USER.findOne({ [_attribute]: _value }, _projection, (getUserErr, userInfo) => {
-    if (getUserErr === null) _callback(userInfo);
-    else _errorCallback(getUserErr);
+  USER.findOne({ [_attribute]: _value }, _projection, (getUserError, userInfo) => {
+    if (getUserError === null) _callback(userInfo);
+    else _errorCallback(getUserError);
   });
 };
 
@@ -63,7 +63,7 @@ var getByUsername = function(_username, _includePassword, _callback, _errorCallb
   const SOURCE = 'getByUsername()';
   log(SOURCE);
 
-  var projection;
+  let projection;
   if (_includePassword) projection = '_id username password email firstName lastName';
   else projection = '_id username email firstName lastName';
 
@@ -72,7 +72,7 @@ var getByUsername = function(_username, _includePassword, _callback, _errorCallb
     _username,
     projection,
     userInfo => _callback(userInfo),
-    getUserInfoErr => _errorCallback(getUserInfoErr)
+    getUserInfoError => _errorCallback(getUserInfoError)
   );
 };
 
@@ -87,8 +87,8 @@ var getAttribute = function(_username, _attribute, _callback, _errorCallback) {
   const SOURCE = 'getAttribute()';
   log(SOURCE);
 
-  USER.findOne({ 'username': _username }, _attribute, (getUserErr, userInfo) => {
-    if (getUserErr !== null) _errorCallback(getUserErr);
+  USER.findOne({ 'username': _username }, _attribute, (getUserError, userInfo) => {
+    if (getUserError !== null) _errorCallback(getUserError);
     else _callback(userInfo);
   });
 };
@@ -111,7 +111,7 @@ var updateAttribute = function(_user, _attribute, _newValue, _callback, _errorCa
   update(
     _user,
     updatedUserInfo => _callback(updatedUserInfo),
-    saveUserErr => _errorCallback(saveUserErr)
+    saveUserError => _errorCallback(saveUserError)
   );
 };
 
@@ -125,9 +125,9 @@ var update = function(_user, _callback, _errorCallback) {
   const SOURCE = 'update()';
   log(SOURCE);
 
-  _user.save((saveUserInfoErr) => {
-    if (saveUserInfoErr === null) _callback(_user);
-    else _errorCallback(saveUserInfoErr);
+  _user.save((saveUserInfoError) => {
+    if (saveUserInfoError === null) _callback(_user);
+    else _errorCallback(saveUserInfoError);
   });
 };
 
@@ -141,9 +141,9 @@ var removeByUsername = function(_username, _callback, _errorCallback) {
   const SOURCE = 'removeByUsername()';
   log(SOURCE);
 
-  USER.remove({ username: _username }, (removeUserErr) => {
-    if (removeUserErr === null) _callback();
-    else _errorCallback(removeUserErr);
+  USER.remove({ username: _username }, (removeUserError) => {
+    if (removeUserError === null) _callback();
+    else _errorCallback(removeUserError);
   });
 }
 
@@ -157,9 +157,9 @@ var remove = function(_user, _callback, _errorCallback) {
   const SOURCE = 'remove()';
   log(SOURCE);
 
-  _user.remove((removeUserErr) => {
-    if (removeUserErr === null) _callback();
-    else _errorCallback(removeUserErr);
+  _user.remove((removeUserError) => {
+    if (removeUserError === null) _callback();
+    else _errorCallback(removeUserError);
   });
 };
 
@@ -171,7 +171,7 @@ module.exports = {
   update: update,
   updateAttribute: updateAttribute,
   remove: remove,
-  removeByUsername: removeByUsername
+  removeByUsername: removeByUsername,
 };
 
 /**

@@ -7,13 +7,13 @@ MONGOOSE.Promise = require('bluebird');
 const BCRYPT = require('bcrypt-nodejs');
 
 // User-id is auto-generated when pushed to mongodb
-var UserSchema = MONGOOSE.Schema({
+let UserSchema = MONGOOSE.Schema({
   email:          { type: String, required: true, index: { unique: true } },
   username:       { type: String, required: true, index: { unique: true } },
   password:       { type: String, required: true },
   dateCreated:    { type: Date, default: Date.now },
   firstName:      { type: String },
-  lastName:       { type: String }
+  lastName:       { type: String },
 });
 
 // Executes right before user is saved in the database
