@@ -22,3 +22,31 @@
     <div *ngIf="error" class="alert alert-danger">{{error}}</div>
   </form>
 </div>
+
+
+<div>
+    <meta name="google-signin-client_id" content="23662056358-j355qof18ns9lsm2dd20nd9usst0frme.apps.googleusercontent.com">
+    <body>
+        <div class="g-signin2" data-onsuccess="onSignIn"></div>
+        <script>
+            /**
+             * this function runs if an error is encountered using the google sign in button
+             * @param error the error thrown.
+             */
+            function onFailure(error) {
+                console.log(error);
+                //add error catching
+            }
+
+            /**
+             * This function runs on the sign in of a google user
+             * @param googleUser The current user attempting to sign in
+             */
+            function onSignIn(googleUser) {
+                //get token  for user who has signed in
+                var id_token = googleUser.getAuthResponse().id_token;
+                //Send Post request to RESTapi containing the token
+           }
+        </script>
+        <script src="https://apis.google.com/js/platform.js" async defer></script>
+</div>
