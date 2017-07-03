@@ -140,62 +140,35 @@ var createUser = function(_request, _response, _callback) {
 
     _callback(errorJson);
   } else {
-    // Parameters are valid, so check if username already exists
-    USERS.getByUsername(
-      _request.body.username,
-      false,
-      (user) => {
-        if (user !== null) {
-          // Username already exists
-          let errorJson = ERROR.error(
-            SOURCE,
-            _request,
-            _response,
-            ERROR.CODE.RESOURCE_ERROR,
-            'That username already exists'
-          );
+    // Parameters are valid, so build user JSON with request body data
+    let userInfo = {
+      email: _request.body.email,
+      username: _request.body.username,
+      password: _request.body.password,
+    };
 
-          _callback(errorJson);
-        } else {
-          // Username is available. Build user JSON with request body data
-          let userInfo = {
-            email: _request.body.email,
-            username: _request.body.username,
-            password: _request.body.password,
-          };
+    if (hasValidFirstName) userInfo.firstName = _request.body.firstName;
+    if (hasValidLastName) userInfo.lastName = _request.body.lastName;
 
-          if (hasValidFirstName) userInfo.firstName = _request.body.firstName;
-          if (hasValidLastName) userInfo.lastName = _request.body.lastName;
+    USERS.create(userInfo)
+      .then((newUser) => {
+        // Generate a JWT for authenticating future requests
+        let token = AUTH.generateToken(newUser);
+        let successJson = {
+          success: {
+            message: 'Successfully created user',
+            token: `JWT ${token}`,
+          },
+        };
 
-          // Save user to database
-          USERS.create(
-            userInfo,
-            (newUser) => {
-              // Generate a JWT for authenticating future requests
-              let token = AUTH.generateToken(newUser);
-              let successJson = {
-                success: {
-                  message: 'Successfully created user',
-                  token: `JWT ${token}`,
-                },
-              };
-
-              // Set response status code
-              _response.status(201);
-              _callback(successJson);
-            }, // End (newUser)
-            (createUserError) => {
-              let errorJson = ERROR.determineUserError(SOURCE, _request, _response, createUserError);
-              _callback(errorJson);
-            } // End (createUserError)
-          ); // End USERS.create()
-        }
-      }, // End (user)
-      (getUserError) => {
-        let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserError);
+        // Set the response status code
+        _response.status(201);
+        _callback(successJson);
+      })
+      .catch((createUserError) => {
+        let errorJson = ERROR.determineUserError(SOURCE, _request, _response, createUserError);
         _callback(errorJson);
-      } // End (getUserError)
-    ); // End USERS.getByUsername()
+      }); // End USERS.create()
   }
 }; // End createUser()
 

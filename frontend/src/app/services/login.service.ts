@@ -5,18 +5,18 @@ import 'rxjs/add/operator/toPromise';
 @Injectable()
 export class LoginService {
     public token: string;
-    private apiUrl:string = 'http://localhost:8080';
+    private apiUrl: string = 'http://localhost:8080';
 
     constructor(private http: Http) {
         // Set token if saved in local storage
-        var currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        let currentUser = JSON.parse(localStorage.getItem('currentUser'));
         this.token = currentUser && currentUser.token;
     }
 
     login(username: string, password: string): Promise<boolean> {
-        const url = `${this.apiUrl}/login`;
-        const body = `username=${username}&password=${password}`;
-        const headers = new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' });
+        let url = `${this.apiUrl}/login`;
+        let body = `username=${username}&password=${password}`;
+        let headers = new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' });
 
         return this.http
             .post(url, body, { headers: headers })

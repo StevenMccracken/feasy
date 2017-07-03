@@ -132,12 +132,19 @@ var determineUserError = function(_source, _request, _response, _error) {
 
       break;
     case 'MongoError':
+      let attribute;
+      if (_error.message.indexOf('username') !== -1) {
+        attribute = 'username';
+      } else if (_error.message.indexOf('email') !== -1) {
+        attribute = 'email address';
+      } else attribute = 'attribute';
+
       errorJson = error(
         _source,
         _request,
         _response,
         ERROR_CODE.RESOURCE_ERROR,
-        'A user with that email already exists',
+        `A user with that ${attribute} already exists`,
         `${_error.name} (${_error.code}): ${_error.message}`
       );
 

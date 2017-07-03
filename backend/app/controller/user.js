@@ -2,16 +2,15 @@
  * user - Database controller for the User model
  */
 
-var USER = require('../models/user.js');
+let USER = require('../models/user.js');
 const LOG = require('../modules/log_mod.js');
 
 /**
  * create - Saves a new user in the database
  * @param {Object} _userInfo JSON containing the user attributes
- * @param {callback} _callback the callback to return the newly saved user
- * @param {callback} _errorCallback the callback to return any errors
+ * @returns {Promise<User>|Promise<Error>} the Mongoose object or a Mongoose error
  */
-var create = function(_userInfo, _callback, _errorCallback) {
+var create = function(_userInfo) {
   const SOURCE = 'create()';
   log(SOURCE);
 
@@ -27,9 +26,10 @@ var create = function(_userInfo, _callback, _errorCallback) {
   if (_userInfo.lastName !== undefined) newUser.lastName = _userInfo.lastName.trim();
   else newUser.lastName = '';
 
-  newUser.save((saveUserError) => {
-    if (saveUserError === null) _callback(newUser);
-    else _errorCallback(saveUserError);
+  return new Promise((resolve, reject) => {
+    newUser.save()
+      .then(() => resolve(newUser))
+      .catch(saveError => reject(saveError));
   });
 };
 
@@ -95,7 +95,7 @@ var getAttribute = function(_username, _attribute, _callback, _errorCallback) {
 
 /**
  * updateAttribute - Updates a specific attribute of a user
- * @param {Object} _user User assignment object
+ * @param {Object} _user the Mongoose object
  * @param {String} _attribute the specific attribute of the user to update
  * @param {string|Date} _newValue the updated value of the user attribute
  * @param {callback} _callback the callback to return the user attribute
@@ -117,7 +117,7 @@ var updateAttribute = function(_user, _attribute, _newValue, _callback, _errorCa
 
 /**
  * update - Executes a database save on a user object to update any new attributes
- * @param {Object} _user User assignment object
+ * @param {Object} _user the Mongoose object
  * @param {callback} _callback the callback to return the updated user attributes
  * @param {callback} _errorCallback the callback to return any errors
  */

@@ -8,16 +8,18 @@ import { Assignment } from '../objects/assignment';
 
 @Injectable()
 export class AssignmentService {
-    private apiUrl:string = 'http://localhost:8080';
-    private headers:Headers = new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' });
+    private apiUrl: string = 'http://localhost:8080';
+    private headers: Headers = new Headers({ 'Content-Type': 'application/x-www-form-urlencoded' });
 
     constructor(private http: Http, private loginService: LoginService) {
         this.headers.append('Authorization', this.loginService.token);
     }
 
     buildQueryString(obj: Object): string {
-        let queryString:string = '';
+        let queryString: string = '';
         for (let key in obj) queryString += `${key}=${obj[key]}&`;
+
+        // Remove the last & from the query string and return it
         return queryString.substring(0, queryString.length - 1);
     }
 
