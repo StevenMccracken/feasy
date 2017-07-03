@@ -105,71 +105,73 @@ var authenticate = function(_request, _response, _callback) {
  * createUser - Adds a new user to the database and sends the client a web token
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to return the response
+ * @returns {Promise<Object>} the error or success JSON
  */
-var createUser = function(_request, _response, _callback) {
+var createUser = function(_request, _response) {
   const SOURCE = 'createUser()';
   log(SOURCE, _request);
 
-  // Check request paramerters
-  let invalidParams = [];
-  if (!VALIDATE.isValidUsername(_request.body.username)) invalidParams.push('username');
-  if (!VALIDATE.isValidPassword(_request.body.password)) invalidParams.push('password');
-  if (!VALIDATE.isValidEmail(_request.body.email)) invalidParams.push('email');
+  return new Promise((resolve) => {
+    // Check request paramerters
+    let invalidParams = [];
+    if (!VALIDATE.isValidUsername(_request.body.username)) invalidParams.push('username');
+    if (!VALIDATE.isValidPassword(_request.body.password)) invalidParams.push('password');
+    if (!VALIDATE.isValidEmail(_request.body.email)) invalidParams.push('email');
 
-  // First name and last name are optional parameters
-  let hasValidFirstName = false, hasValidLastName = false;
-  if (_request.body.firstName !== undefined) {
-    if (!VALIDATE.isValidName(_request.body.firstName)) invalidParams.push('firstName');
-    else hasValidFirstName = true;
-  }
+    // First name and last name are optional parameters
+    let hasValidFirstName = false, hasValidLastName = false;
+    if (_request.body.firstName !== undefined) {
+      if (!VALIDATE.isValidName(_request.body.firstName)) invalidParams.push('firstName');
+      else hasValidFirstName = true;
+    }
 
-  if (_request.body.lastName !== undefined) {
-    if (!VALIDATE.isValidName(_request.body.lastName)) invalidParams.push('lastName');
-    else hasValidLastName = true;
-  }
+    if (_request.body.lastName !== undefined) {
+      if (!VALIDATE.isValidName(_request.body.lastName)) invalidParams.push('lastName');
+      else hasValidLastName = true;
+    }
 
-  if (invalidParams.length > 0) {
-    let errorJson = ERROR.error(
-      SOURCE,
-      _request,
-      _response,
-      ERROR.CODE.INVALID_REQUEST_ERROR,
-      `Invalid parameters: ${invalidParams.join()}`
-    );
+    if (invalidParams.length > 0) {
+      let errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        `Invalid parameters: ${invalidParams.join()}`
+      );
 
-    _callback(errorJson);
-  } else {
-    // Parameters are valid, so build user JSON with request body data
-    let userInfo = {
-      email: _request.body.email,
-      username: _request.body.username,
-      password: _request.body.password,
-    };
+      resolve(errorJson);
+    } else {
+      // Parameters are valid, so build user JSON with request body data
+      let userInfo = {
+        email: _request.body.email,
+        username: _request.body.username,
+        password: _request.body.password,
+      };
 
-    if (hasValidFirstName) userInfo.firstName = _request.body.firstName;
-    if (hasValidLastName) userInfo.lastName = _request.body.lastName;
+      if (hasValidFirstName) userInfo.firstName = _request.body.firstName;
+      if (hasValidLastName) userInfo.lastName = _request.body.lastName;
 
-    USERS.create(userInfo)
-      .then((newUser) => {
-        // Generate a JWT for authenticating future requests
-        let token = AUTH.generateToken(newUser);
-        let successJson = {
-          success: {
-            message: 'Successfully created user',
-            token: `JWT ${token}`,
-          },
-        };
+      USERS.create(userInfo)
+        .then((newUser) => {
+          // Generate a JWT for authenticating future requests
+          let token = AUTH.generateToken(newUser);
+          let successJson = {
+            success: {
+              message: 'Successfully created user',
+              token: `JWT ${token}`,
+            },
+          };
 
-        // Set the response status code
-        _response.status(201);
-        _callback(successJson);
-      })
-      .catch((createUserError) => {
-        let errorJson = ERROR.determineUserError(SOURCE, _request, _response, createUserError);
-        _callback(errorJson);
-      }); // End USERS.create()
-  }
+          // Set the response status code
+          _response.status(201);
+          resolve(successJson);
+        })
+        .catch((createUserError) => {
+          let errorJson = ERROR.determineUserError(SOURCE, _request, _response, createUserError);
+          resolve(errorJson);
+        }); // End USERS.create()
+    }
+  }); // End return promise
 }; // End createUser()
 
 /**

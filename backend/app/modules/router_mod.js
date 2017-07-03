@@ -48,7 +48,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users').post((_request, _response) => (
-    MIDDLEWARE.createUser(_request, _response, result => _response.json(result))
+    MIDDLEWARE.createUser(_request, _response).then(result => _response.json(result))
   ));
 
   /**
