@@ -45,8 +45,32 @@
             function onSignIn(googleUser) {
                 //get token  for user who has signed in
                 var id_token = googleUser.getAuthResponse().id_token;
-                //Send Post request to RESTapi containing the token
+
+
+                var url = "https://api.pyrsuit.com/users";
+                var request = new XMLHttpRequest();
+              request.onreadystatechange = function(){
+                  if(this.readyState == 4 && this.status == 200){
+                    //when this if is executed that means the
+                  //data has been sent.
+
+                  //send to member area HERE
+                }
+              }
+
+
+              //do a post method (@param1)
+              //to url specified (@param2)
+              //set ajax protocol to true
+              request.open("POST", url, true);
+
+              //this is where you add in the info for the body
+              var body = id_token;
+
+              request.send(body);
+
            }
+
         </script>
         <script src="https://apis.google.com/js/platform.js" async defer></script>
 </div>
