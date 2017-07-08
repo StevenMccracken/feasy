@@ -22,3 +22,55 @@
     <div *ngIf="error" class="alert alert-danger">{{error}}</div>
   </form>
 </div>
+
+
+<div>
+    <meta name="google-signin-client_id" content="23662056358-j355qof18ns9lsm2dd20nd9usst0frme.apps.googleusercontent.com">
+    <body>
+        <div class="g-signin2" data-onsuccess="onSignIn"></div>
+        <script>
+            /**
+             * this function runs if an error is encountered using the google sign in button
+             * @param error the error thrown.
+             */
+            function onFailure(error) {
+                console.log(error);
+                //add error catching
+            }
+
+            /**
+             * This function runs on the sign in of a google user
+             * @param googleUser The current user attempting to sign in
+             */
+            function onSignIn(googleUser) {
+                //get token  for user who has signed in
+                var id_token = googleUser.getAuthResponse().id_token;
+
+
+                var url = "https://api.pyrsuit.com/users";
+                var request = new XMLHttpRequest();
+              request.onreadystatechange = function(){
+                  if(this.readyState == 4 && this.status == 200){
+                    //when this if is executed that means the
+                  //data has been sent.
+
+                  //send to member area HERE
+                }
+              }
+
+
+              //do a post method (@param1)
+              //to url specified (@param2)
+              //set ajax protocol to true
+              request.open("POST", url, true);
+
+              //this is where you add in the info for the body
+              var body = id_token;
+
+              request.send(body);
+
+           }
+
+        </script>
+        <script src="https://apis.google.com/js/platform.js" async defer></script>
+</div>
