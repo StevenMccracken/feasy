@@ -5,7 +5,7 @@
 const LOG = require('./log_mod');
 const JWT = require('jsonwebtoken');
 const ERROR = require('./error_mod');
-const BCRYPT = require('bcrypt-nodejs');
+const BCRYPT = require('bcryptjs');
 const CONFIG = require(`${process.cwd()}/config/secret`);
 
 // Handles token storage and verification
@@ -34,23 +34,18 @@ var validatePasswords = function(_givenPassword, _actualPassword, _callback, _er
 };
 
 /**
- * hash - Salts and hashes a password
- * @param {String} _password the password to hash
- * @param {callback} _callback the callback to handle success result
- * @param {callback} _errorCallback the callback to handle error result
+ * validatePasswords2 - Verifies a given password against a saved password
+ * @param {String} _givenPassword a given value for the supposed password
+ * @param {String} _hashedPassword a hashed password
  */
-var hashPassword = function(_password, _callback, _errorCallback) {
-  const SOURCE = 'hashPassword()';
+var validatePasswords2 = function(_givenPassword, _actualPassword) {
+  const SOURCE = 'validatePasswords2()';
   log(SOURCE);
 
-  // Generate salt to hash the password, use 5 rounds of salting
-  BCRYPT.genSalt(5, (bcryptGenSaltError, salt) => {
-    if (bcryptGenSaltError === null) {
-      BCRYPT.hash(_password, salt, null, (bcryptHashError, hashedPassword) => {
-        if (bcryptHashError === null) _callback(hashedPassword);
-        else _errorCallback(bcryptHashError);
-      });
-    } else _errorCallback(bcryptGenSaltError);
+  return new Promise((resolve, reject) => {
+    BCRYPT.compare(_givenPassword, _actualPassword)
+      .then(passwordsMatch => resolve(passwordsMatch))
+      .catch(compareError => reject(compareError));
   });
 };
 
@@ -70,8 +65,34 @@ var verifyToken = function(_request, _response, _callback, _errorCallback) {
     if (passportError !== null) _errorCallback(passportError, null, false);
     else if (tokenError !== undefined) _errorCallback(null, tokenError, false);
     else if (!userInfo) _errorCallback(null, null, true);
-    else errorOccurred = _callback(userInfo);
+    else _callback(userInfo);
   })(_request, _response);
+};
+
+/**
+ * verifyToken2 - Validates and verifies a JSON web token
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ */
+var verifyToken2 = function(_request, _response) {
+  const SOURCE = 'verifyToken2()';
+  log(SOURCE, _request);
+
+  return new Promise((resolve, reject) => {
+    // Verify the client's token
+    PASSPORT.authenticate('jwt', { session: false }, (passportError, userInfo, tokenError) => {
+      if (userInfo) resolve(userInfo);
+      else {
+        let errorJson = {
+          passportError: passportError,
+          tokenError: tokenError === undefined ? null : tokenError,
+          userInfoMissing: !userInfo,
+        };
+
+        reject(errorJson);
+      }
+    })(_request, _response);
+  });
 };
 
 /**
@@ -79,14 +100,15 @@ var verifyToken = function(_request, _response, _callback, _errorCallback) {
  * @param {Object} _userInfo JSON containing user information
  * @returns {String} a JSON web token
  */
-function generateToken(_userInfo) {
+var generateToken = function(_userInfo) {
   return JWT.sign(_userInfo, CONFIG.secret, { expiresIn: '24h' });
 }
 
 module.exports = {
   validatePasswords: validatePasswords,
-  hashPassword: hashPassword,
+  validatePasswords2: validatePasswords2,
   verifyToken: verifyToken,
+  verifyToken2: verifyToken2,
   generateToken: generateToken,
 };
 

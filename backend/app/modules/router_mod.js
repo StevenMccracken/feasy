@@ -37,7 +37,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/login').post((_request, _response) => (
-    MIDDLEWARE.authenticate(_request, _response, result => _response.json(result))
+    MIDDLEWARE.authenticate(_request, _response).then(result => _response.json(result))
   ));
 
   /**
@@ -58,7 +58,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users/:username').get((_request, _response) => (
-    MIDDLEWARE.retrieveUser(_request, _response, result => _response.json(result))
+    MIDDLEWARE.retrieveUser(_request, _response).then(result => _response.json(result))
   ));
 
   /**

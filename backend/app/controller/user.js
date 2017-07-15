@@ -52,6 +52,24 @@ var get = function(_attribute, _value, _projection, _callback, _errorCallback) {
 };
 
 /**
+ * get2 - Retrieves a user from the database based on a specific attribute of that user
+ * @param {String|ObjectId} _attribute the attribute to select the user on
+ * @param {String|Date} _value the value that the specific attribute should equal
+ * @param {String} _projection the space-separated attributes to retrieve
+ * @returns {Promise<Object>} the Mongoose error or success JSON
+ */
+var get2 = function(_attribute, _value, _projection) {
+  const SOURCE = 'get2()';
+  log(SOURCE);
+
+  return new Promise((resolve, reject) => {
+    USER.findOne({ [_attribute]: _value }, _projection)
+      .then(userInfo => resolve(userInfo))
+      .catch(findError => reject(findError));
+  });
+};
+
+/**
  * getByUsername - Retrieves a user by their username
  * @param {String} _username the username of the user
  * @param {Boolean} _includePassword includes or excludes
@@ -77,6 +95,28 @@ var getByUsername = function(_username, _includePassword, _callback, _errorCallb
 };
 
 /**
+ * getByUsername2 - Retrieves a user by their username
+ * @param {String} _username the username of the user
+ * @param {Boolean} _includePassword includes or excludes
+ * the password with the user information from the database
+ * @returns {Promise<Object>} the Mongoose error or success JSON
+ */
+var getByUsername2 = function(_username, _includePassword) {
+  const SOURCE = 'getByUsername2()';
+  log(SOURCE);
+
+  return new Promise((resolve, reject) => {
+    let projection;
+    if (_includePassword) projection = '_id username password email firstName lastName';
+    else projection = '_id username email firstName lastName';
+
+    USER.findOne({ username: _username }, projection)
+      .then(userInfo => resolve(userInfo))
+      .catch(findError => reject(findError));
+  });
+};
+
+/**
  * getAttribute - Retrieves a specific attribute of a user
  * @param {String} _username the username of the user
  * @param {String} _attribute the desired attribute of the user
@@ -90,6 +130,23 @@ var getAttribute = function(_username, _attribute, _callback, _errorCallback) {
   USER.findOne({ 'username': _username }, _attribute, (getUserError, userInfo) => {
     if (getUserError !== null) _errorCallback(getUserError);
     else _callback(userInfo);
+  });
+};
+
+/**
+ * getAttribute2 - Retrieves a specific attribute of a user
+ * @param {String} _username the username of the user
+ * @param {String} _attribute the desired attribute of the user
+ * @returns {Promise<Object>} the Mongoose error or success JSON
+ */
+var getAttribute2 = function(_username, _attribute, _callback, _errorCallback) {
+  const SOURCE = 'getAttribute2()';
+  log(SOURCE);
+
+  return new Promise((resolve, reject) => {
+    USER.findOne({ username: _username }, _attribute)
+      .then(attribute => resolve(attribute))
+      .catch(findError => reject(findError));
   });
 };
 
@@ -132,6 +189,22 @@ var update = function(_user, _callback, _errorCallback) {
 };
 
 /**
+ * update2 - Executes a database save on a user object to update any new attributes
+ * @param {Object} _user the Mongoose object
+ * @returns {Promise<User>|Promise<Error>} the updated Mongoose object or a Mongoose error
+ */
+var update2 = function(_user) {
+  const SOURCE = 'update2()';
+  log(SOURCE);
+
+  return new Promise((resolve, reject) => {
+    _user.save()
+      .then(() => resolve(_user))
+      .catch(saveError => reject(saveError));
+  });
+};
+
+/**
  * removeByUsername - Deletes a user from the user database
  * @param {String} _username the username of the user to delete
  * @param {callback} _callback the callback to return successful deletion
@@ -145,7 +218,23 @@ var removeByUsername = function(_username, _callback, _errorCallback) {
     if (removeUserError === null) _callback();
     else _errorCallback(removeUserError);
   });
-}
+};
+
+/**
+ * removeByUsername2 - Deletes a user from the user database
+ * @param {String} _username the username of the user to delete
+ * @returns {Promise|Promise<Error>} the success Promise or a Mongoose error
+ */
+var removeByUsername2 = function(_username) {
+  const SOURCE = 'removeByUsername2()';
+  log(SOURCE);
+
+  return new Promise((resolve, reject) => {
+    USER.remove({ username: _username })
+      .then(() => resolve())
+      .catch(removeError => reject(removeError));
+  });
+};
 
 /**
  * remove - Deletes a user from the user database
@@ -163,11 +252,33 @@ var remove = function(_user, _callback, _errorCallback) {
   });
 };
 
+/**
+ * remove2 - Deletes a user from the user database
+ * @param {Object} _user JSON of the user attributes
+ * @returns {Promise|Promise<Error>} the success Promise or a Mongoose error
+ */
+var remove2 = function(_user) {
+  const SOURCE = 'remove2()';
+  log(SOURCE);
+
+  return new Promise((resolve, reject) => {
+    _user.remove()
+      .then(() => resolve())
+      .catch(removeError => reject(removeError));
+  });
+
+  _user.remove((removeUserError) => {
+    if (removeUserError === null) _callback();
+    else _errorCallback(removeUserError);
+  });
+};
+
 module.exports = {
   create: create,
   get: get,
   getAttribute: getAttribute,
   getByUsername: getByUsername,
+  getByUsername2: getByUsername2,
   update: update,
   updateAttribute: updateAttribute,
   remove: remove,

@@ -7,7 +7,7 @@
     "name": "Daniel Olivera, Steven McCracken"
   },
   "dependencies": {
-    "bcrypt-nodejs": "~0.0.3",
+    "bcryptjs": "^2.4.3",
     "bluebird": "^3.5.0",
     "body-parser": "latest",
     "cors": " 2.8.1",

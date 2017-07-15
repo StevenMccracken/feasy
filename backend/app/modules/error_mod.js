@@ -264,6 +264,41 @@ var determineAuthenticationError = function(
   return errorJson;
 };
 
+/**
+ * determineAuthenticationError2 - Builds a client
+ * error repsonse based on a given authentication error
+ * @param {String} _source the function where the error occurred
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {Object} _error JSON containing specific authentication errors
+ * @returns {Object} a formalized error JSON
+ */
+var determineAuthenticationError2 = function(_source, _request, _response, _error) {
+  var serverLog;
+  let clientErrorMessage = null;
+
+  if (_error.passportError !== null) serverLog = _passportError;
+  else if (_error.tokenError !== null) {
+    // The token in the request body is invalid
+    serverLog = _error.tokenError.message;
+    clientErrorMessage = determineJwtError(_error.tokenError.message);
+  } else if (_error.userInfoMissing) {
+    serverLog = 'User for this token cannot be found';
+    clientErrorMessage = 'Expired web token';
+  } else serverLog = 'Unknown error';
+
+  let errorJson = error(
+    _source,
+    _request,
+    _response,
+    ERROR_CODE.AUTHENTICATION_ERROR,
+    clientErrorMessage,
+    serverLog
+  );
+
+  return errorJson;
+};
+
 module.exports = {
   error: error,
   CODE: ERROR_CODE,
@@ -271,6 +306,7 @@ module.exports = {
   determineBcryptError: determineBcryptError,
   determineAssignmentError: determineAssignmentError,
   determineAuthenticationError: determineAuthenticationError,
+  determineAuthenticationError2: determineAuthenticationError2,
 };
 
 /**
