@@ -16,7 +16,8 @@
     "mongoose": "latest",
     "passport": "^0.3.2",
     "passport-jwt": "^2.2.1",
-    "uuid": "^3.0.1"
+    "uuid": "^3.0.1",
+    "google-auth-library": "latest"
   },
   "devDependencies": {
     "grunt": "^1.0.1",
