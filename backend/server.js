@@ -27,7 +27,7 @@ app.use(BODY_PARSER.urlencoded({
 app.use('/', ROUTER);
 
 // Connect to database server before express server starts
-MONGOOSE.connect(CONFIG.database);
+MONGOOSE.connect(CONFIG.database, { useMongoClient: true });
 
 /**
  * Listens for all incoming requests

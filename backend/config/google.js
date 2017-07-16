@@ -1,5 +1,11 @@
+/**
+ * google - Google sign-in configuration
+ */
+
+const CONFIG = require('./googleSecret');
+
 module.exports = {
-    'secret':     '',
-    'client_id' : '23662056358 - j355qof18ns9lsm2dd20nd9usst0frme.apps.googleusercontent.com',
-    'uri'       : 'http://localhost:1337' //changed to pyrsuit,com/login? or /signup? add to google permission first
+  secret: CONFIG['client_secret'],
+  clientId: CONFIG['client_id'],
+  redirectUri: 'https://www.pyrsuit.com',
 };
