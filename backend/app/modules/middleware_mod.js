@@ -5,6 +5,7 @@
 
 const LOG = require('./log_mod');
 const ERROR = require('./error_mod');
+const MEDIA = require('./media_mod');
 const USERS = require('../controller/user');
 const AUTH = require('./authentication_mod');
 const VALIDATE = require('./validation_mod');
@@ -1931,6 +1932,98 @@ var deleteAssignment = function(_request, _response, _callback) {
   ); // End AUTH.verifyToken()
 }; // End deleteAssignment()
 
+/**
+ * parseSchedule - Parses a pdf schedule for assignment due dates
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {callback} _callback the callback to send the database response
+ */
+var parseSchedule = function(_request, _response, _callback) {
+  const SOURCE = 'parseSchedule()';
+  log(SOURCE, _request);
+
+  console.log('ayyy');
+  console.log(_response.headersSent);
+  console.log('ayyy');
+
+  // Verify client's web token first
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
+      // Token is valid. Check request parameters in the URL
+      let invalidParams = [];
+      if (_request.file === undefined || _request.file === null) invalidParams.push('pdf');
+
+      if (invalidParams.length > 0) {
+        let errorJson = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          `Invalid parameters: ${invalidParams.join()}`
+        );
+
+        _callback(errorJson);
+      } else if (client.username !== _request.params.username) {
+        // Client attempted to upload a pdf schedule that was not their own
+        let errorJson = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.RESOURCE_ERROR,
+          'You cannot upload another user\'s schedule',
+          `${client.username} tried to upload ${_request.params.username}'s pdf schedule`
+        );
+
+        _callback(errorJson);
+      } else if (_request.file.mimetype !== 'application/pdf') {
+        let errorJson = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_MEDIA_TYPE,
+          'File must be a PDF',
+          `File received had ${_request.file.mimetype} mimetype`
+        );
+
+        _callback(errorJson);
+      } else {
+        SCHEDULE.parsePdf(
+          _request.file.path,
+          (pdfText) => {
+            _callback(pdfText);
+          },
+          (parseError) => {
+            let errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.API_ERROR,
+              null,
+              parseError
+            );
+
+            _callback(errorJson);
+          }
+        );
+      }
+    }, // End (client)
+    (passportError, tokenError, userInfoMissing) => {
+      let errorJson = ERROR.determineAuthenticationError(
+        SOURCE,
+        _request,
+        _response,
+        passportError,
+        tokenError,
+        userInfoMissing
+      );
+
+      _callback(errorJson)
+    }
+  ); // End AUTH.verifyToken()
+}; // End deleteAssignment()
+
 module.exports = {
   authenticate: authenticate,
   createUser: createUser,
@@ -1951,6 +2044,7 @@ module.exports = {
   updateAssignmentCompleted: updateAssignmentCompleted,
   updateAssignmentDueDate: updateAssignmentDueDate,
   deleteAssignment: deleteAssignment,
+  parseSchedule: parseSchedule,
 };
 
 /**
