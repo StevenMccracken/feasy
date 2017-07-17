@@ -15,6 +15,11 @@ const ERROR_CODE = {
     type: 'authentication_error',
     message: 'There was an error while authenticating',
   },
+  INVALID_MEDIA_TYPE: {
+    status: 415,
+    type: 'invalid_media_type',
+    message: 'That type of media file is forbidden',
+  },
   INVALID_REQUEST_ERROR: {
     status: 400,
     type: 'invalid_request_error',

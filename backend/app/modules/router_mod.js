@@ -3,6 +3,7 @@
  */
 
 const LOG = require('./log_mod');
+const MEDIA = require('./media_mod');
 const MIDDLEWARE = require('./middleware_mod');
 
 let router;
@@ -226,6 +227,29 @@ var routing = function(_router) {
   router.route('/users/:username/assignments/:assignmentId').delete((_request, _response) => (
     MIDDLEWARE.deleteAssignment(_request, _response, result => _response.json(result))
   ));
+
+  /**
+   * The POST route for uploading a PDF to add assignments to
+   * a user's schedule. The request body Content-Type MUST be
+   * multipart/form-data. This route requires token authentication
+   * @param {Object} _request the HTTP request
+   * @param {Object} _response the HTTP response
+   */
+  router.route('/users/:username/assignments/pdf').post(
+    MEDIA.upload.single('pdf'),
+    (_request, _response) => {
+      MIDDLEWARE.parseSchedule(
+        _request,
+        _response,
+        (result) => {
+          _response.json(result);
+
+          // Remove temp file that multer created if it existed
+          if (_request.file !== undefined) MEDIA.removeTempFile(_request.file.path);
+        }
+      );
+    }
+  );
 
   return router;
 };

@@ -5,7 +5,7 @@
 const CONFIG = require('./googleSecret');
 
 module.exports = {
-  secret: CONFIG['client_secret'],
-  clientId: CONFIG['client_id'],
+  secret: CONFIG.web['client_secret'],
+  clientId: CONFIG.web['client_id'],
   redirectUri: 'https://www.pyrsuit.com',
 };
