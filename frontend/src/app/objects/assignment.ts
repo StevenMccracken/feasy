@@ -6,7 +6,7 @@ export class Assignment{
   userId: string;
   class: string;
   dateCreated: Date;
-  typeAssigned: string;
+  type: string;
   description: string;
   editMode: boolean = false;
 }

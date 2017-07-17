@@ -17,6 +17,8 @@
       <div class="col s4 cal-title">
         <h3 class="calendar-title"> {{ viewDate | calendarDate:(view + 'ViewTitle'):'en' }}</h3>
       </div>
+
+      <!-- open for descussion later -->
       <!-- <div class="col s4">
         <div class="btn-group">
           <div class="btn btn-primary" (click)="view = 'month'" [class.active]="view === 'month'">
@@ -27,6 +29,7 @@
           </div>
         </div>
       </div> -->
+
     </div>
   </div>
   <br>
@@ -108,8 +111,8 @@
            <tr class = "row">
              <td class="col s12 m4"align='center'><div class="collection-head"><h5>{{a.title}}</h5></div></td>
              <td class="col s12 m2"align='center'><div class="chip">{{a.type}}</div></td>
-             <td class="col s2 m1" align='center'><p class="material-icons delete action" (mousedown)="enableEdit(a, i)">create</p></td>
-             <td class="col s2 m1" align='center'><p class="material-icons delete action" (mousedown)="this.deleteEventAction(a, i)">delete_sweep</p></td>
+             <td class="col s2 m1" align='center'><p class="material-icons action" (mousedown)="enableEdit(a, i)">create</p></td>
+             <td class="col s2 m1" align='center'><p class="material-icons action" (mousedown)="this.deleteEventAction(a, i)">delete_sweep</p></td>
            </tr>
            <tr class="row">
              <div *ngIf="!a.editMode" class="col s12" (mousedown)="enableEdit(a, i)">

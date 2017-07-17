@@ -58,14 +58,9 @@ export class CalendarComponent implements OnInit{
 
   view: string = 'month';
 
-  content: string;
-  title: string;
-  eventHold: CalendarEvent;
+
   currentDayArray: Assignment[];
 
-  editMode: boolean = false;
-
-  test: string = '';
 
   viewDate: Date = new Date();
 
@@ -119,7 +114,10 @@ export class CalendarComponent implements OnInit{
 
   deleteEventAction(assignment: Assignment, index: number): void {
     this.currentDayArray.splice(index, 1);
-    this.handleEvent('Deleted', this.aDescription.get(assignment));
+    console.log(assignment);
+    console.log(index);
+    let event: CalendarEvent = this.aDescription.get(assignment);
+    this.events = this.events.filter(iEvent => iEvent !== event);
     this._assignmentService.delete(assignment._id)
                            .then((res)=> console.log(res));
   }
@@ -184,20 +182,6 @@ export class CalendarComponent implements OnInit{
     }
 
 
-    ///DOUBLE CLICK FUNCTIONALITY LEAVE HERE JUST IN CASE
-    // if(this.onetime){
-    //   this.timer = setTimeout(()=>{this.toastTest(); this.onetime = false;}, 200);
-    // }else{
-    //   clearTimeout(this.timer);
-    //   let eventArry:CalendarEvent[] = event.day.events;
-    //   this.assignment.dueDate = new Date(event.day.date);
-    //   this.currentDayArray = [];
-    //   for(let a of eventArry){
-    //     this.currentDayArray.push(this.eDescription.get(a));
-    //   }
-      //this has to be called or else eventDayArray won't load in time.
-    //   this.openView();
-    // }
 
     this.openView();
     console.log(event);
@@ -225,22 +209,16 @@ export class CalendarComponent implements OnInit{
 
   }
 
-  deleteEvent():void{
-    this.events = this.events.filter(iEvent => iEvent !== this.eventHold);
-  }
 
-  saveEvent(): void{
-    console.log(this.eventHold);
-    this.eDescription.get(this.eventHold).description = this.content;
-  }
 
   dayEventClick(event:any): void{
     this.assignment.dueDate = event.date;
     this.openModal('#createAssignments');
   }
 
-  resetAssignmentField(): void{
+  resetAssignmentField(date: Date): void{
     this.assignment = new Assignment();
+    this.assignment.dueDate = date;
     localStorage['type'] = '';
 
     //clear datepicker input field
@@ -253,15 +231,18 @@ export class CalendarComponent implements OnInit{
   }
 
   addAssignment(): void{
-    console.log(this.assignment);
     this.assignment.completed = false;
-    this.assignment.typeAssigned = (localStorage['type'] !== null || localStorage['type'] !== '') ? localStorage['type'] : '';
+    this.assignment.type = localStorage['type'];
+    console.log(this.assignment.type);
     this._assignmentService.create(this.assignment)
-                           .then(() => {
-                             console.log('something happened');
+                           .then((response) => {
+                             console.log(response.json());
+                             this.assignment.type = response.json().type;
+                             this.assignment._id = response.json()._id;
+                             console.log(this.assignment);
                              this.currentDayArray.push(this.assignment);
                              this.addEvent();
-                             this.resetAssignmentField();
+                             this.resetAssignmentField(this.assignment.dueDate);
                            });
   }
 
@@ -283,6 +264,7 @@ export class CalendarComponent implements OnInit{
       actions: this.actions
     });
     this.eDescription.set(this.events[this.events.length-1], this.assignment);
+    this.aDescription.set(this.assignment, this.events[this.events.length-1]);
     this.refresh.next();
   }
 
@@ -299,15 +281,7 @@ export class CalendarComponent implements OnInit{
 
   //////////// NOT SURE IF NEEDED /////////////////////
   handleEvent(action: string, event: CalendarEvent): void {
-    this.content = this.eDescription.get(event).description;
-    this.title = event.title;
-    this.eventHold = event;
-    if(action === 'Deleted')
-      this.events = this.events.filter(iEvent => iEvent !== this.eventHold);
-    else if(action === 'Edited')
-      $('#editModal').modal('open');
-    else
-      $('#myModal').modal('open');
+    //nothing for now.
   }
 
   debug(event: any): void{
@@ -316,6 +290,7 @@ export class CalendarComponent implements OnInit{
     var target = event.target;
     console.log(event.target.nodeName);
   }
+
   dayClicked({date, events}: {date: Date, events: CalendarEvent[]}): void {
     console.log("not happeneing");
     if (isSameMonth(date, this.viewDate)) {

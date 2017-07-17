@@ -65,7 +65,7 @@ export class AssignmentService implements OnInit{
   }
 
 
-  create(assignment: Assignment): Promise<Assignment>{
+  create(assignment: Assignment): Promise<any>{
     let extension = this.apiUrl + "/users/" + localStorage['currentUser'] + "/assignments";
     let headers: Headers = new Headers({"Authorization":localStorage['token'], "Content-Type":"application/x-www-form-urlencoded"});
     console.log(headers);
@@ -76,14 +76,14 @@ export class AssignmentService implements OnInit{
 
     if(assignment.class !== undefined && assignment.class !== '')
       body = body + "&class="+assignment.class;
-    if(assignment.typeAssigned !== '' && assignment.typeAssigned !== undefined)
-      body = body + "&type="+assignment.typeAssigned;
+    if(assignment.type !== '' && assignment.type !== undefined)
+      body = body + "&type="+assignment.type;
     if(assignment.description !== '' && assignment.description !== undefined)
       body = body+"&description="+assignment.description;
 
     return this._http.post(extension, body, {headers: headers})
                    .toPromise()
-                   .then((res)=> console.log(res))
+                   .then((res)=> {return res;})
                    .catch(this.handleError)
   }
 
