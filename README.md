@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/StevenMccracken/epicenter.svg?token=bR5pzA9oJMx45zgTnQ8X&branch=master)](https://travis-ci.com/StevenMccracken/epicenter)
+[![Build Status](https://travis-ci.com/StevenMccracken/feasy.svg?token=bR5pzA9oJMx45zgTnQ8X&branch=master)](https://travis-ci.com/StevenMccracken/feasy)
 
 # :key: API Documentation :key:
 
@@ -13,9 +13,9 @@
       * Updating a user’s username
 * Without the __Authorization__ key in the request header and a valid token value, your requests will be __denied__
 * The only routes that __do not__ require the Authorization token are:
-  * Base route (__GET__ https://api.pyrsuit.com)
-  * Login route (__POST__ https://api.pyrsuit.com/login)
-  * Create user route (__POST__ https://api.pyrsuit.com/users)
+  * Base route (__GET__ https://api.feasy-app.com)
+  * Login route (__POST__ https://api.feasy-app.com/login)
+  * Create user route (__POST__ https://api.feasy-app.com/users)
 * The URLs in this guide that contain brackets ([]) are meant to have those brackets substituted with with actual values
 * The JSON responses in this guide that contain brackets ([]) will have actual values when returned from the server
 
@@ -50,7 +50,7 @@
 <a name="base-route"></a>
 ### Base route
 
-* Route: __GET__ https://api.pyrsuit.com
+* Route: __GET__ https://api.feasy-app.com
 * Purpose
   * Test if the server is up and running
 * Required parameters: _none_
@@ -68,7 +68,7 @@
 <a name="login"></a>
 ### Login
 
-* Route: __POST__ https://api.pyrsuit.com/login
+* Route: __POST__ https://api.feasy-app.com/login
 * Purpose: Registers the client on the server so that subsequent requests only require a generated token, not their username and password
 * Required parameters
   * In the request body
@@ -96,7 +96,7 @@
 <a name="create-user"></a>
 ### Create a user
 
-* Route: __POST__ https://api.pyrsuit.com/users
+* Route: __POST__ https://api.feasy-app.com/users
 * Purpose: Create a new user
 * Required parameters
   * In the request body
@@ -130,7 +130,7 @@
 <a name="get-user"></a>
 ### Retrieve a user's information
 
-* Route: __GET__ https://api.pyrsuit.com/users/[username]
+* Route: __GET__ https://api.feasy-app.com/users/[username]
 * Purpose: Get information about a user like their id, email, name, etc
 * Required parameters
   * In the header
@@ -158,7 +158,7 @@
 <a name="update-username"></a>
 ### Change a user's username
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/username
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/username
 * Purpose: Update a user's username to a new value
 * Required parameters
   * In the header
@@ -190,7 +190,7 @@
 <a name="update-password"></a>
 ### Change a user's password
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/password
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/password
 * Purpose: Update a user's password to a new value
 * Required parameters
   * In the header
@@ -219,7 +219,7 @@
 <a name="update-email"></a>
 ### Change a user's email
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/email
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/email
 * Purpose: Update a user's email to a new value
 * Required parameters
   * In the header
@@ -248,7 +248,7 @@
 <a name="update-firstName"></a>
 ### Change a user's first name
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/firstName
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/firstName
 * Purpose: Update a user's first name to a new value
 * Required parameters
   * In the header
@@ -277,7 +277,7 @@
 <a name="update-lastName"></a>
 ### Change a user's last name
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/lastName
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/lastName
 * Purpose: Update a user's last name to a new value
 * Required parameters
   * In the header
@@ -306,7 +306,7 @@
 <a name="delete-user"></a>
 ### Delete a user
 
-* Route: __DELETE__ https://api.pyrsuit.com/users/[username]
+* Route: __DELETE__ https://api.feasy-app.com/users/[username]
 * Purpose: Delete a user's account and all their assignments
 * Required parameters
   * In the header
@@ -330,7 +330,7 @@
 <a name="create-assignment"></a>
 ### Create an assignment
 
-* Route: __POST__ https://api.pyrsuit.com/users/[username]/assignments
+* Route: __POST__ https://api.feasy-app.com/users/[username]/assignments
 * Purpose: Create an assignment for a user
 * Required parameters
   * In the header
@@ -383,7 +383,7 @@
 <a name="get-assignments"></a>
 ### Get a user's assignments
 
-* Route: __GET__ https://api.pyrsuit.com/users/[username]/assignments
+* Route: __GET__ https://api.feasy-app.com/users/[username]/assignments
 * Purpose: Retrieve all assignments created by a user
 * Required parameters
   * In the header
@@ -418,7 +418,7 @@
 <a name="get-assignment"></a>
 ### Get an assignment's information
 
-* Route: __GET__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]
+* Route: __GET__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]
 * Purpose: Retrieve a specific assignment created by a user
 * Required parameters
   * In the header
@@ -451,7 +451,7 @@
 <a name="update-title"></a>
 ### Change an assignment's title
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/title
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/title
 * Purpose: Update an assignment's title to a new value
 * Required parameters
   * In the header
@@ -482,7 +482,7 @@
 <a name="update-class"></a>
 ### Change an assignment's class
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/class
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/class
 * Purpose: Update an assignment's class to a new value
 * Required parameters
   * In the header
@@ -513,7 +513,7 @@
 <a name="update-type"></a>
 ### Change an assignment's type
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/type
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/type
 * Purpose: Update an assignment's type to a new value
 * Required parameters
   * In the header
@@ -544,7 +544,7 @@
 <a name="update-description"></a>
 ### Change an assignment's description
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/description
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/description
 * Purpose: Update an assignment's description to a new value
   * Required parameters
     * In the header
@@ -575,7 +575,7 @@
 <a name="update-completed"></a>
 ### Change an assignment's completed
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/completed
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/completed
 * Purpose: Update an assignment to be completed or incomplete
 * Required parameters
   * In the header
@@ -606,7 +606,7 @@
 <a name="update-dueDate"></a>
 ### Change an assignment's due date
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/dueDate
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/dueDate
 * Purpose: Update an assignment's due date to a new value
 * Required parameters
   * In the header
@@ -638,7 +638,7 @@
 <a name="delete-assignment"></a>
 ### Delete an assignment
 
-* Route: __DELETE__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]
+* Route: __DELETE__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]
 * Purpose: Delete a specific assignment
   * Required parameters
     * In the header
