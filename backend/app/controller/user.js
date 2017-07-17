@@ -15,16 +15,39 @@ var create = function(_userInfo) {
   log(SOURCE);
 
   let newUser = new USER();
-  newUser.email = _userInfo.email.trim();
-  newUser.username = _userInfo.username.trim();
-  newUser.password = _userInfo.password.trim();
+  newUser.local.mail = _userInfo.email.trim();
+  newUser.local.username = _userInfo.username.trim();
+  newUser.local.password = _userInfo.password.trim();
 
   // Check optional attributes
-  if (_userInfo.firstName !== undefined) newUser.firstName = _userInfo.firstName.trim();
-  else newUser.firstName = '';
+  if (_userInfo.local.firstName !== undefined) newUser.local.firstName = _userInfo.firstName.trim();
+  else newUser.local.firstName = '';
 
-  if (_userInfo.lastName !== undefined) newUser.lastName = _userInfo.lastName.trim();
-  else newUser.lastName = '';
+  if (_userInfo.local.lastName !== undefined) newUser.local.lastName = _userInfo.lastName.trim();
+  else newUser.local.lastName = '';
+
+  return new Promise((resolve, reject) => {
+    newUser.save()
+      .then(() => resolve(newUser))
+      .catch(saveError => reject(saveError));
+  });
+};
+
+/**
+ * createGoogle - Saves a new google user in the database
+ * @param {Object} _userInfo JSON containing the google user attributes
+ * @returns {Promise<User>|Promise<Error>} the Mongoose object or a Mongoose error
+ */
+var createGoogle = function(_userInfo) {
+  const SOURCE = 'createGoogle()';
+  log(SOURCE);
+
+  let newUser = new USER();
+  newUser.google.username = _userInfo.username.trim();
+
+  // Check optional attributes
+  if (_userInfo.google.name !== undefined) newUser..name = _userInfo.name.trim();
+  else newUser.google.name = '';
 
   return new Promise((resolve, reject) => {
     newUser.save()
@@ -165,6 +188,7 @@ var remove = function(_user, _callback, _errorCallback) {
 
 module.exports = {
   create: create,
+  createGoogle: createGoogle,
   get: get,
   getAttribute: getAttribute,
   getByUsername: getByUsername,

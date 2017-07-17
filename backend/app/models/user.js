@@ -8,12 +8,20 @@ const BCRYPT = require('bcrypt-nodejs');
 
 // User-id is auto-generated when pushed to mongodb
 let UserSchema = MONGOOSE.Schema({
-  email:          { type: String, required: true, index: { unique: true } },
-  username:       { type: String, required: true, index: { unique: true } },
-  password:       { type: String, required: true },
-  dateCreated:    { type: Date, default: Date.now },
-  firstName:      { type: String },
-  lastName:       { type: String },
+  local: {
+    email:          { type: String, required: true, index: { unique: true } },
+    username:       { type: String, required: true, index: { unique: true } },
+    password:       { type: String, required: true },
+    dateCreated:    { type: Date, default: Date.now },
+    firstName:      { type: String },
+    lastName:       { type: String },
+  },
+  
+  facebook: {
+    username:       { type: String, required: true, index: { unique: true } },
+    dateCreated:    { type: Date, default: Date.now },
+    name:           { type: String },
+  },
 });
 
 // Executes right before user is saved in the database

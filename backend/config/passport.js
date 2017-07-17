@@ -9,6 +9,9 @@ const JwtStrategy = require('passport-jwt').Strategy;
 const EXTRACTJWT = require('passport-jwt').ExtractJwt;
 const GoogleStrategy = require('passport-google-oauth2').Strategy;
 
+const USER = require('./app/controller/user');
+
+
 /**
  * exports - Defines how to generate and validate JSON web tokens
  * @param {Object} passport a passport object, usually from 'require(passport)'
@@ -45,6 +48,7 @@ module.exports = function(passport) {
     );
   }));
 
+
   // Use the GoogleStrategy within Passport.
   //   Strategies in Passport require a `verify` function, which accept
   //   credentials (in this case, an accessToken, refreshToken, and Google
@@ -72,6 +76,14 @@ module.exports = function(passport) {
             console.log('ayy')
             console.log(profile);
             console.log('ayy');
+
+            var googleUser = {
+                email: profile.email,
+                name: profile.displayName,
+            };
+
+            USER.createGoogle(googleUser);
+
             // Create user profile in db
             /**
               "email": "testuser@gmail.com",
@@ -82,6 +94,9 @@ module.exports = function(passport) {
               "family_name": "User",
               "locale": "en"
              */
+
+
+
 
             // The user was not found in the database
             console.log('%s not found while authenticating with Google strategy', profile.id);
