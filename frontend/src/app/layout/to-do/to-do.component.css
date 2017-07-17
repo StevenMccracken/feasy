@@ -1,0 +1,90 @@
+pre{
+  padding-top:5px;
+  padding-bottom: 5px;
+  padding-left: 3px;
+  border-radius: 8px;
+  background-color: #e0e0eb;
+}
+#type-row{
+  margin-top: 80px;
+}
+.action{
+  cursor:pointer;
+  text-align: center;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+.todo-main{
+  margin-top:100px;
+  padding-top: 30px;
+  padding-right: 30px;
+  padding-bottom: 30px;
+  padding-left: 30px;
+  border-radius: 8px;
+  border: thin solid gray;
+}
+.todo-body{
+  background-color:white;
+  border: thin solid gray;
+}
+.add-todo{
+  background-color: #bce8f1;
+  color: #31708f;
+  border-radius: 8px;
+  border: thin solid #31708f;
+}
+.chip{
+  margin-top: 13px;
+}
+.modal-header{
+  display: block;
+}
+.content-view{
+  padding: 3px 5px;
+  background-color: #f5f5f5;
+  border: thin solid black;
+  border-radius: 2px;
+}
+.calendar-title{
+  font-family: 'Pacifico', cursive;
+}
+.collection-head{
+  font-family: "Pacifico", cursive;
+}
+.title-collection{
+  display: -webkit-inline-box;
+}
+.action{
+  cursor:pointer;
+  text-align: center;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+.eventDisplay{
+  border-radius: 19px;
+  border: thin solid #e0e0eb;
+  margin-bottom: 30px
+}
+pre{
+  padding-top:5px;
+  padding-bottom: 5px;
+  padding-left: 3px;
+  border-radius: 8px;
+  background-color: #e0e0eb;
+}
+.add-todo{
+  background-color: #bce8f1;
+  color: #31708f;
+  border-radius: 8px;
+  border: thin solid #31708f;
+}
+.row-add{
+  margin-bottom: 0px;
+}
+
+.add-form{
+  border: thin solid #e0e0eb;
+}
+.chip{
+  margin-top: 13px;
+}

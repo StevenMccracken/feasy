@@ -3,51 +3,43 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
 
-import { AppComponent} from './app.component';
+import { AppComponent } from './app.component';
 
-//for quick and easy styling
 import { MaterialModule } from '@angular/material';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { CalendarModule } from 'angular-calendar';
-
-//importing HammerJS (setup gesture add-on)
 import 'hammerjs';
-import { DashboardLayoutComponent } from './dashboard-layout/dashboard-layout.component';
-import { DangerAlertComponent } from './danger-alert/danger-alert.component';
-import { CalendarComponent } from './calendar/calendar.component';
-import { HealthbarComponent } from './healthbar/healthbar.component';
-
-//services
+import { LoginComponent } from './login/login.component';
+import { SignupComponent } from './signup/signup.component';
+import { UserService } from './services/user.service';
 import { AssignmentService } from './services/assignment.service';
 
-//bootstrap
-import { NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
+//form builder imports
+import { ReactiveFormsModule } from '@angular/forms';
 
-//routing
-import { AppRoutingModule } from './app-routing/routing.module';
+import { AppRoutingModule } from './app-routing/app-routing.module';
+import { AuthGuard } from './router-guard/auth.guard';
+import { LayoutComponent } from './layout/layout.component';
 
 @NgModule({
-
-    declarations: [
-        AppComponent,
-        DashboardLayoutComponent,
-        DangerAlertComponent,
-        CalendarComponent,
-        HealthbarComponent,
-    ],
-    imports: [
-        BrowserModule,
-        FormsModule,
-        HttpModule,
-        BrowserAnimationsModule,
-        AppRoutingModule,
-        NgbModalModule.forRoot(),
-        CalendarModule.forRoot(),
-        MaterialModule.forRoot()
-
-    ],
-    providers: [ AssignmentService ],
-    bootstrap: [ AppComponent ]
+  declarations: [
+    AppComponent,
+    LoginComponent,
+    SignupComponent,
+  ],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    HttpModule,
+    MaterialModule,
+    BrowserAnimationsModule,
+    ReactiveFormsModule,
+    AppRoutingModule,
+  ],
+  providers: [ UserService,
+               AuthGuard,
+               AssignmentService
+             ],
+  bootstrap: [AppComponent]
 })
 export class AppModule { }

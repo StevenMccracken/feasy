@@ -1,69 +1,104 @@
-<template ngbModalContainer></template>
-
-<template #modalContent let-close="close">
-    <div class="modal-header">
-        <h5 *ngIf="modalData.action != 'Deleted'" class="modal-title">Edit Event</h5>
-        <h5 *ngIf="modalData.action == 'Deleted'" class="modal-title">Event Deleted</h5>
-        <button type="button" class="close" (click)="close()">
-            <span aria-hidden="true">&times;</span>
-        </button>
+<div class="calendar-app">
+  <div class="row text-center">
+    <div class="col s12">
+      <div class="col s4">
+        <div class="btn-group">
+          <div class="btn" mwlCalendarPreviousView [view]="view" [(viewDate)]="viewDate">
+            Previous
+          </div>
+          <div class="btn" mwlCalendarToday [(viewDate)]="viewDate">
+            Today
+          </div>
+          <div class="btn" mwlCalendarNextView [view]="view" [(viewDate)]="viewDate">
+            Next
+          </div>
+        </div>
+      </div>
+      <div class="col s4 cal-title">
+        <h3 class="calendar-title"> {{ viewDate | calendarDate:(view + 'ViewTitle'):'en' }}</h3>
+      </div>
+      <div class="col s4">
+        <div class="btn-group">
+          <div class="btn btn-primary" (click)="view = 'month'" [class.active]="view === 'month'">
+            Month
+          </div>
+          <div class="btn btn-primary" (click)="view = 'week'" [class.active]="view === 'week'">
+            Week
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="modal-body">
-        <div *ngIf="modalData.action != 'Deleted'">
-            Event:
-            <pre>{{ modalData?.event | json }}</pre>
+  </div>
+  <br>
+  <div class="row">
+    <div [ngSwitch]="view" class="col s12">
+      <mwl-calendar-month-view *ngSwitchCase="'month'" [viewDate]="viewDate" [events]="events" [refresh]="refresh" [activeDayIsOpen]="activeDayIsOpen" (dayClicked)="dayClicked($event.day)" (eventClicked)="handleEvent('Clicked', $event.event)" (eventTimesChanged)="eventTimesChanged($event)">
+      </mwl-calendar-month-view>
+      <mwl-calendar-week-view *ngSwitchCase="'week'" [viewDate]="viewDate" [events]="events" [refresh]="refresh" (eventClicked)="handleEvent('Clicked', $event.event)" (eventTimesChanged)="eventTimesChanged($event)">
+      </mwl-calendar-week-view>
+      <mwl-calendar-day-view *ngSwitchCase="'day'" [viewDate]="viewDate" [events]="events" [refresh]="refresh" (eventClicked)="handleEvent('Clicked', $event.event)" (eventTimesChanged)="eventTimesChanged($event)">
+      </mwl-calendar-day-view>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col s12 add-position">
+      <a class="waves-effect waves-light btn-floating right" (click)="openModal('#createAssignments');"><i class="material-icons">add</i></a>
+    </div>
+  </div>
+
+
+  <div class="row">
+    <button type="button" class="btn" (click)="logout()">logout</button>
+  </div>
+
+
+
+
+
+  <div class="modal modal-fixed-footer row" id="createAssignments">
+    <div class="modal-content">
+      <form class="col s12" #assignmentForm="ngForm">
+        <div class="row">
+          <h4 class="col s11">New Assignment</h4>
+          <i class="material-icons modal-close right" (click)="resetAssignmentField()">clear</i>
         </div>
-        <div *ngIf="modalData.action == 'Deleted'">
-            Event:
-            <pre>Event: {{ modalData?.event.title }}</pre>
-            <pre>Started: {{ modalData?.event.start | date: 'dd/MM/yyyy' }}</pre>
-            <pre *ngIf="modalData?.event.end != null">Ended: {{ modalData?.event.end | date: 'dd/MM/yyyy' }}</pre>
-            <pre *ngIf="modalData?.event.end == null">Ended: {{ modalData?.event.start | date: 'dd/MM/yyyy' }}</pre>
+        <div class="row">
+          <div class="input-field col s12">
+            <input placeholder="Assignment Name" id="title" type="text" name="title" [(ngModel)]="assignment.title" required #title="ngModel">
+          </div>
+          <div class="input-field col s12">
+            <input id="dueDate" type="date" name="dueDate" class="datepicker" required>
+          </div>
+          <div class="input-field col s12">
+            <input name="completed1" type="radio" value="true" id="completed" [(ngModel)]="assignment.completed" required #completed="ngModel"/>
+            <label for="completed">Completed</label>
+            <input name="completed1" type="radio" value="false" id="uncompleted" [(ngModel)]="assignment.completed" />
+            <label for="uncompleted" selected>Not Completed</label>
+          </div>
+          <div class="input-field col s12">
+            <input placeholder="Class" name="class" type="text" id="class" [(ngModel)]="assignment.class" #class="ngModel">
+          </div>
+          <div class="input-field col s12">
+            <select id="type" name="type">
+              <option value="" disabled selected>What type of assignment will this be ?</option>
+              <option value="Homework">Homework</option>
+              <option value="Quizes">Quizes</option>
+              <option value="Exams">Exams</option>
+              <option value="Projects">Projects</option>
+            </select>
+            <label for="type-assignment">Assignment Type</label>
+          </div>
+          <div class="input-field col s12">
+            <textarea id="description" name="description" class="materialize-textarea" [(ngModel)]="assignment.description" #description="ngModel"></textarea>
+            <label for="description">Description</label>
+          </div>
         </div>
+      </form>
     </div>
     <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="close()">OK</button>
-    </div>
-</template>
-
-
-<div class="row text-center">
-  <div class="col-md-4">
-    <div class="btn-group">
-      <div
-        class="btn btn-primary"
-        mwlCalendarPreviousView
-        [view]="view"
-        [(viewDate)]="viewDate">
-        Previous
-      </div>
-      <div
-        class="btn btn-secondary"
-        mwlCalendarToday
-        [(viewDate)]="viewDate">
-        Today
-      </div>
-      <div
-        class="btn btn-primary"
-        mwlCalendarNextView
-        [view]="view"
-        [(viewDate)]="viewDate">
-        Next
-      </div>
+      <button type="submit" class="modal-action modal-close waves-effect waves-green btn-flat" [class.disabled]="!assignmentForm.form.valid"
+        (click)="addAssignment();">
+          Add
+        </button>
     </div>
   </div>
-  <div class="col-md-4">
-    <h3>{{ viewDate | calendarDate:(view + 'ViewTitle'):'en' }}</h3>
-  </div>
-</div>
-<br>
-
-<mwl-calendar-month-view
-    [viewDate]="viewDate"
-    [events]="events"
-    [refresh]="refresh"
-    [activeDayIsOpen]="activeDayIsOpen"
-    (dayClicked)="dayClicked($event.day)"
-    (eventClicked)="handleEvent('Clicked', $event.event)"
-    (eventTimesChanged)="eventTimesChanged($event)">
-</mwl-calendar-month-view>

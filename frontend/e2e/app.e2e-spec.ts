@@ -1,14 +1,14 @@
-import { EpicenterPage } from './app.po';
+import { PYRSUITPage } from './app.po';
 
-describe('epicenter App', () => {
-    let page: EpicenterPage;
+describe('pyrsuit App', () => {
+  let page: PYRSUITPage;
 
-    beforeEach(() => {
-        page = new EpicenterPage();
-    });
+  beforeEach(() => {
+    page = new PYRSUITPage();
+  });
 
-    it('should display message saying app works', () => {
-        page.navigateTo();
-        expect(page.getParagraphText()).toEqual('app works!');
-    });
+  it('should display message saying app works', () => {
+    page.navigateTo();
+    expect(page.getParagraphText()).toEqual('app works!');
+  });
 });

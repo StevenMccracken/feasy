@@ -1,67 +1,30 @@
 /* You can add global styles to this file, and also import other style files */
-@import '../node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css';
-@import '../node_modules/angular-calendar/dist/css/angular-calendar.css';
-html, body, material-app, md-sidenav-container, .my-content {
-    margin: 0;
-    width: 100%;
-    height: 100%;
+
+/*used in calendar component*/
+.edit{
+  margin-left: 10px;
+  margin-right: 3px;
+  font-size: 18px;
 }
-.center {
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 20%;
-}
-.loader {
-    border: 16px solid #f3f3f3; /* Light grey */
-    border-top: 16px solid #3498db; /* Blue */
-    border-radius: 50%;
-    width: 120px;
-    height: 120px;
-    animation: spin 2s linear infinite;
-}
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.delete{
+  font-size: 18px;
 }
 
-button {
-    border: none;
-    background: none;
-    padding: none;
-    margin-right: 20px;
+html{
+  font-family: 'Roboto', sans-serif;
 }
-
-md-sidenav{
-    width: 15%;
+label{
+  font-weight: normal;
 }
-.icon{
-    color: #939393;
+.logo{
+  font-family: 'Pacifico', cursive;
 }
-.icon-rev{
-    color: black;
+.secondary{
+  background-color: #0d47a1;
 }
-.app-toolbar-filler {
-    flex: 1 1 auto;
+.primary{
+  background-color: #ee6e73;
 }
-.account{
-    border-radius: 60%;
-    border: 1px solid white;
-}
-.app-content{
-    display:flex;
-    height:100%;
-    text-align:center;
-    background-color: white;
-}
-.title{
-    text-align: center;
-}
-
-md-toolbar {
-    background-color: gray;
-    min-height: 50px !important;
-}
-
-md-toolbar md-toolbar-row {
-    height: 50px !important;
+.third{
+  background-color: #ee6eb2;
 }

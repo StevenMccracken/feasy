@@ -1,12 +1,12 @@
-export class Assignment {
-
-    public type: string;
-    public name: string;
-
-    //we have it as a number and we will pipe it later
-    public due: number;
-    public user_id: number;
-    public assign_id: number;
-    public completed: boolean;
-
+export class Assignment{
+  _id: string;
+  title: string;
+  dueDate: Date;
+  completed: boolean;
+  userId: string;
+  class: string;
+  dateCreated: Date;
+  typeAssigned: string;
+  description: string;
+  editMode: boolean = false;
 }

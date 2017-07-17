@@ -1,0 +1,41 @@
+<div class="row signup">
+  <form class="col s12 offset-m4 m4" #signupForm="ngForm" autocomplete="off">
+    <h4 class="logo"> Feazy </h4>
+    <div class="row">
+      <div class="input-field col s12 m6">
+        <input placeholder="First Name *" type="text" class="validate"
+               name="firstName" id="firstName" required [(ngModel)]="user.firstName" #firstName="ngModel">
+      </div>
+      <div class="input-field col s12 m6">
+        <input placeholder="Last Name *" type="text" class="validate"
+               name="lastName" id="lastName" required [(ngModel)]="user.lastName" #lastName="ngModel">
+      </div>
+      <div class="input-field col s12 m12">
+        <input placeholder="Email *" type="text" class="validate"
+               name="email" id="email" required [(ngModel)]="user.email" #email="ngModel">
+      </div>
+      <div class="input-field col s12 m12">
+        <input placeholder="Username *" type="text" class="validate"
+               name="username" id="username" required [(ngModel)]="user.username" #username="ngModel">
+      </div>
+    </div>
+    <div class="row">
+      <div class="input-field col s12 m6">
+        <input placeholder="Password *" type="password" class="validate"
+               name="password" id="password" required [(ngModel)]="user.password" #password="ngModel">
+      </div>
+      <div class="input-field col s12 m6">
+        <input placeholder="ReType Password *" type="password" class="validate"
+               name="repassword" id="repassword" [(ngModel)]="passwordValidator" required
+               #repassword="ngModel">
+      </div>
+    </div>
+    <div class="row">
+      <button type="submit" id="singup" class="waves-effect waves-light btn col s5  m3 offset-m9"
+              routerLink="/login">Login</button>
+      <button type="submit" id="singup" class="waves-effect waves-light btn col s5 offset-s7 m3 offset-m1"
+              [class.disabled]="!signupForm.form.valid || (passwordValidator != user.password)" (click)="add()"
+              routerLink="/login">Signup</button>
+    </div>
+  </form>
+</div>

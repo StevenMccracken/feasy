@@ -1,0 +1,69 @@
+
+<div class="main">
+  <nav>
+    <div class="nav-wrapper primary">
+      <a href="#" data-activates="slide-out" class="btn-flat circle" id="button-slide"><i class="material-icons white-text">menu</i></a>
+      <a routerLink='layout' class="logo brand-logo center">Feazy</a>
+    </div>
+  </nav>
+  <ul id="slide-out" class="side-nav right">
+    <li>
+      <div class="user-view">
+        <div class="background secondary">
+        </div>
+          <div class="user-setting">
+            <img class="circle avatar" src="https://cdn0.iconfinder.com/data/icons/avatars-6/500/Avatar_boy_man_people_account_client_male_person_user_work_sport_beard_team_glasses-512.png">
+          </div>
+          <p class="white-text">Hey, &nbsp; {{user.firstName}}</p>
+          <div class="action">
+            <div class="logout" (click)="logout()">Logout</div>
+            <div class="settings">Settings</div>
+          </div>
+      </div>
+    </li>
+    <li>
+      <a routerLink="/main/calendar" routerLinkActive="activeLink">
+        <table>
+          <tr>
+            <td>
+              <p class="material-icons">event_note</p>
+            </td>
+            <td>
+              <h6>Calendar</h6>
+            </td>
+          </tr>
+        </table>
+      </a>
+    </li>
+    <li>
+      <a routerLinkActive="activeLink">
+        <table>
+          <tr>
+            <td>
+              <p class="material-icons">library_books</p>
+            </td>
+            <td>
+              <h6>To-Do List</h6>
+            </td>
+          </tr>
+        </table>
+      </a>
+    </li>
+    <li>
+      <a routerLink="/main/todo">
+        <table>
+          <tr>
+            <td>
+              <p class="material-icons">equalizer</p>
+            </td>
+            <td>
+              <h6>HealthBar</h6>
+            </td>
+          </tr>
+        </table>
+      </a>
+    </li>
+
+  </ul>
+  <router-outlet></router-outlet>
+</div>
