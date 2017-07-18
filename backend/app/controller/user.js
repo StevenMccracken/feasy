@@ -46,7 +46,7 @@ var createGoogle = function(_userInfo) {
   newUser.google.username = _userInfo.username.trim();
 
   // Check optional attributes
-  if (_userInfo.google.name !== undefined) newUser..name = _userInfo.name.trim();
+  if (_userInfo.google.name !== undefined) newUser.name = _userInfo.name.trim();
   else newUser.google.name = '';
 
   return new Promise((resolve, reject) => {

@@ -16,9 +16,10 @@ let UserSchema = MONGOOSE.Schema({
     firstName:      { type: String },
     lastName:       { type: String },
   },
-  
-  facebook: {
-    username:       { type: String, required: true, index: { unique: true } },
+
+  google: {
+    googleId:       { type: String, required: true, index: { unique: true } },
+    email:          { type: String, required: true, index: { unique: true } },
     dateCreated:    { type: Date, default: Date.now },
     name:           { type: String },
   },

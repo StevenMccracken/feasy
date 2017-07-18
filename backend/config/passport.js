@@ -9,7 +9,6 @@ const JwtStrategy = require('passport-jwt').Strategy;
 const EXTRACTJWT = require('passport-jwt').ExtractJwt;
 const GoogleStrategy = require('passport-google-oauth2').Strategy;
 
-const USER = require('./app/controller/user');
 
 
 /**
@@ -65,7 +64,8 @@ module.exports = function(passport) {
   passport.use(new GoogleStrategy(
     googleOptions,
     (request, accessToken, refreshToken, profile, done) => {
-      let projection = 'googleId _id username email firstName lastName';
+
+      let projection = 'googleId _id email name';
       USERS.get(
         'googleId',
         profile.id,
@@ -78,11 +78,12 @@ module.exports = function(passport) {
             console.log('ayy');
 
             var googleUser = {
-                email: profile.email,
+                googleId: profile.id,
+                email: profile.emails,
                 name: profile.displayName,
             };
 
-            USER.createGoogle(googleUser);
+            USERS.createGoogle(googleUser);
 
             // Create user profile in db
             /**
