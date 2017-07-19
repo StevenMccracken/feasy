@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.com/StevenMccracken/epicenter.svg?token=bR5pzA9oJMx45zgTnQ8X&branch=master)](https://travis-ci.com/StevenMccracken/epicenter)
+[![Build Status](https://travis-ci.com/StevenMccracken/feasy.svg?token=bR5pzA9oJMx45zgTnQ8X&branch=master)](https://travis-ci.com/StevenMccracken/feasy)
 
-# :key: API Documentation :key:
+# :key: Feasy API Documentation :key:
 
 ## Guide Information
 * You can send requests to the API routes below to access the server
@@ -10,12 +10,14 @@
     * You can acquire this token in three ways
       * Creating a user
       * Making a request to the /login route with a matching username and password
+      * Making a request to the /auth/google route (requires front-end user interaction)
       * Updating a user’s username
 * Without the `Authorization` key in the request header and a valid token value, your requests will be __denied__
 * The only routes that __do not__ require the Authorization token are:
-  * Base route (__GET__ https://api.pyrsuit.com)
-  * Login route (__POST__ https://api.pyrsuit.com/login)
-  * Create user route (__POST__ https://api.pyrsuit.com/users)
+  * Base route (__GET__ https://api.feasy-app.com)
+  * Login route (__POST__ https://api.feasy-app.com/login)
+  * Google Authentication route (__GET__ https://api.feasy-appy.com/auth/google)
+  * Create user route (__POST__ https://api.feasy-app.com/users)
 * The URLs in this guide that contain square brackets are meant to have those brackets substituted with with actual values
 * The JSON responses in this guide that contain square brackets will have actual values when returned from the server
 
@@ -24,25 +26,26 @@
 
 1. [Base route](#base-route)
 2. [Login](#login)
-3. [Create a user](#create-user)
-4. [Retrieve a user's information](#get-user)
-5. [Change a user's username](#update-username)
-6. [Change a user's password](#update-password)
-7. [Change a user's email](#update-email)
-8. [Change a user's first name](#update-firstName)
-9. [Change a user's last name](#update-lastName)
-10. [Delete a user](#delete-user)
-11. [Create an assignment](#create-assignment)
-12. [Get a user's assignments](#get-assignments)
-13. [Get an assignment's information](#get-assignment)
-14. [Change an assignment's title](#update-title)
-15. [Change an assignment's class](#update-class)
-16. [Change an assignment's type](#update-type)
-17. [Change an assignment's description](#update-description)
-18. [Change an assignment's completed](#update-completed)
-19. [Change an assignment's due date](#update-dueDate)
-20. [Delete an assignment](#delete-assignment)
-21. [Errors](#errors)
+3. [Google Authentication](#google-auth)
+4. [Create a user](#create-user)
+5. [Retrieve a user's information](#get-user)
+6. [Change a user's username](#update-username)
+7. [Change a user's password](#update-password)
+8. [Change a user's email](#update-email)
+9. [Change a user's first name](#update-firstName)
+10. [Change a user's last name](#update-lastName)
+11. [Delete a user](#delete-user)
+12. [Create an assignment](#create-assignment)
+13. [Get a user's assignments](#get-assignments)
+14. [Get an assignment's information](#get-assignment)
+15. [Change an assignment's title](#update-title)
+16. [Change an assignment's class](#update-class)
+17. [Change an assignment's type](#update-type)
+18. [Change an assignment's description](#update-description)
+19. [Change an assignment's completed](#update-completed)
+20. [Change an assignment's due date](#update-dueDate)
+21. [Delete an assignment](#delete-assignment)
+22. [Errors](#errors)
 
 ## Routes
 
@@ -50,7 +53,7 @@
 <a name="base-route"></a>
 ### Base route
 
-* Route: __GET__ https://api.pyrsuit.com
+* Route: __GET__ https://api.feasy-app.com
 * Purpose: Tests if the server is up and running
 * Required parameters: _none_
 * Optional parameters: _none_
@@ -59,7 +62,7 @@
   * Response body JSON
   ```json
   {
-    "message": "This is the REST API for Pyrsuit"
+    "message": "This is the REST API for Feasy"
   }
   ```
 
@@ -67,7 +70,7 @@
 <a name="login"></a>
 ### Login
 
-* Route: __POST__ https://api.pyrsuit.com/login
+* Route: __POST__ https://api.feasy-app.com/login
 * Purpose: Registers the client on the server so that subsequent requests only require a generated token, not their username and password
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -93,10 +96,38 @@
   * This token must be sent in the headers of almost every request
 
 **[⬆ back to top](#table-of-contents)**
+<a name="google-auth"></a>
+### Google Authentication
+
+* Route: __GET__ https://api.feasy-app.com/auth/google
+* Purpose: Registers the client on the server via their Google profile so that subsequent requests only require a generated token, not their username and password
+* Required parameters: _none_
+* Optional parameters: _none_
+* Successful request returns
+  * Status code: __200__
+  * Response body JSON
+  ```json
+  {
+    "success": {
+      "message": "Valid login credentials",
+      "username": "[username value]",
+      "token": "JWT [random string]"
+    }
+  }
+  ```
+* Notes
+  * Token will be a string starting with the word ___JWT___ followed by one space, and then a random string of uppercase and lowercase characters, numbers, periods, and underscores
+  * This token must be sent in the headers of almost every request
+  * The Google user's username will be provided in the response body for future API requests
+    * By default, it will be the local-part of the user's email (everything before _@_)
+    * If another user already existed with that username, there will be a random string appended to the username
+    * The username can be changed after the profile is created
+
+**[⬆ back to top](#table-of-contents)**
 <a name="create-user"></a>
 ### Create a user
 
-* Route: __POST__ https://api.pyrsuit.com/users
+* Route: __POST__ https://api.feasy-app.com/users
 * Purpose: Creates a new user
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -131,7 +162,7 @@
 <a name="get-user"></a>
 ### Retrieve a user's information
 
-* Route: __GET__ https://api.pyrsuit.com/users/[username]
+* Route: __GET__ https://api.feasy-app.com/users/[username]
 * Purpose: Gets information about a user like their id, email, name, etc
 * Required parameters
   * In the header
@@ -159,7 +190,7 @@
 <a name="update-username"></a>
 ### Change a user's username
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/username
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/username
 * Purpose: Updates a user's username to a new value
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -192,7 +223,7 @@
 <a name="update-password"></a>
 ### Change a user's password
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/password
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/password
 * Purpose: Updates a user's password to a new value
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -225,7 +256,7 @@
 <a name="update-email"></a>
 ### Change a user's email
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/email
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/email
 * Purpose: Updates a user's email to a new value
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -255,7 +286,7 @@
 <a name="update-firstName"></a>
 ### Change a user's first name
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/firstName
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/firstName
 * Purpose: Updates a user's first name to a new value
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -285,7 +316,7 @@
 <a name="update-lastName"></a>
 ### Change a user's last name
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/lastName
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/lastName
 * Purpose: Updates a user's last name to a new value
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -315,7 +346,7 @@
 <a name="delete-user"></a>
 ### Delete a user
 
-* Route: __DELETE__ https://api.pyrsuit.com/users/[username]
+* Route: __DELETE__ https://api.feasy-app.com/users/[username]
 * Purpose: Deletes a user's account and all their assignments
 * Required parameters
   * In the header
@@ -339,7 +370,7 @@
 <a name="create-assignment"></a>
 ### Create an assignment
 
-* Route: __POST__ https://api.pyrsuit.com/users/[username]/assignments
+* Route: __POST__ https://api.feasy-app.com/users/[username]/assignments
 * Purpose: Creates an assignment for a user
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -393,7 +424,7 @@
 <a name="get-assignments"></a>
 ### Get a user's assignments
 
-* Route: __GET__ https://api.pyrsuit.com/users/[username]/assignments
+* Route: __GET__ https://api.feasy-app.com/users/[username]/assignments
 * Purpose: Retrieves all assignments created by a user
 * Required parameters
   * In the header
@@ -428,7 +459,7 @@
 <a name="get-assignment"></a>
 ### Get an assignment's information
 
-* Route: __GET__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]
+* Route: __GET__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]
 * Purpose: Retrieves a specific assignment created by a user
 * Required parameters
   * In the header
@@ -461,7 +492,7 @@
 <a name="update-title"></a>
 ### Change an assignment's title
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/title
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/title
 * Purpose: Updates an assignment's title to a new value
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -493,7 +524,7 @@
 <a name="update-class"></a>
 ### Change an assignment's class
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/class
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/class
 * Purpose: Updates an assignment's class to a new value
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -525,7 +556,7 @@
 <a name="update-type"></a>
 ### Change an assignment's type
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/type
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/type
 * Purpose: Updates an assignment's type to a new value
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -557,7 +588,7 @@
 <a name="update-description"></a>
 ### Change an assignment's description
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/description
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/description
 * Request body type: `x-www-form-urlencoded`
 * Purpose: Updates an assignment's description to a new value
 * Required parameters
@@ -589,7 +620,7 @@
 <a name="update-completed"></a>
 ### Change an assignment's completed
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/completed
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/completed
 * Purpose: Updates an assignment to be completed or incomplete
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -621,7 +652,7 @@
 <a name="update-dueDate"></a>
 ### Change an assignment's due date
 
-* Route: __PUT__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]/dueDate
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]/dueDate
 * Purpose: Updates an assignment's due date to a new value
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
@@ -654,7 +685,7 @@
 <a name="delete-assignment"></a>
 ### Delete an assignment
 
-* Route: __DELETE__ https://api.pyrsuit.com/users/[username]/assignments/[assignmentId]
+* Route: __DELETE__ https://api.feasy-app.com/users/[username]/assignments/[assignmentId]
 * Purpose: Deletes a specific assignment
   * Required parameters
     * In the header
@@ -698,10 +729,11 @@
 
 1. [API Error](#api-error)
 2. [Authentication Error](#auth-error)
-3. [Invalid Request Error](#invalid-request-error)
-4. [Login Error](#login-error)
-5. [Resource Does Not Exist Error](#resource-dne-error)
-6. [Resource Error](#resource-error)
+3. [Invalid Media Error](#invalid-media-error)
+4. [Invalid Request Error](#invalid-request-error)
+5. [Login Error](#login-error)
+6. [Resource Does Not Exist Error](#resource-dne-error)
+7. [Resource Error](#resource-error)
 
 **[⬆ back to top - main](#table-of-contents)**
 <a name="api-error"></a>
@@ -727,8 +759,19 @@
 * Notes: This error has the same status code as Login errors; however, this error will never occur in the base route (/), /login route, or __POST__ /users route
 
 **[⬆ back to top - errors](#errors-table-of-contents)**
+<a name-"invalid-media-error"></a>
+### 3. Invalid Media Error
+* Explanation: An error occurred while verifying the type of a file in the request body
+* Common causes
+  * A file of an incorrect type was sent to the server for a route that expects only certain file types
+* Status code: __415__
+* Formal type: `invalid_media_type`
+* Default message: _That type of media file is forbidden_
+* Notes: The message will usually contain a more specific explanation of which filetypes are allowed
+
+**[⬆ back to top - errors](#errors-table-of-contents)**
 <a name="invalid-request-error"></a>
-### 3. Invalid Request Error
+### 4. Invalid Request Error
 
 * Explanation: An error occurred while checking the parameters in the request header or body
 * Common causes
@@ -741,7 +784,7 @@
 
 **[⬆ back to top - errors](#errors-table-of-contents)**
 <a name="login-error"></a>
-### 4. Login Error
+### 5. Login Error
 
 * Explanation: An error occurred while attempting to match the given password for the given username
 * Status code: __401__
@@ -751,7 +794,7 @@
 
 **[⬆ back to top - errors](#errors-table-of-contents)**
 <a name="resource-dne-error"></a>
-### 5. Resource Does Not Exist Error
+### 6. Resource Does Not Exist Error
 
 * Explanation: An error occurred while attempting to retrieve the requested resource
 * Status code: __404__
@@ -761,7 +804,7 @@
 
 **[⬆ back to top - errors](#errors-table-of-contents)**
 <a name="resource-error"></a>
-### 6. Resource Error
+### 7. Resource Error
 
 * Explanation: An error occurred while attempting to access and interact with the requested resource(s). The request would cause the data/application to enter an invalid state
 * Common causes

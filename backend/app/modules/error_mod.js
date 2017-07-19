@@ -288,9 +288,11 @@ function determineJwtError(errorMessage) {
    * If token is malformed, sometimes errorMessage will contain 'Unexpected
    * token' so shorten the errorMessage so it can work with the switch case
    */
-  if (errorMessage !== null && errorMessage.indexOf('Unexpected token') !== -1) {
-    errorMessage = 'Unexpected token';
-  }
+  if (
+    errorMessage !== null &&
+    errorMessage !== undefined &&
+    errorMessage.indexOf('Unexpected token') !== -1
+  ) errorMessage = 'Unexpected token';
 
   let reason;
   switch (errorMessage) {

@@ -9,13 +9,13 @@
  */
 var isValidUsername = function(_username) {
   /**
-   * Evaluates to true if _username is not null, not undefined, not
-   * empty, and only contains alphanumeric characters, dashes, or
-   * underscores. It must start with two alphanumeric characters
+   * Evaluates to true if _username is not null, not undefined, not empty,
+   * and only contains alphanumeric characters, dashes, underscores,
+   * or periods. It must start with two alphanumeric characters
    */
   return _username !== null &&
     _username !== undefined &&
-    (/^[a-zA-Z0-9]{2,}[\w\-]*$/).test(_username);
+    (/^\w+([\.-]?\w+)*$/).test(_username);
 }
 
 /**
@@ -24,7 +24,11 @@ var isValidUsername = function(_username) {
  * @returns {Boolean} validity of _email
  */
 var isValidEmail = function(_email) {
-  // Evaluates to true if true if _email is not null, not undefined, and matches valid email formats
+  /*
+   * Evaluates to true if true if _email is not null, not undefined,
+   * and matches valid email formats: alphanumeric characters,
+   * dashes, underscores, and periods with one @ symbol and a TLD
+   */
   return _email !== null &&
     _email !== undefined &&
     (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/).test(_email);

@@ -27,7 +27,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/').get((_request, _response) => (
-    _response.json({ message: 'This is the REST API for Pyrsuit' })
+    _response.json({ message: 'This is the REST API for Feasy' })
   ));
 
   /**
@@ -40,6 +40,14 @@ var routing = function(_router) {
   router.route('/login').post((_request, _response) => (
     MIDDLEWARE.authenticate(_request, _response, result => _response.json(result))
   ));
+
+  router.route('/auth/google').get((_request, _response) => {
+    MIDDLEWARE.authenticateGoogle(_request, _response, result => _response.json(result));
+  });
+
+  router.route('/auth/google/callback').get((_request, _response) => {
+    MIDDLEWARE.finishGoogleAuthenticate(_request, _response, result => _response.json(result));
+  });
 
   /**
    * The POST route for creating a user. Sends an error

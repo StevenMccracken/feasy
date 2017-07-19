@@ -71,9 +71,13 @@ var verifyToken = function(_request, _response, _callback, _errorCallback) {
     { session: false },
     (passportError, userInfo, tokenError) => {
       if (passportError !== null) _errorCallback(passportError, null, false);
-      else if (tokenError !== undefined) _errorCallback(null, tokenError, false);
+      else if (
+        tokenError !== undefined &&
+        tokenError !== null &&
+        Object.keys(tokenError).length !== 0
+      ) _errorCallback(null, tokenError, false);
       else if (!userInfo) _errorCallback(null, null, true);
-      else errorOccurred = _callback(userInfo);
+      else _callback(userInfo);
     }
   )(_request, _response);
 };

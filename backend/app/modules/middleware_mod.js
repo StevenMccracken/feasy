@@ -25,6 +25,7 @@ var authenticate = function(_request, _response, _callback) {
   let missingParams = [];
   if (_request.body.username === undefined) missingParams.push('username');
   if (_request.body.password === undefined) missingParams.push('password');
+
   if (missingParams.length > 0) {
     let errorJson = ERROR.error(
       SOURCE,
@@ -52,6 +53,17 @@ var authenticate = function(_request, _response, _callback) {
           );
 
           _callback(errorJson);
+        } else if (USERS.isTypeGoogle(user)) {
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.RESOURCE_ERROR,
+            `Authenticating a Google user with this route is not allowed`,
+            `${user.username} tried to use authenticate() method`
+          );
+
+          _callback(errorJson);
         } else {
           // User exists, so compare passwords
           AUTH.validatePasswords(
@@ -63,6 +75,7 @@ var authenticate = function(_request, _response, _callback) {
                 let token = AUTH.generateToken(user);
                 let successJson = {
                   success: {
+                    message: 'Valid login credentials',
                     token: `JWT ${token}`,
                   },
                 };
@@ -101,6 +114,83 @@ var authenticate = function(_request, _response, _callback) {
     ); // End USERS.getByUsername()
   }
 }; // End authenticate()
+
+/**
+ * authenticateGoogle - Initiates the authentication of a Google sign-in
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {callback} _callback the callback to send the database response
+ */
+var authenticateGoogle = function(_request, _response, _callback) {
+  const SOURCE = 'authenticateGoogle()';
+  log(SOURCE, _request);
+
+  // Send the request to verify with Google's authentication API
+  AUTH.verifyToken(
+    _request,
+    _response,
+    client => _callback(),
+    (passportError, tokenError, userInfoMissing) => {
+      let errorJson = ERROR.determineAuthenticationError(
+        SOURCE,
+        _request,
+        _response,
+        passportError,
+        tokenError,
+        userInfoMissing
+      );
+
+      _callback(errorJson)
+    }
+  );
+}; // End authenticateGoogle()
+
+/**
+ * finishGoogleAuthenticate - Concludes the authentication of a Google sign-in
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {callback} _callback the callback to send the database response
+ */
+var finishGoogleAuthenticate = function(_request, _response, _callback) {
+  const SOURCE = 'finishGoogleAuthenticate()';
+  log(SOURCE, _request);
+
+  // Parameters are valid. Retrieve user info from database
+  AUTH.verifyToken(
+    _request,
+    _response,
+    (client) => {
+      // Generate the JWT for the client
+      let token = AUTH.generateToken(client);
+
+      /*
+       * Send the token and google user's username to
+       * the client because it is not entered on frontend
+       */
+      let successJson = {
+        success: {
+          message: 'Successful Google sign-in',
+          username: client.username,
+          token: `JWT ${token}`,
+        },
+      };
+
+      _callback(successJson);
+    },
+    (passportError, tokenError, userInfoMissing) => {
+      let errorJson = ERROR.determineAuthenticationError(
+        SOURCE,
+        _request,
+        _response,
+        passportError,
+        tokenError,
+        userInfoMissing
+      );
+
+      _callback(errorJson)
+    }
+  );
+}; // End finishGoogleAuthenticate()
 
 /**
  * createUser - Adds a new user to the database and sends the client a web token
@@ -428,6 +518,17 @@ var updateUserPassword = function(_request, _response, _callback) {
             _response,
             ERROR.CODE.INVALID_REQUEST_ERROR,
             `Invalid parameters: ${invalidParams.join()}`
+          );
+
+          _callback(errorJson);
+        } else if (USERS.isTypeGoogle(client)) {
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.RESOURCE_ERROR,
+            `Updating a Google user's password is not allowed`,
+            `Google user ${client.username} tried to update their password`
           );
 
           _callback(errorJson);
@@ -1942,9 +2043,17 @@ var parseSchedule = function(_request, _response, _callback) {
   const SOURCE = 'parseSchedule()';
   log(SOURCE, _request);
 
-  console.log('ayyy');
-  console.log(_response.headersSent);
-  console.log('ayyy');
+  // TODO: Remove this error and solve the issue of repeat requests to this route/function crashing
+  let errorJson = ERROR.error(
+    SOURCE,
+    _request,
+    _response,
+    ERROR.CODE.API_ERROR,
+    'Route is not correctly implemented yet'
+  );
+
+  _callback(errorJson);
+  return;
 
   // Verify client's web token first
   AUTH.verifyToken(
@@ -1972,8 +2081,8 @@ var parseSchedule = function(_request, _response, _callback) {
           _request,
           _response,
           ERROR.CODE.RESOURCE_ERROR,
-          'You cannot upload another user\'s schedule',
-          `${client.username} tried to upload ${_request.params.username}'s pdf schedule`
+          'You cannot upload a schedule for another user',
+          `${client.username} tried to upload a schedule for ${_request.params.username}`
         );
 
         _callback(errorJson);
@@ -2005,8 +2114,8 @@ var parseSchedule = function(_request, _response, _callback) {
             );
 
             _callback(errorJson);
-          }
-        );
+          } // End (parseError)
+        ); // End SCHEDULE.parsePdf()
       }
     }, // End (client)
     (passportError, tokenError, userInfoMissing) => {
@@ -2026,6 +2135,8 @@ var parseSchedule = function(_request, _response, _callback) {
 
 module.exports = {
   authenticate: authenticate,
+  authenticateGoogle: authenticateGoogle,
+  finishGoogleAuthenticate, finishGoogleAuthenticate,
   createUser: createUser,
   retrieveUser: retrieveUser,
   updateUserUsername: updateUserUsername,

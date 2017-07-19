@@ -4,6 +4,7 @@
 
 let USER = require('../models/user.js');
 const LOG = require('../modules/log_mod.js');
+const Uuid = require('uuid/v4');
 
 /**
  * create - Saves a new user in the database
@@ -15,16 +16,16 @@ var create = function(_userInfo) {
   log(SOURCE);
 
   let newUser = new USER();
-  newUser.local.mail = _userInfo.email.trim();
-  newUser.local.username = _userInfo.username.trim();
-  newUser.local.password = _userInfo.password.trim();
+  newUser.email = _userInfo.email.trim();
+  newUser.username = _userInfo.username.trim();
+  newUser.password = _userInfo.password.trim();
 
   // Check optional attributes
-  if (_userInfo.local.firstName !== undefined) newUser.local.firstName = _userInfo.firstName.trim();
-  else newUser.local.firstName = '';
+  if (_userInfo.firstName !== undefined) newUser.firstName = _userInfo.firstName.trim();
+  else newUser.firstName = '';
 
-  if (_userInfo.local.lastName !== undefined) newUser.local.lastName = _userInfo.lastName.trim();
-  else newUser.local.lastName = '';
+  if (_userInfo.lastName !== undefined) newUser.lastName = _userInfo.lastName.trim();
+  else newUser.lastName = '';
 
   return new Promise((resolve, reject) => {
     newUser.save()
@@ -43,11 +44,21 @@ var createGoogle = function(_userInfo) {
   log(SOURCE);
 
   let newUser = new USER();
-  newUser.google.username = _userInfo.username.trim();
+  newUser.email = _userInfo.email.trim();
+  newUser.username = _userInfo.username.trim();
+  newUser.googleId = _userInfo.googleId.trim();
+
+  // There is no password for a Google user, so randomly generate it
+  newUser.password = Uuid();
 
   // Check optional attributes
-  if (_userInfo.google.name !== undefined) newUser.name = _userInfo.name.trim();
-  else newUser.google.name = '';
+  if (_userInfo.firstName !== undefined) newUser.firstName = _userInfo.firstName.trim();
+  else newUser.firstName = '';
+
+  if (_userInfo.lastName !== undefined) newUser.lastName = _userInfo.lastName.trim();
+  else newUser.lastName = '';
+
+  if (_userInfo.accessToken !== undefined) newUser.accessToken = _userInfo.accessToken.trim();
 
   return new Promise((resolve, reject) => {
     newUser.save()
@@ -87,8 +98,8 @@ var getByUsername = function(_username, _includePassword, _callback, _errorCallb
   log(SOURCE);
 
   let projection;
-  if (_includePassword) projection = '_id username password email firstName lastName';
-  else projection = '_id username email firstName lastName';
+  if (_includePassword) projection = '_id googleId username password email firstName lastName';
+  else projection = '_id googleId username email firstName lastName';
 
   get(
     'username',
@@ -97,6 +108,23 @@ var getByUsername = function(_username, _includePassword, _callback, _errorCallb
     userInfo => _callback(userInfo),
     getUserInfoError => _errorCallback(getUserInfoError)
   );
+};
+
+/**
+ * getByGoogleId - Retrieves a user by their google ID
+ * @param {String} _googleId the google ID of the user
+ * @param {callback} _callback the callback to return the user
+ * @param {callback} _errorCallback the callback to return any errors
+ */
+var getByGoogleId = function(_googleId, _callback, _errorCallback) {
+  const SOURCE = 'getByGoogleId()';
+  log(SOURCE);
+
+  let projection = '_id googleId username email firstName lastName';
+  USER.findOne({ googleId: _googleId }, projection, (getUserError, userInfo) => {
+    if (getUserError === null) _callback(userInfo);
+    else _errorCallback(getUserError);
+  });
 };
 
 /**
@@ -113,6 +141,22 @@ var getAttribute = function(_username, _attribute, _callback, _errorCallback) {
   USER.findOne({ 'username': _username }, _attribute, (getUserError, userInfo) => {
     if (getUserError !== null) _errorCallback(getUserError);
     else _callback(userInfo);
+  });
+};
+
+/**
+ * update - Executes a database save on a user object to update any new attributes
+ * @param {Object} _user the Mongoose object
+ * @param {callback} _callback the callback to return the updated user attributes
+ * @param {callback} _errorCallback the callback to return any errors
+ */
+var update = function(_user, _callback, _errorCallback) {
+  const SOURCE = 'update()';
+  log(SOURCE);
+
+  _user.save((saveUserInfoError) => {
+    if (saveUserInfoError === null) _callback(_user);
+    else _errorCallback(saveUserInfoError);
   });
 };
 
@@ -139,18 +183,18 @@ var updateAttribute = function(_user, _attribute, _newValue, _callback, _errorCa
 };
 
 /**
- * update - Executes a database save on a user object to update any new attributes
- * @param {Object} _user the Mongoose object
- * @param {callback} _callback the callback to return the updated user attributes
+ * remove - Deletes a user from the user database
+ * @param {Object} _user JSON of the user attributes
+ * @param {callback} _callback the callback to return successful deletion
  * @param {callback} _errorCallback the callback to return any errors
  */
-var update = function(_user, _callback, _errorCallback) {
-  const SOURCE = 'update()';
+var remove = function(_user, _callback, _errorCallback) {
+  const SOURCE = 'remove()';
   log(SOURCE);
 
-  _user.save((saveUserInfoError) => {
-    if (saveUserInfoError === null) _callback(_user);
-    else _errorCallback(saveUserInfoError);
+  _user.remove((removeUserError) => {
+    if (removeUserError === null) _callback();
+    else _errorCallback(removeUserError);
   });
 };
 
@@ -168,22 +212,21 @@ var removeByUsername = function(_username, _callback, _errorCallback) {
     if (removeUserError === null) _callback();
     else _errorCallback(removeUserError);
   });
-}
+};
 
 /**
- * remove - Deletes a user from the user database
- * @param {Object} _user JSON of the user attributes
- * @param {callback} _callback the callback to return successful deletion
- * @param {callback} _errorCallback the callback to return any errors
+ * isTypeGoogle - Determines whether a user is a Google user
+ * @param {Object} _user Mongoose object
+ * @return {Boolean} whether or not _user is a Google user
  */
-var remove = function(_user, _callback, _errorCallback) {
-  const SOURCE = 'remove()';
+var isTypeGoogle = function(_user) {
+  const SOURCE = 'isTypeGoogle()';
   log(SOURCE);
 
-  _user.remove((removeUserError) => {
-    if (removeUserError === null) _callback();
-    else _errorCallback(removeUserError);
-  });
+  return _user !== undefined &&
+    _user !== null &&
+    _user.googleId !== undefined &&
+    _user.googleId !== null;
 };
 
 module.exports = {
@@ -192,10 +235,12 @@ module.exports = {
   get: get,
   getAttribute: getAttribute,
   getByUsername: getByUsername,
+  getByGoogleId: getByGoogleId,
   update: update,
   updateAttribute: updateAttribute,
   remove: remove,
   removeByUsername: removeByUsername,
+  isTypeGoogle: isTypeGoogle,
 };
 
 /**
