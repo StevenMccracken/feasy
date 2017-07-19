@@ -15,104 +15,98 @@ const ASSIGNMENTS = require('../controller/assignment');
  * authenticate - Authorizes a user and generates a JSON web token for the user
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to send the database response
+ * @returns {Promise<Object>} the error or success JSON
  */
-var authenticate = function(_request, _response, _callback) {
+var authenticate = function(_request, _response) {
   const SOURCE = 'authenticate()';
   log(SOURCE, _request);
 
-  // Check request parameters
-  let missingParams = [];
-  if (_request.body.username === undefined) missingParams.push('username');
-  if (_request.body.password === undefined) missingParams.push('password');
+  return new Promise((resolve) => {
+    // Check request parameters
+    let missingParams = [];
+    if (_request.body.username === undefined) missingParams.push('username');
+    if (_request.body.password === undefined) missingParams.push('password');
 
-  if (missingParams.length > 0) {
-    let errorJson = ERROR.error(
-      SOURCE,
-      _request,
-      _response,
-      ERROR.CODE.INVALID_REQUEST_ERROR,
-      `Invalid parameters: ${missingParams.join()}`
-    );
+    if (missingParams.length > 0) {
+      let errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        `Invalid parameters: ${missingParams.join()}`
+      );
 
-    _callback(errorJson);
-  } else {
-    // Parameters are valid. Retrieve user info from database
-    USERS.getByUsername(
-      _request.body.username,
-      true,
-      (user) => {
-        if (user === null) {
-          let errorJson = ERROR.error(
-            SOURCE,
-            _request,
-            _response,
-            ERROR.CODE.LOGIN_ERROR,
-            null,
-            `${_request.body.username} does not exist`
-          );
+      resolve(errorJson);
+    } else {
+      // Parameters are valid. Retrieve user info from database
+      USERS.getByUsername2(_request.body.username, true)
+        .then((user) => {
+          if (user === null) {
+            let errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.LOGIN_ERROR,
+              null,
+              `${_request.body.username} does not exist`
+            );
 
-          _callback(errorJson);
-        } else if (USERS.isTypeGoogle(user)) {
-          let errorJson = ERROR.error(
-            SOURCE,
-            _request,
-            _response,
-            ERROR.CODE.RESOURCE_ERROR,
-            `Authenticating a Google user with this route is not allowed`,
-            `${user.username} tried to use authenticate() method`
-          );
+            resolve(errorJson);
+          } else if (USERS.isTypeGoogle(user)) {
+            let errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.RESOURCE_ERROR,
+              `Authenticating a Google user with this route is not allowed`,
+              `${user.username} tried to use authenticate() method`
+            );
 
-          _callback(errorJson);
-        } else {
-          // User exists, so compare passwords
-          AUTH.validatePasswords(
-            _request.body.password,
-            user.password,
-            (passwordsMatch) => {
-              if (passwordsMatch) {
-                // Password is valid. Generate the JWT for the client
-                let token = AUTH.generateToken(user);
-                let successJson = {
-                  success: {
-                    message: 'Valid login credentials',
-                    token: `JWT ${token}`,
-                  },
-                };
+            resolve(errorJson);
+          } else {
+            AUTH.validatePasswords2(_request.body.password, user.password)
+              .then((passwordsMatch) => {
+                if (passwordsMatch) {
+                  // Password is valid. Generate the JWT for the client
+                  let token = AUTH.generateToken(user);
+                  let successJson = {
+                    success: {
+                      token: `JWT ${token}`,
+                    },
+                  };
 
-                _callback(successJson);
-              } else {
-                let errorJson = ERROR.error(
+                  resolve(successJson);
+                } else {
+                  let errorJson = ERROR.error(
+                    SOURCE,
+                    _request,
+                    _response,
+                    ERROR.CODE.LOGIN_ERROR,
+                    null,
+                    `Passwords do not match for '${_request.body.username}'`
+                  );
+
+                  resolve(errorJson);
+                }
+              }) // End then(passwordsMatch)
+              .catch((validatePasswordsError) => {
+                let errorJson = ERROR.determineBcryptError(
                   SOURCE,
                   _request,
                   _response,
-                  ERROR.CODE.LOGIN_ERROR,
-                  null,
-                  `Passwords do not match for '${_request.body.username}'`
+                  validatePasswordsError
                 );
 
-                _callback(errorJson);
-              }
-            }, // End (passwordsMatch)
-            (validatePasswordsError) => {
-              let errorJson = ERROR.determineBcryptError(
-                SOURCE,
-                _request,
-                _response,
-                validatePasswordsError
-              );
-
-              _callback(errorJson);
-            } // End (validatePasswordsError)
-          ); // End AUTH.validatePasswords()
-        }
-      }, // End (user)
-      (getUserError) => {
-        let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserError);
-        _callback(errorJson);
-      } // End (getUserError)
-    ); // End USERS.getByUsername()
-  }
+                resolve(errorJson);
+              }); // End AUTH.validatePasswords2()
+          }
+        }) // End then(user)
+        .catch((getUserError) => {
+          let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserError);
+          resolve(errorJson);
+        }); // End USERS.getByUsername2()
+    }
+  }); // End return new promise
 }; // End authenticate()
 
 /**
@@ -256,7 +250,7 @@ var createUser = function(_request, _response) {
           // Set the response status code
           _response.status(201);
           resolve(successJson);
-        })
+        }) // End then(newUser)
         .catch((createUserError) => {
           let errorJson = ERROR.determineUserError(SOURCE, _request, _response, createUserError);
           resolve(errorJson);
@@ -269,67 +263,60 @@ var createUser = function(_request, _response) {
  * retrieveUser - Retrieves a user from the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to send the database response
  */
-var retrieveUser = function(_request, _response, _callback) {
+var retrieveUser = function(_request, _response) {
   const SOURCE = 'retrieveUser()';
   log(SOURCE, _request);
 
-  // Verify client's web token first
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Token is valid. Check request paramerters
-      if (!VALIDATE.isValidUsername(_request.params.username)) {
-        let errorJson = ERROR.error(
+  return new Promise((resolve) => {
+    // Verify client's web token first
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Token is valid. Check request paramerters
+        if (!VALIDATE.isValidUsername(_request.params.username)) {
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.INVALID_REQUEST_ERROR,
+            'Invalid parameters: username'
+          );
+
+          resolve(errorJson);
+        } else {
+          // Request parameters are valid. Retrieve user from database
+          USERS.getByUsername2(_request.params.username, false)
+            .then((userInfo) => {
+              if (userInfo === null) {
+                // User with that username does not exist
+                let errorJson = ERROR.error(
+                  SOURCE,
+                  _request,
+                  _response,
+                  ERROR.CODE.RESOURCE_DNE_ERROR,
+                  'That user does not exist'
+                );
+
+                resolve(errorJson);
+              } else resolve(userInfo);
+            }) // End then(userInfo)
+            .catch((getUserInfoError) => {
+              let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserInfoError);
+              resolve(errorJson);
+            }); // End USERS.getByUsername()
+        }
+      }) // End then(client)
+      .catch((verifyTokenError) => {
+        let errorJson = ERROR.determineAuthenticationError2(
           SOURCE,
           _request,
           _response,
-          ERROR.CODE.INVALID_REQUEST_ERROR,
-          'Invalid parameters: username'
+          verifyTokenError
         );
 
-        _callback(errorJson);
-      } else {
-        // Request parameters are valid. Retrieve user from database
-        USERS.getByUsername(
-          _request.params.username,
-          false,
-          (userInfo) => {
-            if (userInfo === null) {
-              // User with that username does not exist
-              let errorJson = ERROR.error(
-                SOURCE,
-                _request,
-                _response,
-                ERROR.CODE.RESOURCE_DNE_ERROR,
-                'That user does not exist'
-              );
-
-              _callback(errorJson);
-            } else _callback(userInfo);
-          }, // End (userInfo)
-          (getUserInfoError) => {
-            let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserInfoError);
-            _callback(errorJson);
-          } // End (getUserInfoError)
-        ); // End USERS.getByUsername()
-      }
-    }, // End (client)
-    (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
-
-      _callback(errorJson)
-    }
-  ); // End AUTH.verifyToken()
+        resolve(errorJson);
+      }); // End AUTH.verifyToken2()
+  });
 }; // End retrieveUser()
 
 /**
@@ -462,7 +449,7 @@ var updateUserUsername = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End updateUserUsername()
@@ -638,7 +625,7 @@ var updateUserPassword = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End updateUserPassword()
@@ -812,7 +799,7 @@ var updateUserEmail = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End updateUserEmail()
@@ -852,7 +839,7 @@ var updateUserFirstName = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End updateUserFirstName()
@@ -892,7 +879,7 @@ var updateUserLastName = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End updateUserLastName()
@@ -1018,7 +1005,7 @@ var deleteUser = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End deleteUser()
@@ -1154,7 +1141,7 @@ var createAssignment = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End createAssignment()
@@ -1230,7 +1217,7 @@ var getAssignments = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End getAssignments()
@@ -1314,7 +1301,7 @@ var getAssignmentById = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End getAssignmentById()
@@ -1499,7 +1486,7 @@ var updateAssignmentTitle = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End updateAssignmentTitle()
@@ -1539,7 +1526,7 @@ var updateAssignmentClass = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End updateAssignmentClass()
@@ -1579,7 +1566,7 @@ var updateAssignmentType = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End updateAssignmentType()
@@ -1619,7 +1606,7 @@ var updateAssignmentDescription = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End updateAssignmentDescription()
@@ -1767,7 +1754,7 @@ function updateAssignmentCompleted(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End updateAssignmentCompleted()
@@ -1914,7 +1901,7 @@ function updateAssignmentDueDate(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End updateAssignmentDueDate()
@@ -2028,7 +2015,7 @@ var deleteAssignment = function(_request, _response, _callback) {
         userInfoMissing
       );
 
-      _callback(errorJson)
+      _callback(errorJson);
     }
   ); // End AUTH.verifyToken()
 }; // End deleteAssignment()

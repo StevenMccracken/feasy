@@ -4,7 +4,7 @@
 
 const MONGOOSE = require('mongoose');
 MONGOOSE.Promise = require('bluebird');
-const BCRYPT = require('bcrypt-nodejs');
+const BCRYPT = require('bcryptjs');
 
 // User-id is auto-generated when pushed to mongodb
 let UserSchema = MONGOOSE.Schema({
@@ -24,18 +24,16 @@ UserSchema.pre('save', function(done) {
   if (!this.isModified('password')) done();
   else {
     // Password has changed, so hash the new password
-    BCRYPT.genSalt(5, (genSaltErr, salt) => {
-      if (genSaltErr) done(genSaltErr);
-      else {
-        BCRYPT.hash(this.password, salt, null, (hashErr, hashedPassword) => {
-          if (hashErr) done(hashErr);
-          else {
+    BCRYPT.genSalt(5)
+      .then((salt) => {
+        BCRYPT.hash(this.password, salt)
+          .then((hashedPassword) => {
             this.password = hashedPassword;
             done();
-          }
-        });
-      }
-    });
+          })
+          .catch(hashError => done(hashError));
+      })
+      .catch((genSaltError) => done(genSaltError));
   }
 });
 

@@ -12,7 +12,6 @@ const CONFIG = require('./config/database');
 const app = Express();
 const ROUTER = require('./app/modules/router_mod')(Express.Router());
 
-// For purpose of checking travis
 let port = 8080;
 if (process.env.TEST) port = 3000;
 
