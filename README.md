@@ -759,7 +759,7 @@
 * Notes: This error has the same status code as Login errors; however, this error will never occur in the base route (/), /login route, or __POST__ /users route
 
 **[⬆ back to top - errors](#errors-table-of-contents)**
-<a name-"invalid-media-error"></a>
+<a name="invalid-media-error"></a>
 ### 3. Invalid Media Error
 * Explanation: An error occurred while verifying the type of a file in the request body
 * Common causes
