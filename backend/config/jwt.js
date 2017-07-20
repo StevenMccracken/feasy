@@ -1,5 +1,5 @@
 /**
- * secret - JSON web token secret configuration
+ * jwt - JSON web token secret configuration
  */
 
 const Uuid = require('uuid/v4');

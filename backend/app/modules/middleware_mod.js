@@ -113,77 +113,70 @@ var authenticate = function(_request, _response) {
  * authenticateGoogle - Initiates the authentication of a Google sign-in
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to send the database response
+ * @returns {Promise<Object>} the error or success JSON
  */
-var authenticateGoogle = function(_request, _response, _callback) {
+var authenticateGoogle = function(_request, _response) {
   const SOURCE = 'authenticateGoogle()';
   log(SOURCE, _request);
 
-  // Send the request to verify with Google's authentication API
-  AUTH.verifyToken(
-    _request,
-    _response,
-    client => _callback(),
-    (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
+  return new Promise((resolve) => {
+    // Send the request to verify with Google's authentication API
+    AUTH.verifyToken2(_request, _response)
+      .then(client => resolve()) // End then(client)
+      .catch((verifyTokenError) => {
+        let errorJson = ERROR.determineAuthenticationError2(
+          SOURCE,
+          _request,
+          _response,
+          verifyTokenError
+        );
 
-      _callback(errorJson)
-    }
-  );
+        resolve(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
 }; // End authenticateGoogle()
 
 /**
- * finishGoogleAuthenticate - Concludes the authentication of a Google sign-in
+ * finishAuthenticateGoogle - Concludes the authentication of a Google sign-in
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to send the database response
+ * @returns {Promise<Object>} the error or success JSON
  */
-var finishGoogleAuthenticate = function(_request, _response, _callback) {
-  const SOURCE = 'finishGoogleAuthenticate()';
+var finishAuthenticateGoogle = function(_request, _response) {
+  const SOURCE = 'finishAuthenticateGoogle()';
   log(SOURCE, _request);
 
-  // Parameters are valid. Retrieve user info from database
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Generate the JWT for the client
-      let token = AUTH.generateToken(client);
+  return new Promise((resolve) => {
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Generate the JWT for the client
+        let token = AUTH.generateToken(client);
 
-      /*
-       * Send the token and google user's username to
-       * the client because it is not entered on frontend
-       */
-      let successJson = {
-        success: {
-          message: 'Successful Google sign-in',
-          username: client.username,
-          token: `JWT ${token}`,
-        },
-      };
+        /*
+         * Send the token and google user's username to
+         * the client because it is not entered on frontend
+         */
+        let successJson = {
+          success: {
+            message: 'Successful Google sign-in',
+            username: client.username,
+            token: `JWT ${token}`,
+          },
+        };
 
-      _callback(successJson);
-    },
-    (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
+        resolve(successJson);
+      })
+      .catch((verifyTokenError) => {
+        let errorJson = ERROR.determineAuthenticationError2(
+          SOURCE,
+          _request,
+          _response,
+          verifyTokenError
+        );
 
-      _callback(errorJson)
-    }
-  );
+        resolve(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
 }; // End finishGoogleAuthenticate()
 
 /**
@@ -779,15 +772,29 @@ var updateUserEmail = function(_request, _response, _callback) {
     _request,
     _response,
     (client) => {
-      // Token is valid. Update the user email
-      updateUserAttribute(
-        client,
-        _request,
-        _response,
-        'email',
-        VALIDATE.isValidEmail,
-        updateResult => _callback(updateResult)
-      ); // End updateUserAttribute()
+      // Token is valid. Check if user is a google user
+      if (USERS.isTypeGoogle(client)) {
+        let errorJson = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.RESOURCE_ERROR,
+          `Updating a Google user's email is not allowed`,
+          `Google user ${client.username} tried to update their email`
+        );
+
+        _callback(errorJson);
+      } else {
+        // Update the user's email
+        updateUserAttribute(
+          client,
+          _request,
+          _response,
+          'email',
+          VALIDATE.isValidEmail,
+          updateResult => _callback(updateResult)
+        ); // End updateUserAttribute()
+      }
     }, // End (client)
     (passportError, tokenError, userInfoMissing) => {
       let errorJson = ERROR.determineAuthenticationError(
@@ -2123,7 +2130,7 @@ var parseSchedule = function(_request, _response, _callback) {
 module.exports = {
   authenticate: authenticate,
   authenticateGoogle: authenticateGoogle,
-  finishGoogleAuthenticate, finishGoogleAuthenticate,
+  finishAuthenticateGoogle, finishAuthenticateGoogle,
   createUser: createUser,
   retrieveUser: retrieveUser,
   updateUserUsername: updateUserUsername,

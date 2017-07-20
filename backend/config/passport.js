@@ -1,10 +1,10 @@
 /**
- * passport - @module for passport authentication configuration
+ * passport - Passport authentication configuration
  */
 
 const Uuid = require('uuid/v4');
-const GOOGLE = require('./google');
-const CONFIG = require('./secret');
+const JWT_CONFIG = require('./jwt');
+const GOOGLE_CONFIG = require('./google');
 const USERS = require('../app/controller/user');
 const JwtStrategy = require('passport-jwt').Strategy;
 const EXTRACTJWT = require('passport-jwt').ExtractJwt;
@@ -17,7 +17,7 @@ const GoogleStrategy = require('passport-google-oauth2').Strategy;
 module.exports = function(passport) {
   // JSON containing criteria used to compare incoming JWTs to existing JWTs
   let jwtOptions = {
-    secretOrKey: CONFIG.secret,
+    secretOrKey: JWT_CONFIG.secret,
     jwtFromRequest: EXTRACTJWT.fromAuthHeader(),
   };
 
@@ -69,11 +69,11 @@ module.exports = function(passport) {
 
   // JSON containing criteria used to compare incoming Google oAuth2 requests
   let googleOptions = {
-    clientID: GOOGLE.clientId,
-    clientSecret: GOOGLE.secret,
-    callbackURL: GOOGLE.redirectUri,
-    scope: GOOGLE.scope,
     passReqToCallback: true,
+    cope: GOOGLE_CONFIG.scope,
+    clientID: GOOGLE_CONFIG.clientId,
+    clientSecret: GOOGLE_CONFIG.secret,
+    callbackURL: GOOGLE_CONFIG.redirectUri,
   };
 
   passport.use(new GoogleStrategy(

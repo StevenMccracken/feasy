@@ -17,28 +17,16 @@ const UPLOAD_CONFIG = Multer({
 const parser = new PdfParser(this, 1);
 
 /**
- * ADD - Uploads an image to cloud storage
- * @param {String} _filename the name of the file (usually a dropp id)
- * @param {Object} _fileJson the file attributes JSON from multer
+ * parsePdf - Parses a pdf file and returns the content, split by whitespace
+ * @param {String} _filepath the path where the pdf file exists
  * @param {callback} _callback the callback to return the result
- * @param {callback} _errorCallback the callback to handle any errors
+ * @param {callback} _errorCallback the callback to return any errors
  */
-var ADD = function(_filename, _fileJson, _callback, _errorCallback) {
-  const SOURCE = 'ADD()';
-  log(SOURCE);
-
-  let localReadStream = FS.createReadStream(_fileJson.path);
-  // let remoteWriteStream = BUCKET.file(_filename).createWriteStream();
-  // localReadStream.pipe(remoteWriteStream);
-  //
-  // remoteWriteStream.on('error', uploadError => _errorCallback(uploadError));
-  // remoteWriteStream.on('finish', () => _callback());
-};
-
 var parsePdf = function(_filepath, _callback, _errorCallback) {
   const SOURCE = 'parsePdf()';
   log(SOURCE);
 
+  // Load the pdf file and start the parse
   parser.loadPDF(_filepath);
   parser.on('pdfParser_dataError', parseError => _errorCallback(parseError));
   parser.on('pdfParser_dataReady', (pdfData) => {
@@ -46,68 +34,55 @@ var parsePdf = function(_filepath, _callback, _errorCallback) {
     let textArray = parser.getRawTextContent().split(/\s+/);
     _callback(textArray);
   });
-}
-
-/**
- * GET - Downloads an image from cloud storage
- * @param {String} _filename the name of the file (usually a dropp id)
- * @param {Boolean} _platformIsReactNative determines if the image should be encoded in base-64
- * @param {callback} _callback the callback to return the result
- * @param {callback} _errorCallback the callback to handle any errors
- */
-var GET = function(_filename, _platformIsReactNative, _callback, _errorCallback) {
-  const SOURCE = 'GET()';
-  log(SOURCE);
-
-  // let remoteReadStream = BUCKET.file(_filename).createReadStream();
-  //
-  // // Catch error event while downloading
-  // remoteReadStream.on('error', (downloadError) => {
-  //   // var error, clientMessage, serverLog;
-  //   if (downloadError.code === 404) _callback(null);
-  //   else _errorCallback(downloadError);
-  // });
-  //
-  // // Download bytes from google cloud storage reference to local memory array
-  // let data = [];
-  // remoteReadStream.on('data', datum => data.push(datum));
-  //
-  // // Catch finish event after downloading has finished
-  // remoteReadStream.on('end', () => {
-  //   // Create buffer object from array of bytes
-  //   let buffer = Buffer.concat(data);
-  //
-  //   if (_platformIsReactNative) {
-  //     encodeForReactNative(buffer, base64String => _callback({ media: base64String }));
-  //   } else _callback({ media: buffer });
-  // });
 };
 
 /**
- * DELETE - Removes an image from cloud storage
- * @param {String} _filename the name of the file (usually a dropp id)
- * @param {callback} _callback the callback to handle finish event
- * @param {callback} _errorCallback the callback to handle error event
+ * parsePdf2 - Parses a pdf file and returns the content, split by whitespace
+ * @param {String} _filepath the path where the pdf file exists
+ * @returns {Promise<String>|Promise<Error>[]} array of pdf text content or pdf2json error
  */
-var DELETE = function(_filename, _callback, _errorCallback) {
-  const SOURCE = 'DELETE()';
+var parsePdf2 = function(_filepath) {
+  const SOURCE = 'parsePdf2()';
   log(SOURCE);
 
-  log(`${SOURCE}: Trying to delete image '${_filename}'`);
-  // let image = BUCKET.file(_filename);
-  // if (image !== null) {
-  //   image.delete().then((response) => {
-  //     log(`${SOURCE}: Successfully deleted image '${_filename}'`);
-  //     _callback(true);
-  //   })
-  //   .catch((deleteImageError) => {
-  //     log(`${SOURCE}: Failed deleting image '${_filename}' because: ${deleteImageError}`);
-  //     _errorCallback(deleteImageError);
-  //   });
-  // } else {
-  //   log(`${SOURCE}: Image '${_filename}' does not exist`);
-  //   _callback(false);
-  // }
+  return new Promise((resolve, reject) => {
+    // Load the pdf file and start the parse
+    parser.loadPDF(_filepath);
+    parser.on('pdfParser_dataError', parseError => reject(parseError));
+    parser.on('pdfParser_dataReady', (pdfData) => {
+      // Split the raw text into strings and store into an array
+      let textArray = parser.getRawTextContent().split(/\s+/);
+      resolve(textArray);
+    });
+  });
+};
+
+/**
+ * add - Adds an image
+ * @param {String} _filename the name of the file
+ * @param {Object} _fileJson the file attributes JSON from multer
+ */
+var add = function(_filename, _fileJson) {
+  const SOURCE = 'add()';
+  log(SOURCE);
+};
+
+/**
+ * get - Gets an image
+ * @param {String} _filename the name of the file
+ */
+var get = function(_filename) {
+  const SOURCE = 'get()';
+  log(SOURCE);
+};
+
+/**
+ * DELETE - Deletes an image
+ * @param {String} _filename the name of the file
+ */
+var DELETE = function(_filename) {
+  const SOURCE = 'DELETE()';
+  log(SOURCE);
 };
 
 /**
@@ -121,15 +96,15 @@ var removeTempFile = function(_filePath) {
   FS.unlink(_filePath, (unlinkError) => {
     if (unlinkError) {
       log(`${SOURCE}: Failed removing temp file at ${_filePath} because ${unlinkError}`);
-  } else log(`${SOURCE}: Removed temp file at ${_filePath}`);
+    } else log(`${SOURCE}: Removed temp file at ${_filePath}`);
   });
 };
 
 module.exports = {
   parsePdf: parsePdf,
   upload: UPLOAD_CONFIG,
-  ADD: ADD,
-  GET: GET,
+  ADD: add,
+  GET: get,
   DELETE: DELETE,
   removeTempFile: removeTempFile,
 };

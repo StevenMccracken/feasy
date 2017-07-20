@@ -41,13 +41,26 @@ var routing = function(_router) {
     MIDDLEWARE.authenticate(_request, _response).then(result => _response.json(result))
   ));
 
-  router.route('/auth/google').get((_request, _response) => {
-    MIDDLEWARE.authenticateGoogle(_request, _response, result => _response.json(result));
-  });
+  /**
+   * The GET route for initiating a Google profile sign-in. Re-routes the client
+   * to Google's sign-in page. This route does not require token authentication
+   * @param {Object} _request the HTTP request
+   * @param {Object} _response the HTTP response
+   */
+  router.route('/auth/google').get((_request, _response) => (
+    MIDDLEWARE.authenticateGoogle(_request, _response).then(result => _response.json(result))
+  ));
 
-  router.route('/auth/google/callback').get((_request, _response) => {
-    MIDDLEWARE.finishGoogleAuthenticate(_request, _response, result => _response.json(result));
-  });
+  /**
+   * The GET route for concluding a Google profile sign-in.
+   * Sends an error JSON or a JSON web token for authentication.
+   * This route does not require token authentication
+   * @param {Object} _request the HTTP request
+   * @param {Object} _response the HTTP response
+   */
+  router.route('/auth/google/callback').get((_request, _response) => (
+    MIDDLEWARE.finishAuthenticateGoogle(_request, _response).then(result => _response.json(result))
+  ));
 
   /**
    * The POST route for creating a user. Sends an error

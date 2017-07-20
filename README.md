@@ -251,6 +251,7 @@
 * Notes
   * The `oldPassword` value must be __identical__ to the existing password in the database
   * The `newPassword` value must be __different__ from the existing password in the database
+  * Users who signed up with Google are __not__ allowed to update their password
 
 **[⬆ back to top](#table-of-contents)**
 <a name="update-email"></a>
@@ -281,6 +282,7 @@
   ```
 * Notes
   * The `newEmail` value must be __different__ from the existing email in the database
+  * Users who signed up with Google are __not__ allowed to update their email
 
 **[⬆ back to top](#table-of-contents)**
 <a name="update-firstName"></a>
