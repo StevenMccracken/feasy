@@ -16,7 +16,7 @@ import { Router } from '@angular/router';
 @Injectable()
 export class AssignmentService implements OnInit{
 
-  private apiUrl = 'https://api.pyrsuit.com';
+  private apiUrl = 'https://api.feasy-app.com';
   private token: string;
   username: string;
 

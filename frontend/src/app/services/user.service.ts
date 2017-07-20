@@ -14,7 +14,7 @@ import 'rxjs/add/operator/map';
 @Injectable()
 export class UserService {
 
-  private userUrl = 'https://api.pyrsuit.com';
+  private userUrl = 'https://api.feasy-app.com';
   private token = '';
 
   private headers = new Headers({"Content-Type": "application/x-www-form-urlencoded"});

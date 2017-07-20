@@ -1,7 +1,7 @@
 {
-  "name": "Pyrsuit",
+  "name": "Feasy",
   "version": "0.1.0",
-  "description": "Pyrsuit backend",
+  "description": "Feasy backend",
   "main": "server.js",
   "author": {
     "name": "Daniel Olivera, Steven McCracken"
