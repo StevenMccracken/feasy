@@ -70,7 +70,7 @@ module.exports = function(passport) {
   // JSON containing criteria used to compare incoming Google oAuth2 requests
   let googleOptions = {
     passReqToCallback: true,
-    cope: GOOGLE_CONFIG.scope,
+    scope: GOOGLE_CONFIG.scope,
     clientID: GOOGLE_CONFIG.clientId,
     clientSecret: GOOGLE_CONFIG.secret,
     callbackURL: GOOGLE_CONFIG.redirectUri,
