@@ -1,3 +1,6 @@
+import { Subject } from 'rxjs/Subject';
+import { Router } from '@angular/router';
+import { Observable } from 'rxjs/Observable';
 import { Component, ChangeDetectionStrategy, OnInit} from '@angular/core';
 import {
   startOfDay,
@@ -9,7 +12,6 @@ import {
   isSameMonth,
   addHours
 } from 'date-fns';
-import { Subject } from 'rxjs/Subject';
 import {
   CalendarEvent,
   CalendarEventAction,
@@ -17,16 +19,13 @@ import {
 } from 'angular-calendar';
 
 import { Assignment } from '../../objects/Assignment';
-import { Observable } from 'rxjs/Observable';
-import { Router } from '@angular/router';
 import { AssignmentService } from '../../services/assignment.service';
 
 declare var $: any;
 declare var Materialize:any;
 
-
 const colors: any = {
-  gray:{
+  gray: {
     primary: '#8c8c8c',
     secondary: '#bfbfbf'
   },
@@ -41,7 +40,7 @@ const colors: any = {
   yellow: {
     primary: '#e3bc08',
     secondary: '#FDF1BA'
-  }
+  },
 };
 
 @Component({
@@ -50,29 +49,21 @@ const colors: any = {
   styleUrls: ['calendar.component.css'],
   templateUrl: 'calendar.component.html'
 })
-
-
-export class CalendarComponent implements OnInit{
-
+export class CalendarComponent implements OnInit {
+  // FIXME: Why is there a global assignment variable for the entire component?
   assignment: Assignment = new Assignment();
-
   view: string = 'month';
-
-
   currentDayArray: Assignment[];
-
-
   viewDate: Date = new Date();
 
   eDescription: Map<CalendarEvent, Assignment> = new Map<CalendarEvent, Assignment>();
   aDescription: Map<Assignment, CalendarEvent> = new Map<Assignment, CalendarEvent>();
 
-
   events: CalendarEvent[]  = new Array<CalendarEvent>();
 
-  constructor(private router: Router, private _assignmentService: AssignmentService){}
+  constructor(private router: Router, private _assignmentService: AssignmentService) {}
 
-  ngOnInit(){
+  ngOnInit() {
     $(document).ready(function() {
       $('select').material_select();
       $('select').on('change', function(e) {
@@ -81,12 +72,13 @@ export class CalendarComponent implements OnInit{
           $('select').prop('selectedIndex', 0); //Sets the first option as selected
       });
     });
+
     $('.datepicker').pickadate({
-      onSet: (context) => {
-         this.assignment.dueDate = new Date(context.select);},
-         selectMonths: true, // Creates a dropdown to control month
-         selectYears: 15 // Creates a dropdown of 15 years to control year
-     });
+      onSet: (context) => { this.assignment.dueDate = new Date(context.select); },
+      selectMonths: true, // Creates a dropdown to control month
+      selectYears: 15 // Creates a dropdown of 15 years to control year
+    });
+
     this.initializeCalendar();
   }
 
@@ -101,12 +93,13 @@ export class CalendarComponent implements OnInit{
       this.handleEvent('Edited', event);
       this.openModal("#createAssignments");
     }
-  }, {
+  },
+  {
     label: '<i class="material-icons delete">delete_sweep</i>',
-    onClick: ({event}: {event: CalendarEvent}): void => {
+    onClick: ({ event }: { event: CalendarEvent }): void => {
       this.handleEvent('Deleted', event);
       this._assignmentService.delete(this.eDescription.get(event)._id)
-                             .then((res)=> console.log(res));
+        .then(response => console.log(response));
     }
   }];
 
@@ -118,34 +111,37 @@ export class CalendarComponent implements OnInit{
     console.log(index);
     let event: CalendarEvent = this.aDescription.get(assignment);
     this.events = this.events.filter(iEvent => iEvent !== event);
+
+    // TODO: Add a catch for this service call
     this._assignmentService.delete(assignment._id)
-                           .then((res)=> console.log(res));
+      .then(response => console.log(response));
   }
 
   //////////////////////// INTIALIZE ITEM IN CALENDAR ////////////////////////////////////////////////
-  initializeCalendar(): void{
-    let assignmentArray: Assignment[] = [];
+  initializeCalendar(): void {
     this._assignmentService.get()
-                           .then((res: Assignment[]) => {
-                             this.populate(res);
-                           });
+      .then((assignments: Assignment[]) => this.populate(assignments));
 
   }
 
-  populate(assignmentArray: Assignment[]): void{
-    console.log(assignmentArray);
+  populate(assignments: Assignment[]): void {
+    console.log(assignments);
     let SomeArray: CalendarEvent[] = [];
 
-    for(let a of assignmentArray){
-      let Event: CalendarEvent = { start: new Date(a.dueDate),
-                                   end: new Date(a.dueDate),
-                                   title: a.title,
-                                   color: (new Date() > new Date(a.dueDate)) ? colors.gray:
-                                          (addDays(new Date(), 5) >  new Date(a.dueDate)) ? colors.red:
-                                          (addDays(new Date(), 14) > new Date(a.dueDate)) ? colors.yellow:
-                                          colors.blue,
-                                   actions: this.actions,
-                                   draggable: true};
+    for (let a of assignments) {
+      // TODO: Clean up this monstrosity haha
+      let Event: CalendarEvent = {
+        start: new Date(a.dueDate),
+        end: new Date(a.dueDate),
+        title: a.title,
+        color: (new Date() > new Date(a.dueDate)) ? colors.gray :
+        (addDays(new Date(), 5) >  new Date(a.dueDate)) ? colors.red:
+        (addDays(new Date(), 14) > new Date(a.dueDate)) ? colors.yellow:
+        colors.blue,
+        actions: this.actions,
+        draggable: true
+      };
+
       SomeArray.push(Event);
       this.eDescription.set(Event, a);
       this.aDescription.set(a, Event);
@@ -162,61 +158,52 @@ export class CalendarComponent implements OnInit{
   onetime: boolean = false;
   timer: any;
 
-
-  enableEdit(assignment: Assignment, index: number):void{
+  enableEdit(assignment: Assignment, index: number): void {
     assignment.editMode = !assignment.editMode;
-    let id = '#descriptionEdit'+index;
-    setTimeout(()=>{$(id).focus();}, 1);
+    let id = `#descriptionEdit${index}`;
+    setTimeout(() => $(id).focus(), 1);
   }
 
-  getEditMode(event: CalendarEvent): boolean{
+  getEditMode(event: CalendarEvent): boolean {
     return this.eDescription.get(event).editMode;
   }
-  monthEventClick(event: any){
+
+  monthEventClick(event: any) {
     this.onetime = !this.onetime;
-    let eventArry:CalendarEvent[] = event.day.events;
+    let eventArray: CalendarEvent[] = event.day.events;
     this.assignment.dueDate = new Date(event.day.date);
+
     this.currentDayArray = [];
-    for(let a of eventArry){
-      this.currentDayArray.push(this.eDescription.get(a));
-    }
-
-
+    for(let a of eventArray) this.currentDayArray.push(this.eDescription.get(a));
 
     this.openView();
     console.log(event);
   }
 
-  openView(): void{
+  openView(): void {
     $('#viewEvent').modal('open');
   }
 
-
-
-  eventTimesChanged({event, newStart, newEnd}: CalendarEventTimesChangedEvent): void {
+  eventTimesChanged({ event, newStart, newEnd }: CalendarEventTimesChangedEvent): void {
     event.start = newStart;
     event.end = newEnd;
     this.handleEvent('Dropped or resized', event);
     this.refresh.next();
   }
 
-  updateDescription(assignment: Assignment): void{
-    let index = assignment._id;
+  updateDescription(assignment: Assignment): void {
     assignment.editMode = false;
-    this._assignmentService.update(index, assignment.description)
-                           .then(()=> {
-                           });
 
+    // TODO: Add a meaningful then and catch to this service call
+    this._assignmentService.update(assignment._id, assignment.description);
   }
 
-
-
-  dayEventClick(event:any): void{
+  dayEventClick(event: any): void {
     this.assignment.dueDate = event.date;
     this.openModal('#createAssignments');
   }
 
-  resetAssignmentField(date: Date): void{
+  resetAssignmentField(date: Date): void {
     this.assignment = new Assignment();
     this.assignment.dueDate = date;
     localStorage['type'] = '';
@@ -230,22 +217,26 @@ export class CalendarComponent implements OnInit{
     $('select').prop('selectedIndex', 0); //Sets the first option as selected
   }
 
-  addAssignment(): void{
+  addAssignment(): void {
     this.assignment.completed = false;
     this.assignment.type = localStorage['type'];
     console.log(this.assignment.type);
-    this._assignmentService.create(this.assignment)
-                           .then((response) => {
-                             console.log(response.json());
-                             this.assignment.type = response.json().type;
-                             this.assignment._id = response.json()._id;
-                             console.log(this.assignment);
-                             this.currentDayArray.push(this.assignment);
-                             this.addEvent();
-                             this.resetAssignmentField(this.assignment.dueDate);
-                           });
-  }
 
+    // TODO: Add catch to this service call
+    this._assignmentService.create(this.assignment)
+      .then((response) => {
+        let assignmentResponse = response.json();
+        console.log(assignmentResponse);
+
+        this.assignment.type = assignmentResponse.type;
+        this.assignment._id = assignmentResponse._id;
+        console.log(this.assignment);
+
+        this.currentDayArray.push(this.assignment);
+        this.addEvent();
+        this.resetAssignmentField(this.assignment.dueDate);
+      });
+  }
 
   addEvent(): void {
     this.events.push({
@@ -259,23 +250,22 @@ export class CalendarComponent implements OnInit{
       draggable: true,
       resizable: {
         beforeStart: true,
-        afterEnd: true
+        afterEnd: true,
       },
-      actions: this.actions
+      actions: this.actions,
     });
-    this.eDescription.set(this.events[this.events.length-1], this.assignment);
-    this.aDescription.set(this.assignment, this.events[this.events.length-1]);
+
+    this.eDescription.set(this.events[this.events.length - 1], this.assignment);
+    this.aDescription.set(this.assignment, this.events[this.events.length - 1]);
     this.refresh.next();
   }
 
-
-
   //////////////////// HELPER FUNCTIONS /////////////////////
-  openModal(id: string): void{
+  openModal(id: string): void {
     $(id).modal('open');
   }
 
-  getDescription(event: CalendarEvent): string{
+  getDescription(event: CalendarEvent): string {
     return this.eDescription.get(event).description;
   }
 
@@ -284,26 +274,23 @@ export class CalendarComponent implements OnInit{
     //nothing for now.
   }
 
-  debug(event: any): void{
-    // console.log(event.y);
+  debug(event: any): void {
     console.log(event.target);
     var target = event.target;
     console.log(event.target.nodeName);
   }
 
-  dayClicked({date, events}: {date: Date, events: CalendarEvent[]}): void {
+  dayClicked({ date, events }: { date: Date, events: CalendarEvent[] }): void {
     console.log("not happeneing");
     if (isSameMonth(date, this.viewDate)) {
       if (
         (isSameDay(this.viewDate, date) && this.activeDayIsOpen === true) ||
         events.length === 0
-      ) {
-        this.activeDayIsOpen = false;
-      } else {
+      ) this.activeDayIsOpen = false;
+      else {
         this.activeDayIsOpen = true;
         this.viewDate = date;
       }
     }
   }
-
 }

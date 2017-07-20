@@ -4,29 +4,23 @@ import { User } from '../objects/user';
 import { UserService } from '../services/user.service';
 import { Router } from '@angular/router';
 
-
 @Component({
   selector: 'app-signup',
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.css']
 })
-
 export class SignupComponent implements OnInit {
-
   user: User = new User();
   passwordValidator: string;
   error: boolean = false;
 
-  constructor(private _userService: UserService, private router: Router) {
+  constructor(private _userService: UserService, private router: Router) {}
 
-  }
+  ngOnInit() {}
 
-  ngOnInit() {
-  }
-
-  add(): void{
-    if( !this.user ) {return null;}
+  add(): void {
+    if (!this.user) return null;
     this._userService.create(this.user)
-                     .then((response: User) => console.log(response));
+      .then((response: User) => console.log(response));
   }
 }

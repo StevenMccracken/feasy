@@ -24,4 +24,4 @@ import { CalendarModule } from 'angular-calendar';
   ],
   providers: [ AuthGuard ]
 })
-export class LayoutModule { }
+export class LayoutModule {}

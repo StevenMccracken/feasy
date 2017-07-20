@@ -42,4 +42,4 @@ import { LayoutComponent } from './layout/layout.component';
              ],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {}

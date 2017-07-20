@@ -13,68 +13,77 @@ import 'rxjs/add/operator/map';
 
 @Injectable()
 export class UserService {
+  private baseUrl = 'https://api.feasy-app.com';
+  private contentType_UrlEncoded = 'application/x-www-form-urlencoded';
+  private standardHeaders = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
 
-  private userUrl = 'https://api.feasy-app.com';
-  private token = '';
+  private token: string;
 
-  private headers = new Headers({"Content-Type": "application/x-www-form-urlencoded"});
+  constructor(private _http: Http, private _router: Router) {}
 
-  constructor(private _http: Http, private _router: Router) { }
-
-  private handleError(error: any): Promise<any>{
-    console.log("http error:", error);
-    if(error.status == 401){
+  private handleError(error: any): Promise<any> {
+    console.error('HTTP error: %s', error);
+    if (error.status == 401) {
       localStorage.clear();
       this._router.navigate(['/login']);
     }
+
     return Promise.reject(error.message || error);
   }
 
-  get(): Promise<Account>{
-    let extension = this.userUrl + "/users/" + localStorage['currentUser'];
-    let headers: Headers = new Headers({"Authorization":localStorage['token'], "Content-Type":"application/x-www-form-urlencoded"});
-    return this._http.get(extension, {headers: headers})
-                     .toPromise()
-                     .then((res: Response)=> {
-                       console.log(res);
-                       let account:Account = res.json();
-                       return account})
-                     .catch((error:any) => this.handleError(error));
+  get(): Promise<Account> {
+    // Create request information
+    let getUserUrl = `${this.baseUrl}/users/${localStorage['currentUser']}`;
+    let headers = new Headers({
+      'Content-Type': this.contentType_UrlEncoded,
+      Authorization: localStorage['token'],
+    });
+
+    // Send request
+    return this._http.get(getUserUrl, { headers: headers })
+      .toPromise()
+      .then((response: Response) => {
+        console.log(response);
+        let account: Account = response.json();
+        return account;
+      })
+      .catch((error: any) => this.handleError(error));
   }
 
-  create(user: User): Promise<User>{
-    //used for api extention
-    let extension = this.userUrl + "/users";
+  create(user: User): Promise<User> {
+    // Create request information
+    let createUserUrl = `${this.baseUrl}/users`;
 
-    //used for body data
-    let body = "username="+user.username+
-               "&password="+user.password+
-               "&email="+user.email+
-               "&firstName="+user.firstName+
-               "&lastName="+user.lastName;
+    // Add required parameters
+    let requestParams = `username=${user.username}&password=${user.password}&email=${user.email}&firstName=${user.firstName}&lastName=${user.lastName}`;
 
-    return this._http.post(extension.toString(), body, {headers: this.headers})
-                     .toPromise()
-                     .then((response: Response) =>{
-                       let body = response.json();
-                       return body.data || {};
-                     })
-                     .catch(this.handleError);
+    // Send request
+    return this._http.post(createUserUrl, requestParams, { headers: this.standardHeaders })
+      .toPromise()
+      .then((response: Response) => {
+        // TODO: Response will have JWT, so parse response for that and return it
+        let body = response.json();
+        return body.data || {};
+      })
+      .catch(this.handleError);
   }
 
-  validate(username: string, password: string): Promise<string>{
-    let extention = this.userUrl+"/login";
+  validate(username: string, password: string): Promise<string> {
+    // Create request information
+    let loginUrl = `${this.baseUrl}/login`;
 
-    let body = "username="+username+
-               "&password="+password;
+    // Add required parameters
+    let requestParams = `username=${username}&password=${password}`;
 
-    return this._http.post(extention.toString(), body, {headers: this.headers})
-                     .toPromise()
-                     .then((response: Response) => {
-                       let token = response.json().success.token;
-                       localStorage.setItem('currentUser', username);
-                       localStorage.setItem('token', token);
-                     })
-                      .catch(this.handleError);
+    // Send request
+    return this._http.post(loginUrl, requestParams, { headers: this.standardHeaders })
+      .toPromise()
+      .then((response: Response) => {
+        // FIXME: Do not set the localStorage in the service. It should be in the individual components
+        let token = response.json().success.token;
+        localStorage.setItem('currentUser', username);
+        localStorage.setItem('token', token);
+      })
+      .catch(this.handleError);
   }
 }

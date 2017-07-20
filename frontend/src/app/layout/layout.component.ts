@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { UserService } from '../services/user.service';
+import { Component, OnInit } from '@angular/core';
+
 import { Account } from '../objects/user';
+import { UserService } from '../services/user.service';
 
 declare var $: any;
 
@@ -11,26 +12,25 @@ declare var $: any;
   styleUrls: ['./layout.component.css']
 })
 export class LayoutComponent implements OnInit {
-
-  constructor(private _router: Router, private _userService: UserService) { }
   user: Account = new Account();
+
+  constructor(private _router: Router, private _userService: UserService) {}
 
   ngOnInit() {
     $("#button-slide").sideNav();
 
+    // TODO: Add a catch to this service call
     this._userService.get()
-                     .then((res: Account) => {
-                       console.log(res);
-                       this.user = res;
-                       this.user.firstName = this.user.firstName.charAt(0).toUpperCase() + this.user.firstName.slice(1);
-                     }
-                     );
+      .then((response: Account) => {
+        console.log(response);
+        this.user = response;
+        this.user.firstName = `${this.user.firstName.charAt(0).toUpperCase()}${this.user.firstName.slice(1)}`;
+      });
   }
 
-  logout(): void{
+  logout(): void {
     localStorage.clear();
     $("#button-slide").sideNav('destroy');
     this._router.navigate(['login']);
   }
-
 }
