@@ -5,40 +5,34 @@
 const Cors = require('cors');
 const Express = require('express');
 const MONGOOSE = require('mongoose');
-MONGOOSE.Promise = require('bluebird');
 const BODY_PARSER = require('body-parser');
-const CONFIG = require('./config/database');
+const DB_CONFIG = require('./config/database');
 
-var port = 8080;
 const app = Express();
 const ROUTER = require('./app/modules/router_mod')(Express.Router());
 
-// For purpose of checking travis
+MONGOOSE.Promise = require('bluebird');
+
+let port = 8080;
 if (process.env.TEST) port = 3000;
 
 app.use(Cors());
-app.use(
-  BODY_PARSER.urlencoded({
-    parameterLimit: 100000000,
-    limit: '10000kb',
-    extended: true
-  })
-);
+app.use(BODY_PARSER.urlencoded({
+  parameterLimit: 100000000,
+  limit: '10000kb',
+  extended: true,
+}));
 
 // Set the base route path
 app.use('/', ROUTER);
 
 // Connect to database server before express server starts
-MONGOOSE.connect(CONFIG.database);
+MONGOOSE.connect(DB_CONFIG.path, { useMongoClient: true });
 
-/**
- * Listens for all incoming requests
- * @param {Number} port the port to listen on
- * @param {callback} err the callback that handles any errors
- */
-var server = app.listen(port, (err) => {
-  if (err) console.log('Server connection error: %s', err);
-  else console.log('Pyrsuit server is listening on port %d', port);
+// Listens for all incoming requests on the specified port
+var server = app.listen(port, (connectionError) => {
+  if (connectionError === undefined) console.log('Feasy server is listening on port %d', port);
+  else console.log('Server connection error: %s', connectionError);
 });
 
 module.exports.closeServer = () => {

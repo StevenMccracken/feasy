@@ -3,17 +3,33 @@
  */
 
 const MONGOOSE = require('mongoose');
-MONGOOSE.Promise = require('bluebird');
-const BCRYPT = require('bcrypt-nodejs');
+const BCRYPT = require('bcryptjs');
 
-// User-id is auto-generated when pushed to mongodb
-var UserSchema = MONGOOSE.Schema({
-  email:          { type: String, required: true, index: { unique: true } },
-  username:       { type: String, required: true, index: { unique: true } },
-  password:       { type: String, required: true },
-  dateCreated:    { type: Date, default: Date.now },
-  firstName:      { type: String },
-  lastName:       { type: String }
+MONGOOSE.Promise = require('bluebird');
+
+let UserSchema = MONGOOSE.Schema({
+  email: {
+    type: String,
+    required: true,
+    index: { unique: true },
+  },
+  username: {
+    type: String,
+    required: true,
+    index: { unique: true }
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  dateCreated: {
+    type: Date,
+    default: Date.now,
+  },
+  googleId: { type: String },
+  firstName: { type: String },
+  lastName: { type: String },
+  accessToken: { type: String },
 });
 
 // Executes right before user is saved in the database
@@ -22,18 +38,16 @@ UserSchema.pre('save', function(done) {
   if (!this.isModified('password')) done();
   else {
     // Password has changed, so hash the new password
-    BCRYPT.genSalt(5, (genSaltErr, salt) => {
-      if (genSaltErr) done(genSaltErr);
-      else {
-        BCRYPT.hash(this.password, salt, null, (hashErr, hashedPassword) => {
-          if (hashErr) done(hashErr);
-          else {
+    BCRYPT.genSalt(5)
+      .then((salt) => {
+        BCRYPT.hash(this.password, salt)
+          .then((hashedPassword) => {
             this.password = hashedPassword;
             done();
-          }
-        });
-      }
-    });
+          })
+          .catch(hashError => done(hashError));
+      })
+      .catch((genSaltError) => done(genSaltError));
   }
 });
 

@@ -1,0 +1,69 @@
+<template ngbModalContainer></template>
+
+<template #modalContent let-close="close">
+  <div class="modal-header">
+    <h5 *ngIf="modalData.action != 'Deleted'" class="modal-title">Edit Event</h5>
+    <h5 *ngIf="modalData.action == 'Deleted'" class="modal-title">Event Deleted</h5>
+    <button type="button" class="close" (click)="close()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="modalData.action != 'Deleted'">
+      Event:
+      <pre>{{ modalData?.event | json }}</pre>
+    </div>
+    <div *ngIf="modalData.action == 'Deleted'">
+      Event:
+      <pre>Event: {{ modalData?.event.title }}</pre>
+      <pre>Started: {{ modalData?.event.start | date: 'dd/MM/yyyy' }}</pre>
+      <pre *ngIf="modalData?.event.end != null">Ended: {{ modalData?.event.end | date: 'dd/MM/yyyy' }}</pre>
+      <pre *ngIf="modalData?.event.end == null">Ended: {{ modalData?.event.start | date: 'dd/MM/yyyy' }}</pre>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="close()">OK</button>
+  </div>
+</template>
+
+
+<div class="row text-center">
+  <div class="col-md-4">
+    <div class="btn-group">
+      <div
+        class="btn btn-primary"
+        mwlCalendarPreviousView
+        [view]="view"
+        [(viewDate)]="viewDate">
+        Previous
+      </div>
+      <div
+        class="btn btn-secondary"
+        mwlCalendarToday
+        [(viewDate)]="viewDate">
+        Today
+      </div>
+      <div
+        class="btn btn-primary"
+        mwlCalendarNextView
+        [view]="view"
+        [(viewDate)]="viewDate">
+        Next
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <h3>{{ viewDate | calendarDate:(view + 'ViewTitle'):'en' }}</h3>
+  </div>
+</div>
+<br>
+
+<mwl-calendar-month-view
+  [viewDate]="viewDate"
+  [events]="events"
+  [refresh]="refresh"
+  [activeDayIsOpen]="activeDayIsOpen"
+  (dayClicked)="dayClicked($event.day)"
+  (eventClicked)="handleEvent('Clicked', $event.event)"
+  (eventTimesChanged)="eventTimesChanged($event)">
+</mwl-calendar-month-view>
