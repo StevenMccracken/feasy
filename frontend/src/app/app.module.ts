@@ -31,10 +31,11 @@ import { AppRoutingModule } from './app-routing/app-routing.module';
     ReactiveFormsModule,
     AppRoutingModule,
   ],
-  providers: [ UserService,
-               AuthGuard,
-               AssignmentService
-             ],
+  providers: [
+    UserService,
+    AuthGuard,
+    AssignmentService
+  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {}
