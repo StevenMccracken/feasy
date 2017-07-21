@@ -22,24 +22,24 @@ import { Assignment } from '../../objects/Assignment';
 import { AssignmentService } from '../../services/assignment.service';
 
 declare var $: any;
-declare var Materialize:any;
+declare var Materialize: any;
 
-const colors: any = {
+const colors = {
   gray: {
     primary: '#8c8c8c',
-    secondary: '#bfbfbf'
+    secondary: '#bfbfbf',
   },
   red: {
     primary: '#ad2121',
-    secondary: '#FAE3E3'
+    secondary: '#FAE3E3',
   },
   blue: {
     primary: '#1e90ff',
-    secondary: '#D1E8FF'
+    secondary: '#D1E8FF',
   },
   yellow: {
     primary: '#e3bc08',
-    secondary: '#FDF1BA'
+    secondary: '#FDF1BA',
   },
 };
 
@@ -47,19 +47,18 @@ const colors: any = {
   selector: 'app-calendar',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['calendar.component.css'],
-  templateUrl: 'calendar.component.html'
+  templateUrl: 'calendar.component.html',
 })
 export class CalendarComponent implements OnInit {
   // FIXME: Why is there a global assignment variable for the entire component?
   assignment: Assignment = new Assignment();
-  view: string = 'month';
+  view = 'month';
   currentDayArray: Assignment[];
-  viewDate: Date = new Date();
+  viewDate = new Date();
 
-  eDescription: Map<CalendarEvent, Assignment> = new Map<CalendarEvent, Assignment>();
-  aDescription: Map<Assignment, CalendarEvent> = new Map<Assignment, CalendarEvent>();
-
-  events: CalendarEvent[]  = new Array<CalendarEvent>();
+  eDescription = new Map<CalendarEvent, Assignment>();
+  aDescription = new Map<Assignment, CalendarEvent>();
+  events = new Array<CalendarEvent>();
 
   constructor(private router: Router, private _assignmentService: AssignmentService) {}
 
@@ -67,7 +66,7 @@ export class CalendarComponent implements OnInit {
     $(document).ready(function() {
       $('select').material_select();
       $('select').on('change', function(e) {
-          var selected = e.currentTarget.selectedOptions[0].value;
+          let selected = e.currentTarget.selectedOptions[0].value;
           localStorage['type'] = selected;
           $('select').prop('selectedIndex', 0); //Sets the first option as selected
       });
@@ -89,21 +88,23 @@ export class CalendarComponent implements OnInit {
 
   actions: CalendarEventAction[] = [{
     label: '<i class="material-icons edit">create</i>',
-    onClick: ({event}: {event: CalendarEvent}): void => {
+    onClick: ({ event }: { event: CalendarEvent }): void => {
       this.handleEvent('Edited', event);
-      this.openModal("#createAssignments");
-    }
+      this.openModal('#createAssignments');
+    },
   },
   {
     label: '<i class="material-icons delete">delete_sweep</i>',
     onClick: ({ event }: { event: CalendarEvent }): void => {
       this.handleEvent('Deleted', event);
+
+      // TODO: Add a catch for this service call
       this._assignmentService.delete(this.eDescription.get(event)._id)
         .then(response => console.log(response));
-    }
+    },
   }];
 
-  refresh: Subject<any> = new Subject();
+  refresh = new Subject();
 
   deleteEventAction(assignment: Assignment, index: number): void {
     this.currentDayArray.splice(index, 1);
@@ -121,7 +122,6 @@ export class CalendarComponent implements OnInit {
   initializeCalendar(): void {
     this._assignmentService.get()
       .then((assignments: Assignment[]) => this.populate(assignments));
-
   }
 
   populate(assignments: Assignment[]): void {
@@ -129,17 +129,17 @@ export class CalendarComponent implements OnInit {
     let SomeArray: CalendarEvent[] = [];
 
     for (let a of assignments) {
-      // TODO: Clean up this monstrosity haha
       let Event: CalendarEvent = {
         start: new Date(a.dueDate),
         end: new Date(a.dueDate),
         title: a.title,
+        // TODO: Clean up this monstrosity haha
         color: (new Date() > new Date(a.dueDate)) ? colors.gray :
         (addDays(new Date(), 5) >  new Date(a.dueDate)) ? colors.red:
         (addDays(new Date(), 14) > new Date(a.dueDate)) ? colors.yellow:
         colors.blue,
         actions: this.actions,
-        draggable: true
+        draggable: true,
       };
 
       SomeArray.push(Event);
@@ -147,6 +147,7 @@ export class CalendarComponent implements OnInit {
       this.aDescription.set(a, Event);
     }
 
+    // Bad name
     let variable: CalendarEvent[] = this.events.concat(SomeArray);
     this.events = variable;
     this.refresh.next();
@@ -154,8 +155,8 @@ export class CalendarComponent implements OnInit {
 
   //////////////////////////////////////////////////////////////////////
   //turn off active day
-  activeDayIsOpen: boolean = false;
-  onetime: boolean = false;
+  activeDayIsOpen = false;
+  onetime = false;
   timer: any;
 
   enableEdit(assignment: Assignment, index: number): void {
@@ -276,7 +277,7 @@ export class CalendarComponent implements OnInit {
 
   debug(event: any): void {
     console.log(event.target);
-    var target = event.target;
+    let target = event.target;
     console.log(event.target.nodeName);
   }
 

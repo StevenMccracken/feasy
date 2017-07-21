@@ -1,10 +1,10 @@
 import { Router } from '@angular/router';
 import { Injectable, OnInit} from '@angular/core';
 import { Headers, Http, RequestOptions, Response } from '@angular/http';
-import 'rxjs/add/operator/toPromise';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/catch';
+import 'rxjs/add/operator/toPromise';
 
 import { Assignment } from '../objects/assignment';
 

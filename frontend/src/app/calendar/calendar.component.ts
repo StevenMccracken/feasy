@@ -2,22 +2,28 @@ import { Subject } from 'rxjs/Subject';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { Component, ChangeDetectionStrategy, ViewChild, TemplateRef, OnInit } from '@angular/core';
 import {
-    startOfDay,
-    endOfDay,
-    subDays,
-    addDays,
-    endOfMonth,
-    isSameDay,
-    isSameMonth,
-    addHours
+  OnInit,
+  Component,
+  ViewChild,
+  TemplateRef,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import {
+  startOfDay,
+  endOfDay,
+  subDays,
+  addDays,
+  endOfMonth,
+  isSameDay,
+  isSameMonth,
+  addHours
 } from 'date-fns';
 
 import {
-    CalendarEvent,
-    CalendarEventAction,
-    CalendarEventTimesChangedEvent
+  CalendarEvent,
+  CalendarEventAction,
+  CalendarEventTimesChangedEvent
 } from 'angular-calendar';
 
 import { Assignment } from '../objects/assignment';
@@ -46,7 +52,7 @@ const colors: any = {
     templateUrl: 'calendar.component.html'
 })
 export class CalendarComponent implements OnInit {
-    
+
     @ViewChild('modalContent') modalContent: TemplateRef<any>;
 
     username: string;

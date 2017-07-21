@@ -1,15 +1,12 @@
+import { Router } from '@angular/router';
 import { Injectable } from '@angular/core';
-
 import { Headers, Http, RequestOptions, Response } from '@angular/http';
-
+import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/toPromise';
 
-import { Router } from '@angular/router';
 import { User } from '../objects/user';
 import { Account } from '../objects/user';
-
-import 'rxjs/add/operator/catch';
-import 'rxjs/add/operator/map';
 
 @Injectable()
 export class UserService {

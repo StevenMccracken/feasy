@@ -1,7 +1,7 @@
 .menuBar {
   height: 120%;
-
 }
+
 md-list-item {
   padding-top: 10px;
   padding-bottom: 10px;
@@ -11,16 +11,20 @@ md-list-item {
   text-align: center;
   display: flex;
 }
+
 .menuContent:focus {
   outline-width: 0;
 }
-.menuContent:hover{
+
+.menuContent:hover {
   cursor: pointer;
 }
+
 .menuBar:hover {
   border-left: 6px solid;
   border-color: #ff2d55;
 }
+
 .menuBar:focus {
   border: 6px solid #ff2d55;
 }
@@ -35,17 +39,18 @@ md-list-item {
   color: white;
 }
 
-h3.logo{
+h3.logo {
   font-family: 'Pacifico', cursive;
   margin-bottom: 30px;
   border-bottom: 1px;
   color: white;
 }
-.card{
+
+.card {
   background: #ff2d55;
 }
 
-md-sidenav.md-sidenav-opened, md-sidenav.md-sidenav-opening{
+md-sidenav.md-sidenav-opened, md-sidenav.md-sidenav-opening {
   box-shadow: none;
   border-right: 1px solid #ff2d55;
 }
@@ -54,19 +59,24 @@ h4.route {
   padding-top: 8px;
   margin-left: 90px;
 }
-.leftMenu{
+
+.leftMenu {
   display:flex;
 }
-.toolBarComponent{
+
+.toolBarComponent {
   font-family: 'Nunito', sans-serif;
 }
+
 .dropdown-item {
   padding: 3px 0.5rem !important;
 }
-i.fa.fa-user-circle{
+
+i.fa.fa-user-circle {
   font-size: 150%;
 }
-.top-dropdown-menu{
+
+.top-dropdown-menu {
   width: 145px;
   top: 55px;
   right: -25px;
@@ -80,7 +90,7 @@ i.fa.fa-user-circle{
   background-color: white;
 }
 
-.healthbar-widget{
+.healthbar-widget {
   margin: 5px 5px;
   width: 90%;
 }

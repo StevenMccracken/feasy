@@ -1,14 +1,16 @@
-.outer-notification{
+.outer-notification {
   background: #ff2d55;
   border-radius: 3px;
   padding-top: 9px;
   padding-bottom: 9px;
 }
+
 .notification {
   margin-left: 10px;
   margin-right: 10px;
   margin-top: 20px;
 }
-.alert-danger{
+
+.alert-danger {
   border-color: #ff2d55;
 }

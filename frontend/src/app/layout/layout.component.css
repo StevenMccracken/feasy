@@ -1,23 +1,29 @@
 .btn-flat {
   display: inline-table;
 }
+
 td {
   padding: 0 0;
 }
+
 .background {
   text-align: center;
 }
+
 .avatar {
   margin-left: 38%;
 }
+
 .user-view {
   text-align: center;
   font-size: 20px;
 }
+
 .action {
   display: -webkit-inline-box;
   margin-bottom: 40px
 }
+
 .logout {
   margin-right: 25px;
   padding: 5px 5px;
@@ -26,8 +32,8 @@ td {
   display: initial;
   color: #87b4f0;
   cursor: pointer;
-
 }
+
 .settings {
   margin-left: 25px;
   padding: 5px 5px;
@@ -37,9 +43,11 @@ td {
   color: #87b4f0;
   cursor: pointer;
 }
+
 p {
   margin: 0px 0px 0px 0px;
 }
+
 .activeLink {
   border: thin solid purple;
   border-radius: 9px;

@@ -1,56 +1,56 @@
 <div class="row">
-   <div *ngIf="doneSorting" class="col m8 offset-m2  todo-main">
-     <div *ngFor="let a of assignments; let i = index;" class="col s12">
-         <table class="eventDisplay">
-           <tr class = "row">
-             <td class="col s12 m4"align='center'><div class="collection-head"><h5>{{a.title}}</h5></div></td>
-             <td class="col s12 m2"align='center'><div class="chip">{{a.type}}</div></td>
-             <td class="col s2 m1" align='center'><p class="material-icons delete action" (mousedown)="enableEdit(i)">create</p></td>
-             <td class="col s2 m1" align='center'><p class="material-icons delete action" (mousedown)="this.deleteEventAction(i)">delete_sweep</p></td>
-           </tr>
-           <tr class="row">
-             <div *ngIf="!a.editMode" class="col s12" (mousedown)="enableEdit(a, i)">
+  <div *ngIf="doneSorting" class="col m8 offset-m2  todo-main">
+      <div *ngFor="let a of assignments; let i = index;" class="col s12">
+        <table class="eventDisplay">
+          <tr class = "row">
+            <td class="col s12 m4"align='center'><div class="collection-head"><h5>{{a.title}}</h5></div></td>
+            <td class="col s12 m2"align='center'><div class="chip">{{a.type}}</div></td>
+            <td class="col s2 m1" align='center'><p class="material-icons delete action" (mousedown)="enableEdit(i)">create</p></td>
+            <td class="col s2 m1" align='center'><p class="material-icons delete action" (mousedown)="this.deleteEventAction(i)">delete_sweep</p></td>
+          </tr>
+          <tr class="row">
+            <div *ngIf="!a.editMode" class="col s12" (mousedown)="enableEdit(a, i)">
               <pre> {{a.description}} </pre>
-             </div>
-             <div [style.display] = "(a.editMode) ? 'inline' : 'none'">
-               <div class="row">
-                 <div class="input-field col s12">
-                   <textarea [id]="'descriptionEdit'+i" name="descriptionEdit" class="materialize-textarea col s12" (blur)="updateDescription(a)" [(ngModel)]="a.description" placeholder="Edit event description..."></textarea>
-                 </div>
-               </div>
-             </div>
-           </tr>
-         </table>
-     </div>
+            </div>
+            <div [style.display] = "(a.editMode) ? 'inline' : 'none'">
+              <div class="row">
+                <div class="input-field col s12">
+                  <textarea [id]="'descriptionEdit'+i" name="descriptionEdit" class="materialize-textarea col s12" (blur)="updateDescription(a)" [(ngModel)]="a.description" placeholder="Edit event description..."></textarea>
+                </div>
+              </div>
+            </div>
+          </tr>
+        </table>
+      </div>
      <div class="col s12">
-         <form class="add-form col s12">
-           <div class="row row-add">
-             <div class="input-field col s12">
-               <input placeholder="Task Name" id="title" type="text" name="title" [(ngModel)]="assignment.title" required #title="ngModel">
-             </div>
-           </div>
-           <div class="row row-add">
-             <div class="input-field col s12" id="type-row">
-               <select id="type" name="type">
-                 <option value="" disabled selected>What type of assignment will this be ?</option>
-                 <option value="Homework">Homework</option>
-                 <option value="Quizes">Quiz</option>
-                 <option value="Exams">Exam</option>
-                 <option value="Projects">Project</option>
-               </select>
-               <label for="type-assignment">Assignment Type</label>
-             </div>
-           </div>
-           <div class="row row-add">
-             <div class="input-field col s12">
-               <textarea id="description" name="description" class="materialize-textarea" [(ngModel)]="assignment.description" #description="ngModel"></textarea>
-               <label for="description">Description</label>
-             </div>
-           </div>
-           <div class="row">
-             <button class="btn btn-flat add-todo" (click)="addAssignment()"><b>Add</b></button>
-           </div>
-         </form>
-     </div>
+        <form class="add-form col s12">
+          <div class="row row-add">
+            <div class="input-field col s12">
+              <input placeholder="Task Name" id="title" type="text" name="title" [(ngModel)]="assignment.title" required #title="ngModel">
+            </div>
+          </div>
+          <div class="row row-add">
+            <div class="input-field col s12" id="type-row">
+              <select id="type" name="type">
+                <option value="" disabled selected>What type of assignment will this be ?</option>
+                <option value="Homework">Homework</option>
+                <option value="Quizes">Quiz</option>
+                <option value="Exams">Exam</option>
+                <option value="Projects">Project</option>
+              </select>
+              <label for="type-assignment">Assignment Type</label>
+            </div>
+          </div>
+          <div class="row row-add">
+            <div class="input-field col s12">
+              <textarea id="description" name="description" class="materialize-textarea" [(ngModel)]="assignment.description" #description="ngModel"></textarea>
+              <label for="description">Description</label>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn btn-flat add-todo" (click)="addAssignment()"><b>Add</b></button>
+          </div>
+        </form>
+    </div>
   </div>
 </div>
