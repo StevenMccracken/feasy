@@ -117,12 +117,11 @@ export class UserService {
     // Send request
     return this._http.post(loginUrl, requestParams, { headers: this.standardHeaders })
       .toPromise()
-      .then((response: Response) => {
-        // FIXME: Do not set the localStorage in the service. It should be in the individual components
-        let token = response.json().success.token;
-        localStorage.setItem('currentUser', username);
-        localStorage.setItem('token', token);
+      .then((successResponse: Response) => {
+        let responseBody = successResponse.json();
+        let token = responseBody && responseBody.success && responseBody.success.token;
+        return token != undefined ? token : null;
       })
-      .catch(this.handleError);
+      .catch((errorResponse: Response) => Promise.reject(errorResponse));
   }
 }

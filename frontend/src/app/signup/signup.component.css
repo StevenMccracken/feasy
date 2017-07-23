@@ -2,6 +2,12 @@
   margin-top: 55px;
 }
 
-#error {
-  color: red;
+.error-message {
+  background-color: #E57373;
+  color: white;
+  text-align: center;
+}
+
+.error-message .card-content {
+  padding: 5px;
 }

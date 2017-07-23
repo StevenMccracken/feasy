@@ -2,7 +2,11 @@
   <form class="col s12 offset-m4 m4" #signupForm="ngForm" autocomplete="off">
     <h4 class="logo"> Feazy </h4>
     <div id="error" *ngIf="error">
-      <h5>{{ errorMessage }}</h5>
+      <div class="card error-message">
+        <div class="card-content">
+          {{ this.errorMessage }}
+        </div>
+      </div>
     </div>
     <div class="row">
       <div class="input-field col s12 m6">
