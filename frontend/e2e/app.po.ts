@@ -1,6 +1,6 @@
 import { browser, element, by } from 'protractor';
 
-export class FEASYPage {
+export class PYRSUITPage {
   navigateTo() {
     return browser.get('/');
   }

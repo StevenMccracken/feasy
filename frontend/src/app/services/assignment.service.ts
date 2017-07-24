@@ -119,4 +119,18 @@ export class AssignmentService implements OnInit {
       .then((response: Response) => { return response; })
       .catch(this.handleError)
   }
+
+  changeTime(assignmentId: string, newDueDate: Date): Promise<any>{
+    let changeTimeUrl = `${this.baseUrl}/users/${localStorage['currentUser']}/assignments/${assignmentId}/dueDate`;
+    let headers = new Headers({
+      Authorization: localStorage['token'],
+      'Content-Type': this.contentType_UrlEncoded,
+    });
+    let body = 'newDueDate='+newDueDate.getTime() / 1000;
+
+    return this._http.put(changeTimeUrl, body, {headers: headers})
+                     .toPromise()
+                     .then((response: Response) => {return response})
+                     .catch(this.handleError);
+  }
 }

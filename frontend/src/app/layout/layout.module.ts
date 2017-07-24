@@ -22,6 +22,6 @@ import { CalendarModule } from 'angular-calendar';
     ToDoComponent,
     CalendarComponent
   ],
-  providers: [ AuthGuard ],
+  providers: [ AuthGuard ]
 })
-export class LayoutModule {}
+export class LayoutModule { }

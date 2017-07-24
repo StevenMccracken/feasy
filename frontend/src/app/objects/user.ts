@@ -1,15 +1,15 @@
-export class User {
-  email: string;
-  username: string;
-  password: string;
-  firstName: string;
+export class User{
   lastName: string;
+  firstName: string;
+  username: string;
+  email: string;
+  password: string;
 }
 
-export class Account {
+export class Account{
   _id: string;
-  email: string;
-  username: string;
-  firstName: string;
   lastName: string;
+  firstName: string;
+  username: string;
+  email: string;
 }

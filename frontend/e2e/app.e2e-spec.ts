@@ -1,10 +1,10 @@
-import { FEASYPage } from './app.po';
+import { PYRSUITPage } from './app.po';
 
-describe('feasy App', () => {
-  let page: FEASYPage;
+describe('pyrsuit App', () => {
+  let page: PYRSUITPage;
 
   beforeEach(() => {
-    page = new FEASYPage();
+    page = new PYRSUITPage();
   });
 
   it('should display message saying app works', () => {

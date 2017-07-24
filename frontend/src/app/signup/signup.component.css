@@ -1,3 +1,13 @@
-.signup {
+#signup {
   margin-top: 55px;
+}
+
+.error-message {
+  background-color: #E57373;
+  color: white;
+  text-align: center;
+}
+
+.error-message .card-content {
+  padding: 5px;
 }

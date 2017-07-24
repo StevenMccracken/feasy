@@ -2,17 +2,15 @@
   <div class="row text-center">
     <div class="col s12">
       <div class="col s4">
-        <div class="btn-group">
-          <div class="btn" mwlCalendarPreviousView [view]="view" [(viewDate)]="viewDate">
-            Previous
-          </div>
-          <div class="btn" mwlCalendarToday [(viewDate)]="viewDate">
+          <a class="btn-floating btn-large waves-effect waves-light red" mwlCalendarPreviousView [view]="view" [(viewDate)]="viewDate">
+            <i class="material-icons">arrow_back</i>
+          </a>
+          <div class="btn red" mwlCalendarToday [(viewDate)]="viewDate">
             Today
           </div>
-          <div class="btn" mwlCalendarNextView [view]="view" [(viewDate)]="viewDate">
-            Next
-          </div>
-        </div>
+          <a class="btn-floating btn-large waves-effect waves-light red" mwlCalendarNextView [view]="view" [(viewDate)]="viewDate">
+            <i class="material-icons">arrow_forward</i>
+          </a>
       </div>
       <div class="col s4 cal-title">
         <h3 class="calendar-title"> {{ viewDate | calendarDate:(view + 'ViewTitle'):'en' }}</h3>
@@ -35,12 +33,17 @@
   <br>
   <div class="row">
     <div [ngSwitch]="view" class="col s12">
-      <mwl-calendar-month-view *ngSwitchCase="'month'" [viewDate]="viewDate" [events]="events" [refresh]="refresh" [activeDayIsOpen]="activeDayIsOpen" (dayClicked)="monthEventClick($event)" (eventClicked)="handleEvent('Clicked', $event.event)" (eventTimesChanged)="eventTimesChanged($event)">
+      <mwl-calendar-month-view *ngSwitchCase="'month'" [viewDate]="viewDate" [events]="events" [refresh]="refresh" [activeDayIsOpen]="activeDayIsOpen" (mousedown)="setEvent($event)" (dayClicked)="monthEventClick($event)" (eventClicked)="handleEvent('Clicked', $event.event)" (eventTimesChanged)="eventTimesChanged($event)">
       </mwl-calendar-month-view>
-      <mwl-calendar-week-view *ngSwitchCase="'week'" [viewDate]="viewDate" [events]="events" [refresh]="refresh" (dayClicked)="dayEventClick($event)" (eventClicked)="handleEvent('Clicked', $event.event)" (eventTimesChanged)="eventTimesChanged($event)">
+      <mwl-calendar-week-view *ngSwitchCase="'week'" [viewDate]="viewDate" [events]="events" [refresh]="refresh"  (dayClicked)="dayEventClick($event)" (eventClicked)="handleEvent('Clicked', $event.event)" (eventTimesChanged)="eventTimesChanged($event)">
       </mwl-calendar-week-view>
     </div>
   </div>
+
+
+
+
+
 
   <div class="modal modal-fixed-footer row" id="createAssignments">
     <div class="modal-content">
@@ -74,9 +77,9 @@
             <select id="type" name="type">
               <option value="" disabled selected>What type of assignment will this be ?</option>
               <option value="Homework">Homework</option>
-              <option value="Quizes">Quiz</option>
-              <option value="Exams">Exam</option>
-              <option value="Projects">Project</option>
+              <option value="Quizes">Quizes</option>
+              <option value="Exams">Exams</option>
+              <option value="Projects">Projects</option>
             </select>
             <label for="type-assignment">Assignment Type</label>
           </div>
@@ -88,6 +91,7 @@
           </div>
         </div>
 
+
       </form>
     </div>
     <div class="modal-footer">
@@ -96,62 +100,61 @@
           Add
         </button>
     </div>
-  </div>
+ </div>
 
-  <div class="modal modal-fixed-footer row" id="viewEvent">
-    <div class="modal-content row">
-      <div *ngFor="let a of currentDayArray; let i = index;" class="col s12">
-        <table class="eventDisplay">
-          <tr class = "row">
-            <td class="col s12 m4"align='center'><div class="collection-head"><h5>{{a.title}}</h5></div></td>
-            <td class="col s12 m2"align='center'><div class="chip">{{a.type}}</div></td>
-            <td class="col s2 m1" align='center'><p class="material-icons action" (mousedown)="enableEdit(a, i)">create</p></td>
-            <td class="col s2 m1" align='center'><p class="material-icons action" (mousedown)="this.deleteEventAction(a, i)">delete_sweep</p></td>
-          </tr>
-          <tr class="row">
-            <div *ngIf="!a.editMode" class="col s12" (mousedown)="enableEdit(a, i)">
+ <div class="modal modal-fixed-footer row" id="viewEvent">
+   <div class="modal-content row" id="mainForm">
+     <div *ngFor="let a of currentDayArray; let i = index;" class="col s12">
+         <table class="eventDisplay">
+           <tr class = "row">
+             <td class="col s12 m4"align='center'><div class="collection-head"><h5>{{a.title}}</h5></div></td>
+             <td class="col s12 m2"align='center'><div class="chip">{{a.type}}</div></td>
+             <td class="col s2 m1" align='center'><p class="material-icons action" (mousedown)="enableEdit(a, i)">create</p></td>
+             <td class="col s2 m1" align='center'><p class="material-icons action" (mousedown)="this.deleteEventAction(a, i)">delete_sweep</p></td>
+           </tr>
+           <tr class="row">
+             <div *ngIf="!a.editMode" class="col s12" (mousedown)="enableEdit(a, i)">
               <pre> {{a.description}} </pre>
-            </div>
-           <div [style.display] = "(a.editMode) ? 'inline' : 'none'">
-              <div class="row">
-                <div class="input-field col s12">
-                  <textarea [id]="'descriptionEdit'+i" name="descriptionEdit" class="materialize-textarea col s12" (blur)="updateDescription(a)" [(ngModel)]="a.description" placeholder="Edit event description..."></textarea>
-                </div>
-              </div>
+             </div>
+             <div [style.display] = "(a.editMode) ? 'inline' : 'none'">
+               <div class="row">
+                 <div class="input-field col s12">
+                   <textarea [id]="'descriptionEdit'+i" name="descriptionEdit" class="materialize-textarea col s12" (blur)="updateDescription(a)" [(ngModel)]="a.description" placeholder="Edit event description..."></textarea>
+                 </div>
+               </div>
+             </div>
+           </tr>
+         </table>
+     </div>
+     <div class="col s12">
+         <form class="add-form col s12" #taskForm="ngForm">
+           <div class="row row-add">
+             <div class="input-field col s12">
+               <input placeholder="Task Name" id="title" type="text" name="title" [(ngModel)]="assignment.title" required #title="ngModel">
+             </div>
            </div>
-          </tr>
-        </table>
-      </div>
-      <div class="col s12">
-        <form class="add-form col s12">
-          <div class="row row-add">
-            <div class="input-field col s12">
-              <input placeholder="Task Name" id="title" type="text" name="title" [(ngModel)]="assignment.title" required #title="ngModel">
-            </div>
-          </div>
-          <div class="row row-add">
-            <div class="input-field col s12" id="type-row">
-              <select id="type" name="type">
-                <option value="" disabled selected>What type of assignment will this be ?</option>
-                <option value="Homework">Homework</option>
-                <option value="Quizes">Quiz</option>
-                <option value="Exams">Exam</option>
-                <option value="Projects">Project</option>
-              </select>
-            <label for="type-assignment">Assignment Type</label>
-            </div>
-          </div>
-          <div class="row row-add">
-            <div class="input-field col s12">
-              <textarea id="description" name="description" class="materialize-textarea" [(ngModel)]="assignment.description" #description="ngModel"></textarea>
-              <label for="description">Description</label>
-            </div>
-          </div>
-          <div class="row">
-            <button class="btn btn-flat add-todo" (click)="addAssignment()"><b>Add</b></button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+           <div class="row row-add">
+             <div class="label_assignment col s12"> Assignment Type </div>
+             <div class="input-field col s12" id="type-row">
+               <select id="type" class="browser-default" name="type" [(ngModel)]="assignment.type" #type="ngModel" required>
+                 <option value="" disabled selected>What type of assignment will this be ?</option>
+                 <option value="Homework">Homework</option>
+                 <option value="Quizes">Quizes</option>
+                 <option value="Exams">Exams</option>
+                 <option value="Projects">Projects</option>
+               </select>
+             </div>
+           </div>
+           <div class="row row-add">
+             <div class="input-field col s12">
+               <textarea id="description" name="description" class="materialize-textarea" [(ngModel)]="assignment.description" #description="ngModel"></textarea>
+               <label for="description">Description</label>
+             </div>
+           </div>
+           <div class="row">
+             <button class="btn btn-flat add-todo" [class.disabled]="!taskForm.form.valid" (click)="addAssignment()"><b>Add</b></button>
+           </div>
+         </form>
+     </div>
+   </div>
 </div>

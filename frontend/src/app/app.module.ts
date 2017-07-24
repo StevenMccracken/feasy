@@ -1,20 +1,25 @@
-import { NgModule } from '@angular/core';
-import { HttpModule } from '@angular/http';
-import { FormsModule } from '@angular/forms';
-import { MaterialModule } from '@angular/material';
-import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import 'hammerjs';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { HttpModule } from '@angular/http';
 
 import { AppComponent } from './app.component';
-import { UserService } from './services/user.service';
-import { AuthGuard } from './router-guard/auth.guard';
+
+import { MaterialModule } from '@angular/material';
+
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import 'hammerjs';
 import { LoginComponent } from './login/login.component';
 import { SignupComponent } from './signup/signup.component';
-import { LayoutComponent } from './layout/layout.component';
+import { UserService } from './services/user.service';
 import { AssignmentService } from './services/assignment.service';
+
+//form builder imports
+import { ReactiveFormsModule } from '@angular/forms';
+
 import { AppRoutingModule } from './app-routing/app-routing.module';
+import { AuthGuard } from './router-guard/auth.guard';
+import { LayoutComponent } from './layout/layout.component';
 
 @NgModule({
   declarations: [
@@ -35,6 +40,6 @@ import { AppRoutingModule } from './app-routing/app-routing.module';
                AuthGuard,
                AssignmentService
              ],
-  bootstrap: [AppComponent],
+  bootstrap: [AppComponent]
 })
-export class AppModule {}
+export class AppModule { }

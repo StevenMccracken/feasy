@@ -1,3 +1,4 @@
+
 <div class="main">
   <nav>
     <div class="nav-wrapper primary">
@@ -21,7 +22,7 @@
       </div>
     </li>
     <li>
-      <a routerLink="/main/calendar" routerLinkActive="activeLink">
+      <a (click)="closeNav('/main/calendar')">
         <table>
           <tr>
             <td>
@@ -35,7 +36,7 @@
       </a>
     </li>
     <li>
-      <a routerLinkActive="activeLink">
+      <a (click)="closeNav('handled')">
         <table>
           <tr>
             <td>
@@ -49,7 +50,7 @@
       </a>
     </li>
     <li>
-      <a routerLink="/main/todo">
+      <a routerLink="/main/todo" (click)="closeNav('handled')">
         <table>
           <tr>
             <td>
@@ -62,6 +63,7 @@
         </table>
       </a>
     </li>
+
   </ul>
   <router-outlet></router-outlet>
 </div>
