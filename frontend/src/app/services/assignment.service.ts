@@ -15,13 +15,13 @@ export class AssignmentService implements OnInit {
   private standardHeaders = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
 
   private token: string;
-  username: string;
+  private username: string;
 
   constructor(private _http: Http, private _router: Router) {}
 
   ngOnInit() {
-    this.token = localStorage.getItem('token');
-    this.username = localStorage.getItem('currentUser');
+    this.token = localStorage.getItem('token') || '';
+    this.username = localStorage.getItem('currentUser') || '';
   }
 
   private handleError(error: any): Promise<any> {
