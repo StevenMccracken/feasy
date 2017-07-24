@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { AssignmentService } from '../../services/assignment.service';
+
 import { Assignment } from '../../objects/Assignment';
+import { AssignmentService } from '../../services/assignment.service';
 
 
 declare var $: any;

@@ -8,25 +8,28 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanLoad{
 
   constructor(private router: Router){}
 
-  canActivate(
-    next: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
-      if(localStorage['currentUser'] === undefined || localStorage['token'] === undefined){
-        this.router.navigate(['/login']);
-        return false;
-      }
-    return true;
+  canActivate(next: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
+    if (this.isValidStorageItem('currentUser') && this.isValidStorageItem('token')) return true;
+    else {
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('token');
+
+      this.router.navigate(['/login']);
+      return false;
+    }
   }
 
-  canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean  {
+  canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
     return this.canActivate(route, state);
   }
 
-  canLoad(route: Route): Observable<boolean> | Promise<boolean> | boolean {
+  canLoad(route: Route): boolean {
+    return this.isValidStorageItem('currentUser') && this.isValidStorageItem('token');
+  }
 
-    if(localStorage['currentUser'] === undefined || localStorage['token'] === undefined)
-      return false;
-    return true;
+  isValidStorageItem(storageItemKey: string): boolean {
+    let storageItem = localStorage.getItem(storageItemKey);
+    return storageItem != null && storageItem != undefined && storageItem != '';
   }
 
 }

@@ -36,10 +36,11 @@ import { LayoutComponent } from './layout/layout.component';
     ReactiveFormsModule,
     AppRoutingModule,
   ],
-  providers: [ UserService,
-               AuthGuard,
-               AssignmentService
-             ],
-  bootstrap: [AppComponent]
+  providers: [
+    UserService,
+    AuthGuard,
+    AssignmentService
+  ],
+  bootstrap: [AppComponent],
 })
 export class AppModule { }
