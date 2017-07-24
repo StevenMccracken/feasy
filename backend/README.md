@@ -6,8 +6,7 @@
 3. [npm](https://www.npmjs.com/) (Comes with Node.js install) version 3.10.10+
 
 ## Install
-* `sudo npm install --save` for packages required to run the server locally
-* `sudo npm install --save-dev` for packages required to test the server locally
+* `sudo npm install` for packages required to run the server locally
 
 ## Run
 1. Run _mongod_ in one tab/window to start the database server instance locally

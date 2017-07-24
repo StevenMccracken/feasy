@@ -1,30 +1,36 @@
 /* You can add global styles to this file, and also import other style files */
 
-/*used in calendar component*/
-.edit{
+/* used in calendar component */
+.edit {
   margin-left: 10px;
   margin-right: 3px;
   font-size: 18px;
 }
-.delete{
+
+.delete {
   font-size: 18px;
 }
 
-html{
+html {
   font-family: 'Roboto', sans-serif;
 }
-label{
+
+label {
   font-weight: normal;
 }
-.logo{
+
+.logo {
   font-family: 'Quicksand', cursive;
 }
-.secondary{
+
+.secondary {
   background-color: #0d47a1;
 }
-.primary{
+
+.primary {
   background-color: #ee6e73;
 }
-.third{
+
+.third {
   background-color: #ee6eb2;
 }

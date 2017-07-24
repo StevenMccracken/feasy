@@ -1,4 +1,4 @@
-export class Assignment{
+export class Assignment {
   _id: string;
   title: string;
   dueDate: Date;

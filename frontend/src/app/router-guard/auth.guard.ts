@@ -1,12 +1,18 @@
-import { Injectable } from '@angular/core';
-import { CanActivate, CanActivateChild, ActivatedRouteSnapshot, RouterStateSnapshot, CanLoad, Route} from '@angular/router';
-import { Observable } from 'rxjs/Observable';
+import {
+  Route,
+  CanLoad,
+  CanActivate,
+  CanActivateChild,
+  RouterStateSnapshot,
+  ActivatedRouteSnapshot
+} from '@angular/router';
 import { Router } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs/Observable';
 
 @Injectable()
-export class AuthGuard implements CanActivate, CanActivateChild, CanLoad{
-
-  constructor(private router: Router){}
+export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
+  constructor(private router: Router) {}
 
   canActivate(next: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
     if (this.isValidStorageItem('currentUser') && this.isValidStorageItem('token')) return true;
@@ -31,5 +37,4 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanLoad{
     let storageItem = localStorage.getItem(storageItemKey);
     return storageItem != null && storageItem != undefined && storageItem != '';
   }
-
 }
