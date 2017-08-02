@@ -9,17 +9,17 @@
  * @param {Object} [_request=null] the HTTP request
  */
 var log = function(_source, _message, _request = null) {
-  const NOW = new Date().toISOString();
+  let now = new Date().toISOString();
 
   // If _request is null, the IP address cannot be logged
-  if (_request === null) console.log('{%s} [%s]: %s', NOW, _source, _message);
+  if (_request === null) console.log('{%s} [%s]: %s', now, _source, _message);
   else {
     // Log information about an incoming HTTP request
-    const IP = _request.headers['x-forwarded-for'] || _request.connection.remoteAddress;
-    console.log('{%s} [%s] (%s): %s', NOW, _source, IP, _message);
+    let ipAddress = _request.headers['x-forwarded-for'] || _request.connection.remoteAddress;
+    console.log('{%s} [%s] (%s): %s', now, _source, ipAddress, _message);
   }
 };
 
 module.exports = {
-  log: log
+  log: log,
 };

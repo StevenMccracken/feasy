@@ -1,14 +1,14 @@
-import { EpicenterPage } from './app.po';
+import { FEASYPage } from './app.po';
 
-describe('epicenter App', () => {
-    let page: EpicenterPage;
+describe('feasy App', () => {
+  let page: FEASYPage;
 
-    beforeEach(() => {
-        page = new EpicenterPage();
-    });
+  beforeEach(() => {
+    page = new FEASYPage();
+  });
 
-    it('should display message saying app works', () => {
-        page.navigateTo();
-        expect(page.getParagraphText()).toEqual('app works!');
-    });
+  it('should display message saying app works', () => {
+    page.navigateTo();
+    expect(page.getParagraphText()).toEqual('app works!');
+  });
 });

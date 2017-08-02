@@ -3,9 +3,10 @@
  */
 
 const LOG = require('./log_mod');
+const MEDIA = require('./media_mod');
 const MIDDLEWARE = require('./middleware_mod');
 
-var router;
+let router;
 var routing = function(_router) {
   router = _router;
 
@@ -26,7 +27,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/').get((_request, _response) => (
-    _response.json({ message: 'This is the REST API for Pyrsuit' })
+    _response.json({ message: 'This is the REST API for Feasy' })
   ));
 
   /**
@@ -37,7 +38,28 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/login').post((_request, _response) => (
-    MIDDLEWARE.authenticate(_request, _response, result => _response.json(result))
+    MIDDLEWARE.authenticate(_request, _response).then(result => _response.json(result))
+  ));
+
+  /**
+   * The GET route for initiating a Google profile sign-in. Re-routes the client
+   * to Google's sign-in page. This route does not require token authentication
+   * @param {Object} _request the HTTP request
+   * @param {Object} _response the HTTP response
+   */
+  router.route('/auth/google').get((_request, _response) => (
+    MIDDLEWARE.authenticateGoogle(_request, _response).then(result => _response.json(result))
+  ));
+
+  /**
+   * The GET route for concluding a Google profile sign-in.
+   * Sends an error JSON or a JSON web token for authentication.
+   * This route does not require token authentication
+   * @param {Object} _request the HTTP request
+   * @param {Object} _response the HTTP response
+   */
+  router.route('/auth/google/callback').get((_request, _response) => (
+    MIDDLEWARE.finishAuthenticateGoogle(_request, _response).then(result => _response.json(result))
   ));
 
   /**
@@ -48,7 +70,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users').post((_request, _response) => (
-    MIDDLEWARE.createUser(_request, _response, result => _response.json(result))
+    MIDDLEWARE.createUser(_request, _response).then(result => _response.json(result))
   ));
 
   /**
@@ -58,7 +80,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users/:username').get((_request, _response) => (
-    MIDDLEWARE.retrieveUser(_request, _response, result => _response.json(result))
+    MIDDLEWARE.retrieveUser(_request, _response).then(result => _response.json(result))
   ));
 
   /**
@@ -148,7 +170,7 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/:assignmentId') .get((_request, _response) => (
+  router.route('/users/:username/assignments/:assignmentId').get((_request, _response) => (
     MIDDLEWARE.getAssignmentById(_request, _response, result => _response.json(result))
   ));
 
@@ -227,8 +249,31 @@ var routing = function(_router) {
     MIDDLEWARE.deleteAssignment(_request, _response, result => _response.json(result))
   ));
 
+  /**
+   * The POST route for uploading a PDF to add assignments to
+   * a user's schedule. The request body Content-Type MUST be
+   * multipart/form-data. This route requires token authentication
+   * @param {Object} _request the HTTP request
+   * @param {Object} _response the HTTP response
+   */
+  router.route('/users/:username/assignments/pdf').post(
+    MEDIA.upload.single('pdf'),
+    (_request, _response) => {
+      MIDDLEWARE.parseSchedule(
+        _request,
+        _response,
+        (result) => {
+          _response.json(result);
+
+          // Remove temp file that multer created if it existed
+          if (_request.file !== undefined) MEDIA.removeTempFile(_request.file.path);
+        }
+      );
+    }
+  );
+
   return router;
-}
+};
 
 /**
  * log - Logs a message to the server console

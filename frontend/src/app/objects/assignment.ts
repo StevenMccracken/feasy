@@ -1,12 +1,35 @@
-export class Assignment {
+interface Serializable<T> {
+  deserialize(input: Object): T;
+}
 
-    public type: string;
-    public name: string;
+export class Assignment implements Serializable<Assignment> {
+  _id: string;
+  title: string;
+  dueDate: Date;
+  completed: boolean;
+  userId: string;
+  class: string;
+  dateCreated: Date;
+  type: string;
+  description: string;
+  editMode: boolean = false;
 
-    //we have it as a number and we will pipe it later
-    public due: number;
-    public user_id: number;
-    public assign_id: number;
-    public completed: boolean;
+  /**
+   * Converts a JSON representing an assignment to an Assignment object
+   * @param {Object} input JSON containing assignment information
+   * @return {Assignment} assignment with the attributes from the JSON input
+   */
+  deserialize(input) {
+    this._id = input._id;
+    this.title = input.title;
+    this.dueDate = new Date(input.dueDate);
+    this.completed = input.completed;
+    this.class = input.class;
+    this.dateCreated = new Date(input.dateCreated);
+    this.type = input.type;
+    this.description = input.description;
+    this.editMode = false;
 
+    return this;
+  }
 }

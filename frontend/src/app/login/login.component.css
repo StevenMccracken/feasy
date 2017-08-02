@@ -1,0 +1,17 @@
+.login {
+  margin-top: 55px;
+}
+
+#signup {
+  padding-left: 5px;
+}
+
+.error-message {
+  background-color: #E57373;
+  color: white;
+  text-align: center;
+}
+
+.error-message .card-content {
+  padding: 5px;
+}
