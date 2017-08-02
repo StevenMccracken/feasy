@@ -10,26 +10,15 @@ import { Account } from '../objects/user';
 
 @Injectable()
 export class UserService {
+  private token: string;
   private baseUrl = 'http://localhost:8080';
   private contentType_UrlEncoded = 'application/x-www-form-urlencoded';
   private standardHeaders = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
 
-  private token: string;
-
   constructor(private _http: Http, private _router: Router) {}
 
-  private handleError(error: any): Promise<any> {
-    // console.error('HTTP error: %s', error);
-    if (error.status == 401) {
-      localStorage.clear();
-      this._router.navigate(['/login']);
-    }
-
-    return Promise.reject(error.message || error);
-  }
-
   /**
-   * create - Sends a request to create a new user
+   *  Sends a request to create a new user
    * @param {User} user the user object
    * @return {Promise<string>} the authentication token for the newly created user
    */
@@ -40,7 +29,7 @@ export class UserService {
     // Add required parameters
     let requestParams = `username=${user.username}&password=${user.password}&email=${user.email}`;
 
-    // Attempt to add optional parameters
+    // Add optional parameters
     if (user.firstName != undefined && user.firstName != '') {
       requestParams += `&firstName=${user.firstName}`
     };
@@ -53,10 +42,10 @@ export class UserService {
     return this._http.post(createUserUrl, requestParams, { headers: this.standardHeaders })
       .toPromise()
       .then((successResponse: Response) => {
-        // Extracts the token from the response body
+        // Extract the token from the response body
         let responseBody = successResponse.json();
         let token: string = responseBody && responseBody.success && responseBody.success.token;
-        return token != undefined ? token : null;
+        return token !== undefined ? token : null;
       })
       .catch((errorResponse: Response) => {
         let responseBody = errorResponse.json();
@@ -88,25 +77,37 @@ export class UserService {
       });
   }
 
-  get(): Promise<Account> {
+  /**
+   * Sends a request to get a user's profile
+   * @param {string} username the desired user's username
+   * @return {Promise<Account>} the user account information for the desired user
+   */
+  get(username: string): Promise<Account> {
     // Create request information
-    let getUserUrl = `${this.baseUrl}/users/${localStorage['currentUser']}`;
+    let token: string = localStorage.getItem('token');
+
+    let getUserUrl = `${this.baseUrl}/users/${username}`;
     let headers = new Headers({
+      Authorization: token,
       'Content-Type': this.contentType_UrlEncoded,
-      Authorization: localStorage['token'],
     });
 
     // Send request
     return this._http.get(getUserUrl, { headers: headers })
       .toPromise()
-      .then((response: Response) => {
-        console.log(response);
-        let account: Account = response.json();
-        return account;
+      .then((successResponse: Response) => {
+        let responseBody = successResponse.json();
+        return new Account().deserialize(responseBody);
       })
-      .catch((error: any) => this.handleError(error));
+      .catch((errorResponse: Response) => Promise.reject(errorResponse));
   }
 
+  /**
+   * Sends a username and password to the /login API route to retrieve a token
+   * @param {string} username the desired user's username
+   * @param {string} password the desired user's password
+   * @return {Promise<string>} the token to authenticate subsequent requests
+   */
   validate(username: string, password: string): Promise<string> {
     // Create request information
     let loginUrl = `${this.baseUrl}/login`;

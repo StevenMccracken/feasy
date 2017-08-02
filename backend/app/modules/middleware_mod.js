@@ -121,7 +121,7 @@ var authenticateGoogle = function(_request, _response) {
 
   return new Promise((resolve) => {
     // Send the request to verify with Google's authentication API
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyGoogleRequest(_request, _response)
       .then(client => resolve()) // End then(client)
       .catch((verifyTokenError) => {
         let errorJson = ERROR.determineAuthenticationError2(
@@ -147,7 +147,7 @@ var finishAuthenticateGoogle = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyGoogleRequest(_request, _response)
       .then((client) => {
         // Generate the JWT for the client
         let token = AUTH.generateToken(client);

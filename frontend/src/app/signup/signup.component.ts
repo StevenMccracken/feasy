@@ -29,7 +29,7 @@ export class SignupComponent implements OnInit {
   ngOnInit() {}
 
   add(): void {
-    if (!this.user) return null;
+    if (!this.user) return;
 
     this._userService.create(this.user)
       .then((token: string) => {
@@ -59,10 +59,8 @@ export class SignupComponent implements OnInit {
         // Update the HTML to display an error message
         if (typeof createUserError === 'string') {
           // Another user exists with one of these attributes from the form
-          if (createUserError == 'username') {
-            this.errorMessage = `Username '${this.user.username}' is already taken`
-          } else if (createUserError == 'email') {
-            this.errorMessage = `Email address '${this.user.email}' is already taken`
+          if (createUserError == 'username' || createUserError == 'email') {
+            this.errorMessage = `That ${this.varToWordMap[createUserError]} is already taken`;
           } else {
             // Unknown error message content for the login error
             this.errorMessage = this.standardErrorMessage;

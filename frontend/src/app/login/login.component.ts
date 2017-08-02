@@ -13,7 +13,7 @@ export class LoginComponent implements OnInit {
   _username: string;
   _password: string;
   form: FormGroup;
-  error = false;
+  error: boolean;
   errorMessage: string;
   private standardErrorMessage = 'Something bad happened. Please try signing in again';
 
@@ -23,6 +23,19 @@ export class LoginComponent implements OnInit {
     if (this.isValidStorageItem('currentUser') && this.isValidStorageItem('token')) {
       console.log('Got %s from browser local storage', localStorage.getItem('currentUser'));
       this._router.navigate(['main']);
+    } else if (
+      this.isValidStorageItem('expiredToken') &&
+      localStorage.getItem('expiredToken') === 'true'
+    ) {
+      // Remove the expiredToken local storage item now
+      localStorage.removeItem('expiredToken');
+
+      // Update the login screen error
+      this.error = true;
+      this.errorMessage = 'Please sign in again to continue';
+    } else {
+      this.error = false;
+      this.errorMessage = '';
     }
   }
 
@@ -61,6 +74,11 @@ export class LoginComponent implements OnInit {
       });
   }
 
+  /**
+   * Determines if a specific local storage item contains any meaningful data
+   * @param {string} storageItemKey the key of the local storage item
+   * @return {boolean} whether or not the key contains a meaningful (non-empty) data value
+   */
   isValidStorageItem(storageItemKey: string): boolean {
     let storageItem = localStorage.getItem(storageItemKey);
     return storageItem != null && storageItem != undefined && storageItem != '';

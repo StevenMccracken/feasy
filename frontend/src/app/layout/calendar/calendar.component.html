@@ -40,16 +40,11 @@
     </div>
   </div>
 
-
-
-
-
-
   <div class="modal modal-fixed-footer row" id="createAssignments">
     <div class="modal-content">
       <form class="col s12" #assignmentForm="ngForm">
         <div class="row">
-          <h4 class="col s11 collection-head">Whats New ?</h4>
+          <h4 class="col s11 collection-head">Whats New?</h4>
           <i class="material-icons modal-close right" (click)="resetAssignmentField()">clear</i>
         </div>
 
@@ -75,11 +70,11 @@
         <div class="row">
           <div class="input-field col s12" id="type-row">
             <select id="type" name="type">
-              <option value="" disabled selected>What type of assignment will this be ?</option>
+              <option value="" disabled selected>What type of assignment will this be?</option>
               <option value="Homework">Homework</option>
-              <option value="Quizes">Quizes</option>
-              <option value="Exams">Exams</option>
-              <option value="Projects">Projects</option>
+              <option value="Quizes">Quiz</option>
+              <option value="Exams">Exam</option>
+              <option value="Projects">Project</option>
             </select>
             <label for="type-assignment">Assignment Type</label>
           </div>
@@ -107,14 +102,24 @@
      <div *ngFor="let a of currentDayArray; let i = index;" class="col s12">
          <table class="eventDisplay">
            <tr class = "row">
-             <td class="col s12 m4"align='center'><div class="collection-head"><h5>{{a.title}}</h5></div></td>
-             <td class="col s12 m2"align='center'><div class="chip">{{a.type}}</div></td>
-             <td class="col s2 m1" align='center'><p class="material-icons action" (mousedown)="enableEdit(a, i)">create</p></td>
-             <td class="col s2 m1" align='center'><p class="material-icons action" (mousedown)="this.deleteEventAction(a, i)">delete_sweep</p></td>
+             <td class="col s12 m4" align='center'>
+               <div class="collection-head">
+                 <h5>{{ a.title }}</h5>
+               </div>
+             </td>
+             <td class="col s12 m2" align='center'>
+               <div class="chip">{{ a.type }}</div>
+             </td>
+             <td class="col s2 m1" align='center'>
+               <p class="material-icons action" (mousedown)="enableEdit(a, i)">create</p>
+             </td>
+             <td class="col s2 m1" align='center'>
+               <p class="material-icons action" (mousedown)="this.deleteEventAction(a, i)">delete_sweep</p>
+             </td>
            </tr>
            <tr class="row">
              <div *ngIf="!a.editMode" class="col s12" (mousedown)="enableEdit(a, i)">
-              <pre> {{a.description}} </pre>
+              <pre>{{ a.description }}</pre>
              </div>
              <div [style.display] = "(a.editMode) ? 'inline' : 'none'">
                <div class="row">
@@ -134,14 +139,14 @@
              </div>
            </div>
            <div class="row row-add">
-             <div class="label_assignment col s12"> Assignment Type </div>
+             <div class="label_assignment col s12">Assignment Type</div>
              <div class="input-field col s12" id="type-row">
                <select id="type" class="browser-default" name="type" [(ngModel)]="assignment.type" #type="ngModel" required>
-                 <option value="" disabled selected>What type of assignment will this be ?</option>
+                 <option value="" disabled selected>What type of assignment will this be?</option>
                  <option value="Homework">Homework</option>
-                 <option value="Quizes">Quizes</option>
-                 <option value="Exams">Exams</option>
-                 <option value="Projects">Projects</option>
+                 <option value="Quizes">Quiz</option>
+                 <option value="Exams">Exam</option>
+                 <option value="Projects">Project</option>
                </select>
              </div>
            </div>

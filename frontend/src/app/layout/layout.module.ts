@@ -1,14 +1,13 @@
 import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
+import { CalendarModule } from 'angular-calendar';
+import { LayoutComponent } from './layout.component';
+import { AuthGuard } from '../router-guard/auth.guard';
 import { ToDoComponent } from './to-do/to-do.component';
 import { CondorraRoutingModule } from './condorra-routing.module';
-import { FormsModule } from '@angular/forms';
-
 import { CalendarComponent } from './calendar/calendar.component';
-import { AuthGuard } from '../router-guard/auth.guard';
-import { LayoutComponent } from './layout.component';
-import { CalendarModule } from 'angular-calendar';
 
 @NgModule({
   imports: [
@@ -20,8 +19,8 @@ import { CalendarModule } from 'angular-calendar';
   declarations: [
     LayoutComponent,
     ToDoComponent,
-    CalendarComponent
+    CalendarComponent,
   ],
-  providers: [ AuthGuard ]
+  providers: [AuthGuard],
 })
-export class LayoutModule { }
+export class LayoutModule {}

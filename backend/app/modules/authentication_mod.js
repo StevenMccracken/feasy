@@ -62,20 +62,16 @@ var verifyToken = function(_request, _response, _callback, _errorCallback) {
   log(SOURCE, _request);
 
   // Verify the client's token
-  PASSPORT.authenticate(
-    ['jwt', 'google'],
-    { session: false },
-    (passportError, userInfo, tokenError) => {
-      if (passportError !== null) _errorCallback(passportError, null, false);
-      else if (
-        tokenError !== undefined &&
-        tokenError !== null &&
-        Object.keys(tokenError).length !== 0
-      ) _errorCallback(null, tokenError, false);
-      else if (!userInfo) _errorCallback(null, null, true);
-      else _callback(userInfo);
-    }
-  )(_request, _response);
+  PASSPORT.authenticate('jwt', { session: false }, (passportError, userInfo, tokenError) => {
+    if (passportError !== null) _errorCallback(passportError, null, false);
+    else if (
+      tokenError !== undefined &&
+      tokenError !== null &&
+      Object.keys(tokenError).length !== 0
+    ) _errorCallback(null, tokenError, false);
+    else if (!userInfo) _errorCallback(null, null, true);
+    else _callback(userInfo);
+  })(_request, _response);
 };
 
 /**
@@ -91,22 +87,46 @@ var verifyToken2 = function(_request, _response) {
 
   return new Promise((resolve, reject) => {
     // Verify the client's token
-    PASSPORT.authenticate(
-      ['jwt', 'google'],
-      { session: false },
-      (passportError, userInfo, tokenError) => {
-        if (userInfo) resolve(userInfo);
-        else {
-          let errorJson = {
-            passportError: passportError,
-            tokenError: tokenError === undefined ? null : tokenError,
-            userInfoMissing: !userInfo,
-          };
+    PASSPORT.authenticate('jwt', { session: false }, (passportError, userInfo, tokenError) => {
+      if (userInfo) resolve(userInfo);
+      else {
+        let errorJson = {
+          passportError: passportError,
+          tokenError: tokenError === undefined ? null : tokenError,
+          userInfoMissing: !userInfo,
+        };
 
-          reject(errorJson);
-        }
+        reject(errorJson);
       }
-    )(_request, _response);
+    })(_request, _response);
+  });
+};
+
+/**
+ * verifyGoogleRequest - Validates and verifies a JSON web token
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @returns {Promise<User>|Promise<Object>} the User
+ * object referenced by the token or a JSON of errors
+ */
+var verifyGoogleRequest = function(_request, _response) {
+  const SOURCE = 'verifyGoogleRequest()';
+  log(SOURCE, _request);
+
+  return new Promise((resolve, reject) => {
+    // Verify the client's token
+    PASSPORT.authenticate('google', { session: false }, (passportError, userInfo, tokenError) => {
+      if (userInfo) resolve(userInfo);
+      else {
+        let errorJson = {
+          passportError: passportError,
+          tokenError: tokenError === undefined ? null : tokenError,
+          userInfoMissing: !userInfo,
+        };
+
+        reject(errorJson);
+      }
+    })(_request, _response);
   });
 };
 
@@ -124,6 +144,7 @@ module.exports = {
   validatePasswords2: validatePasswords2,
   verifyToken: verifyToken,
   verifyToken2: verifyToken2,
+  verifyGoogleRequest: verifyGoogleRequest,
   generateToken: generateToken,
 };
 

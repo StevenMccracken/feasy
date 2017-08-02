@@ -1,24 +1,30 @@
-.btn-flat{
+.btn-flat {
   display: inline-table;
 }
-td{
+
+td {
   padding: 0 0;
 }
-.background{
+
+.background {
   text-align: center;
 }
-.avatar{
+
+.avatar {
   margin-left: 38%;
 }
-.user-view{
+
+.user-view {
   text-align: center;
   font-size: 20px;
 }
-.action{
+
+.action {
   display: -webkit-inline-box;
-  margin-bottom: 40px
+  margin-bottom: 40px;
 }
-.logout{
+
+.logout {
   margin-right: 25px;
   padding: 5px 5px;
   border-radius: 9px;
@@ -26,9 +32,9 @@ td{
   display: initial;
   color: #87b4f0;
   cursor: pointer;
-
 }
-.settings{
+
+.settings {
   margin-left: 25px;
   padding: 5px 5px;
   border-radius: 9px;
@@ -37,6 +43,7 @@ td{
   color: #87b4f0;
   cursor: pointer;
 }
-p{
+
+p {
   margin: 0px 0px 0px 0px;
 }
