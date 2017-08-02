@@ -10,7 +10,7 @@ import { Assignment } from '../objects/Assignment';
 
 @Injectable()
 export class AssignmentService {
-  private baseUrl = 'http://localhost:8080';
+  private baseUrl = 'https://api.feasy-app.com';
   private contentType_UrlEncoded = 'application/x-www-form-urlencoded';
   private standardHeaders = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
 
