@@ -18,7 +18,7 @@ import {
 } from 'angular-calendar';
 import { Component, ChangeDetectionStrategy, OnInit } from '@angular/core';
 
-import { Assignment } from '../../objects/Assignment';
+import { Assignment } from '../../objects/assignment';
 import { AssignmentService } from '../../services/assignment.service';
 
 // Used to access jQuery and Materialize script

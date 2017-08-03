@@ -1,7 +1,7 @@
 import { Router } from '@angular/router';
 import { Component, OnInit } from '@angular/core';
 
-import { Assignment } from '../../objects/Assignment';
+import { Assignment } from '../../objects/assignment';
 import { AssignmentService } from '../../services/assignment.service';
 
 declare var $: any;

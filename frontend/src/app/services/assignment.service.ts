@@ -6,7 +6,7 @@ import { Observable } from 'rxjs/Observable';
 import { Injectable, OnInit} from '@angular/core';
 import { Headers, Http, RequestOptions, Response } from '@angular/http';
 
-import { Assignment } from '../objects/Assignment';
+import { Assignment } from '../objects/assignment';
 
 @Injectable()
 export class AssignmentService {
