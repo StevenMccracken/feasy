@@ -167,6 +167,9 @@ export class CalendarComponent implements OnInit {
         this.currentDayArray.splice(index, 1);
         let event: CalendarEvent = this.aDescription.get(assignment);
         this.events = this.events.filter(iEvent => iEvent !== event);
+
+        // Update the UI
+        this.refresh.next();
       })
       .catch((deleteError: Response) => {
         if (deleteError.status === 404) this.handle404Error(assignment);

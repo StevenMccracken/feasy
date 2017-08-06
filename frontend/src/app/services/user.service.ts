@@ -11,7 +11,7 @@ import { Account } from '../objects/user';
 @Injectable()
 export class UserService {
   private token: string;
-  private baseUrl = 'https://api.feasy-app.com';
+  private baseUrl = 'http://localhost:8080';
   private contentType_UrlEncoded = 'application/x-www-form-urlencoded';
   private standardHeaders = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
 

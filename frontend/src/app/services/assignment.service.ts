@@ -10,7 +10,7 @@ import { Assignment } from '../objects/assignment';
 
 @Injectable()
 export class AssignmentService {
-  private baseUrl = 'https://api.feasy-app.com';
+  private baseUrl = 'http://localhost:8080';
   private contentType_UrlEncoded = 'application/x-www-form-urlencoded';
   private standardHeaders = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
 
@@ -33,7 +33,13 @@ export class AssignmentService {
     });
 
     // Add required parameters
-    let dateUnixSeconds = assignment.dueDate.getTime() / 1000;
+    let invalidParams: string[] = [];
+    if (assignment.title == null || assignment.title == undefined) invalidParams.push('title');
+    if (assignment.dueDate == null || assignment.dueDate == undefined) invalidParams.push('dueDate');
+
+    if (invalidParams.length > 0) return Promise.reject(invalidParams);
+
+    let dateUnixSeconds = Math.round(assignment.dueDate.getTime() / 1000);
     let requestParams = `title=${assignment.title}&dueDate=${dateUnixSeconds}`;
 
     // Attempt to add optional assignment attributes

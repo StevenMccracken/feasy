@@ -37,8 +37,28 @@ export class ToDoComponent implements OnInit {
       .catch((getError: Response) => this.handleError(getError));
   }
 
-  deleteEventAction(id: string, index: number): void {
-    this._assignmentService.delete(id)
+  addAssignment(): void {
+    this.assignment.completed = false;
+
+    // TODO: Add due date field to form
+    this.assignment.dueDate = new Date();
+
+    this._assignmentService.create(this.assignment)
+      .then((newAssignment: Assignment) => {
+        this.assignments.push(newAssignment);
+        this.sortAssignments();
+      })
+      .catch((createError: any) => {
+        if (Array.isArray(createError)) {
+          // Request was invalid and createError is an array containing invalid params
+          console.error('Invalid parameters: %s', createError.join());
+        } else this.handleError(createError);
+      });
+  }
+
+  deleteEventAction(index: number): void {
+    let assignment = this.assignments[index];
+    this._assignmentService.delete(assignment._id)
       .then(() => this.assignments.splice(index, 1))
       .catch((deleteError: Response) => {
         if (deleteError.status === 404) this.assignments.splice(index, 1);
@@ -46,9 +66,9 @@ export class ToDoComponent implements OnInit {
       });
   }
 
-  enableEdit(index: number): void {
-    this.assignments[index].editMode = !this.assignments[index].editMode;
-    let id = "#descriptionEdit"+index;
+  enableEdit(assignment: Assignment, index: number): void {
+    assignment.editMode = !assignment.editMode;
+    let id = `#descriptionEdit${index}`;
     setTimeout(() => $(id).focus(), 1);
   }
 
@@ -72,6 +92,7 @@ export class ToDoComponent implements OnInit {
   }
 
   sortAssignments(): void {
+    this.doneSorting = false;
     this.assignments.sort((a, b) => {
       return (a.dueDate.getTime() - b.dueDate.getTime());
     });
