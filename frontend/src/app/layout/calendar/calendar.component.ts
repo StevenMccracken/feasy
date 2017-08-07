@@ -347,7 +347,7 @@ export class CalendarComponent implements OnInit {
   updateDescription(assignment: Assignment): void {
     assignment.editMode = false;
     this._assignmentService.updateDescription(assignment._id, assignment.description)
-      .then(() => console.log('Updated description'))
+      .then()
       .catch((updateError: any) => {
         if (typeof updateError === 'string') this.handleUpdateError('description', updateError);
         else if (updateError.status === 404) this.handle404Error(assignment);

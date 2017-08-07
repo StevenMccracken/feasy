@@ -218,7 +218,7 @@ export class AssignmentService {
    * @return {Promise<any>} an empty resolved promise
    */
   updateDueDate(id: string, newDueDate: Date): Promise<any> {
-    let newDueDateUnixSeconds = newDueDate.getTime() / 1000;
+    let newDueDateUnixSeconds = Math.round(newDueDate.getTime() / 1000);
     return this.update(id, 'dueDate', newDueDateUnixSeconds)
       .then((successResponse: Response) => Promise.resolve())
       .catch((updateError: any) => Promise.reject(updateError));
