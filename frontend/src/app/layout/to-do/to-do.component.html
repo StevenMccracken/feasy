@@ -1,5 +1,5 @@
 <div class="row">
-   <div *ngIf="doneSorting" class="col m8 offset-m2  todo-main">
+   <div *ngIf="doneSorting" class="col m8 offset-m2 todo-main">
      <div *ngFor="let a of assignments; let i = index;" class="col s12">
          <table class="eventDisplay">
            <tr class = "row">
@@ -12,7 +12,7 @@
                <div class="chip">{{ a.type }}</div>
              </td>
              <td class="col s2 m1" align='center'>
-               <p class="material-icons delete action" (mousedown)="enableEdit(i)">create</p>
+               <p class="material-icons delete action" (mousedown)="enableEdit(a, i)">create</p>
              </td>
              <td class="col s2 m1" align='center'>
                <p class="material-icons delete action" (mousedown)="this.deleteEventAction(i)">delete_sweep</p>
@@ -25,7 +25,7 @@
              <div [style.display]="(a.editMode) ? 'inline' : 'none'">
                <div class="row">
                  <div class="input-field col s12">
-                   <textarea [id]="'descriptionEdit'+i" name="descriptionEdit" class="materialize-textarea col s12" (blur)="updateDescription(a)" [(ngModel)]="a.description" placeholder="Edit event description..."></textarea>
+                   <textarea [id]="'descriptionEdit'+i" name="descriptionEdit" class="materialize-textarea col s12" (blur)="updateDescription(a)" [(ngModel)]="a.description" placeholder="Edit description"></textarea>
                  </div>
                </div>
              </div>
@@ -44,9 +44,9 @@
                <select id="type" name="type">
                  <option value="" disabled selected>What type of assignment will this be?</option>
                  <option value="Homework">Homework</option>
-                 <option value="Quizes">Quiz</option>
-                 <option value="Exams">Exam</option>
-                 <option value="Projects">Project</option>
+                 <option value="Quiz">Quiz</option>
+                 <option value="Exam">Exam</option>
+                 <option value="Project">Project</option>
                </select>
                <label for="type-assignment">Assignment Type</label>
              </div>

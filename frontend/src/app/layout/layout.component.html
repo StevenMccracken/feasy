@@ -13,7 +13,7 @@
           <div class="user-setting">
             <img class="circle avatar" src="https://cdn0.iconfinder.com/data/icons/avatars-6/500/Avatar_boy_man_people_account_client_male_person_user_work_sport_beard_team_glasses-512.png">
           </div>
-          <p class="white-text">Hey, &nbsp; {{ firstName }}</p>
+          <p class="white-text">Hey,&nbsp;{{ firstName }}</p>
           <div class="action">
             <div class="logout" (click)="logout()">Logout</div>
             <div class="settings">Settings</div>
@@ -35,7 +35,7 @@
       </a>
     </li>
     <li>
-      <a (click)="closeNav('handled')">
+      <a routerLink="/main/todo" (click)="closeNav('handled')">
         <table>
           <tr>
             <td>
@@ -49,20 +49,19 @@
       </a>
     </li>
     <li>
-      <a routerLink="/main/todo" (click)="closeNav('handled')">
+      <a (click)="closeNav('handled')">
         <table>
           <tr>
             <td>
               <p class="material-icons">equalizer</p>
             </td>
             <td>
-              <h6>HealthBar</h6>
+              <h6>Health Bar</h6>
             </td>
           </tr>
         </table>
       </a>
     </li>
-
   </ul>
   <router-outlet></router-outlet>
 </div>

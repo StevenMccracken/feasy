@@ -1,13 +1,12 @@
 import 'hammerjs';
 import { NgModule } from '@angular/core';
 import { HttpModule } from '@angular/http';
-import { FormsModule } from '@angular/forms';
-import { AppComponent } from './app.component';
 import { MaterialModule } from '@angular/material';
-import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { AppComponent } from './app.component';
 import { AuthGuard } from './router-guard/auth.guard';
 import { UserService } from './services/user.service';
 import { LoginComponent } from './login/login.component';

@@ -33,7 +33,13 @@ export class AssignmentService {
     });
 
     // Add required parameters
-    let dateUnixSeconds = assignment.dueDate.getTime() / 1000;
+    let invalidParams: string[] = [];
+    if (assignment.title == null || assignment.title == undefined) invalidParams.push('title');
+    if (assignment.dueDate == null || assignment.dueDate == undefined) invalidParams.push('dueDate');
+
+    if (invalidParams.length > 0) return Promise.reject(invalidParams);
+
+    let dateUnixSeconds = Math.round(assignment.dueDate.getTime() / 1000);
     let requestParams = `title=${assignment.title}&dueDate=${dateUnixSeconds}`;
 
     // Attempt to add optional assignment attributes
@@ -212,7 +218,7 @@ export class AssignmentService {
    * @return {Promise<any>} an empty resolved promise
    */
   updateDueDate(id: string, newDueDate: Date): Promise<any> {
-    let newDueDateUnixSeconds = newDueDate.getTime() / 1000;
+    let newDueDateUnixSeconds = Math.round(newDueDate.getTime() / 1000);
     return this.update(id, 'dueDate', newDueDateUnixSeconds)
       .then((successResponse: Response) => Promise.resolve())
       .catch((updateError: any) => Promise.reject(updateError));
