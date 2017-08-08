@@ -309,7 +309,7 @@ var retrieveUser = function(_request, _response) {
 
         resolve(errorJson);
       }); // End AUTH.verifyToken2()
-  });
+  }); // End return promise
 }; // End retrieveUser()
 
 /**
@@ -2031,101 +2031,77 @@ var deleteAssignment = function(_request, _response, _callback) {
  * parseSchedule - Parses a pdf schedule for assignment due dates
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to send the database response
  */
-var parseSchedule = function(_request, _response, _callback) {
+var parseSchedule = function(_request, _response) {
   const SOURCE = 'parseSchedule()';
   log(SOURCE, _request);
 
-  // TODO: Remove this error and solve the issue of repeat requests to this route/function crashing
-  let errorJson = ERROR.error(
-    SOURCE,
-    _request,
-    _response,
-    ERROR.CODE.API_ERROR,
-    'Route is not correctly implemented yet'
-  );
+  return new Promise((resolve) => {
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Token is valid. Check request parameters in the URL
+        let invalidParams = [];
+        if (_request.file === undefined || _request.file === null) invalidParams.push('pdf');
 
-  _callback(errorJson);
-  return;
+        if (invalidParams.length > 0) {
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.INVALID_REQUEST_ERROR,
+            `Invalid parameters: ${invalidParams.join()}`
+          );
 
-  // Verify client's web token first
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Token is valid. Check request parameters in the URL
-      let invalidParams = [];
-      if (_request.file === undefined || _request.file === null) invalidParams.push('pdf');
+          resolve(errorJson);
+        } else if (client.username !== _request.params.username) {
+          // Client attempted to upload a pdf schedule that was not their own
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.RESOURCE_ERROR,
+            'You cannot upload a schedule for another user',
+            `${client.username} tried to upload a schedule for ${_request.params.username}`
+          );
 
-      if (invalidParams.length > 0) {
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.INVALID_REQUEST_ERROR,
-          `Invalid parameters: ${invalidParams.join()}`
-        );
+          resolve(errorJson);
+        } else if (_request.file.mimetype !== 'application/pdf') {
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.INVALID_MEDIA_TYPE,
+            'File must be a PDF',
+            `File received had ${_request.file.mimetype} mimetype`
+          );
 
-        _callback(errorJson);
-      } else if (client.username !== _request.params.username) {
-        // Client attempted to upload a pdf schedule that was not their own
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.RESOURCE_ERROR,
-          'You cannot upload a schedule for another user',
-          `${client.username} tried to upload a schedule for ${_request.params.username}`
-        );
+          resolve(errorJson);
+        } else {
+          // Parse the PDF schedule
+          MEDIA.parsePdf2(_request.file.path)
+            .then((pdfText) => {
+              resolve(pdfText);
+            })
+            .catch((parseError) => {
+              let errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.API_ERROR,
+                null,
+                parseError
+              );
 
-        _callback(errorJson);
-      } else if (_request.file.mimetype !== 'application/pdf') {
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.INVALID_MEDIA_TYPE,
-          'File must be a PDF',
-          `File received had ${_request.file.mimetype} mimetype`
-        );
-
-        _callback(errorJson);
-      } else {
-        SCHEDULE.parsePdf(
-          _request.file.path,
-          (pdfText) => {
-            _callback(pdfText);
-          },
-          (parseError) => {
-            let errorJson = ERROR.error(
-              SOURCE,
-              _request,
-              _response,
-              ERROR.CODE.API_ERROR,
-              null,
-              parseError
-            );
-
-            _callback(errorJson);
-          } // End (parseError)
-        ); // End SCHEDULE.parsePdf()
-      }
-    }, // End (client)
-    (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
-
-      _callback(errorJson)
-    }
-  ); // End AUTH.verifyToken()
-}; // End deleteAssignment()
+              resolve(errorJson);
+            }); // End MEDIA.parsePdf2()
+        }
+      })
+      .catch((authError) => {
+        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        resolve(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
+}; // End parseSchedule()
 
 module.exports = {
   authenticate: authenticate,

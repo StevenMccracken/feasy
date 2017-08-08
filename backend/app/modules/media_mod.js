@@ -102,6 +102,7 @@ var removeTempFile = function(_filePath) {
 
 module.exports = {
   parsePdf: parsePdf,
+  parsePdf2: parsePdf2,
   upload: UPLOAD_CONFIG,
   ADD: add,
   GET: get,

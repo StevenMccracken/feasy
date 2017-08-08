@@ -282,7 +282,7 @@ var determineAuthenticationError2 = function(_source, _request, _response, _erro
   var serverLog;
   let clientErrorMessage = null;
 
-  if (_error.passportError !== null) serverLog = _passportError;
+  if (_error.passportError !== null) serverLog = _error.passportError;
   else if (_error.tokenError !== null) {
     // The token in the request body is invalid
     serverLog = _error.tokenError.message;
