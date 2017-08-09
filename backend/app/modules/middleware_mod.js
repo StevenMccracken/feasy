@@ -15,7 +15,7 @@ const ASSIGNMENTS = require('../controller/assignment');
  * authenticate - Authorizes a user and generates a JSON web token for the user
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @returns {Promise<Object>} the error or success JSON
+ * @return {Promise<Object>} the error or success JSON
  */
 var authenticate = function(_request, _response) {
   const SOURCE = 'authenticate()';
@@ -113,7 +113,7 @@ var authenticate = function(_request, _response) {
  * authenticateGoogle - Initiates the authentication of a Google sign-in
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @returns {Promise<Object>} the error or success JSON
+ * @return {Promise<Object>} the error or success JSON
  */
 var authenticateGoogle = function(_request, _response) {
   const SOURCE = 'authenticateGoogle()';
@@ -140,7 +140,7 @@ var authenticateGoogle = function(_request, _response) {
  * finishAuthenticateGoogle - Concludes the authentication of a Google sign-in
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @returns {Promise<Object>} the error or success JSON
+ * @return {Promise<Object>} the error or success JSON
  */
 var finishAuthenticateGoogle = function(_request, _response) {
   const SOURCE = 'finishAuthenticateGoogle()';
@@ -183,7 +183,7 @@ var finishAuthenticateGoogle = function(_request, _response) {
  * createUser - Adds a new user to the database and sends the client a web token
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @returns {Promise<Object>} the error or success JSON
+ * @return {Promise<Object>} the error or success JSON
  */
 var createUser = function(_request, _response) {
   const SOURCE = 'createUser()';
@@ -256,7 +256,8 @@ var createUser = function(_request, _response) {
  * retrieveUser - Retrieves a user from the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- */
+ * @return {Promise<Object>} the error or success JSON
+*/
 var retrieveUser = function(_request, _response) {
   const SOURCE = 'retrieveUser()';
   log(SOURCE, _request);
@@ -453,7 +454,8 @@ var updateUserUsername = function(_request, _response, _callback) {
  * updateUserUsername2 - Updates a user's username information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- */
+ * @return {Promise<Object>} the error or success JSON
+*/
 var updateUserUsername2 = function(_request, _response) {
   const SOURCE = 'updateUserUsername2()';
   log(SOURCE, _request);
@@ -564,56 +566,29 @@ var updateUserUsername2 = function(_request, _response) {
  * updateUserPassword - Updates a user's password information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to send the database response
+ * @return {Promise<Object>} the error or success JSON
  */
-var updateUserPassword = function(_request, _response, _callback) {
+var updateUserPassword = function(_request, _response) {
   const SOURCE = 'updateUserPassword()';
   log(SOURCE, _request);
 
-  // Verify client's web token first
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Token is valid. Check first request parameter
-      if (!VALIDATE.isValidUsername(_request.params.username)) {
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.INVALID_REQUEST_ERROR,
-          'Invalid parameters: username'
-        );
-
-        _callback(errorJson);
-      } else if (client.username !== _request.params.username) {
-        // Client attempted to update a user other than themselves
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.RESOURCE_ERROR,
-          'You cannot update another user',
-          `${client.username} tried to update ${_request.params.username}`
-        );
-
-        _callback(errorJson);
-      } else {
-        // URL request parameter is valid. Check request body parameters
-        let invalidParams = [];
-        if (!VALIDATE.isValidPassword(_request.body.oldPassword)) invalidParams.push('oldPassword');
-        if (!VALIDATE.isValidPassword(_request.body.newPassword)) invalidParams.push('newPassword');
-
-        if (invalidParams.length > 0) {
+  return new Promise((resolve) => {
+    // Verify client's web token first
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Token is valid. Check first request parameter
+        if (client.username !== _request.params.username) {
+          // Client attempted to update a user other than themselves
           let errorJson = ERROR.error(
             SOURCE,
             _request,
             _response,
-            ERROR.CODE.INVALID_REQUEST_ERROR,
-            `Invalid parameters: ${invalidParams.join()}`
+            ERROR.CODE.RESOURCE_ERROR,
+            'You cannot update another user',
+            `${client.username} tried to update ${_request.params.username}`
           );
 
-          _callback(errorJson);
+          resolve(errorJson);
         } else if (USERS.isTypeGoogle(client)) {
           let errorJson = ERROR.error(
             SOURCE,
@@ -624,116 +599,112 @@ var updateUserPassword = function(_request, _response, _callback) {
             `Google user ${client.username} tried to update their password`
           );
 
-          _callback(errorJson);
+          resolve(errorJson);
         } else {
-          // All request parameters are valid. Get the user object
-          USERS.getByUsername(
-            _request.params.username,
-            true,
-            (userInfo) => {
-              if (userInfo === null) {
-                // User with that username does not exist
-                let errorJson = ERROR.error(
-                  SOURCE,
-                  _request,
-                  _response,
-                  ERROR.CODE.API_ERROR,
-                  null,
-                  `${client.username} is null in the database even though authentication passed`
-                );
+          // Client is valid. Check request parameters
+          let invalidParams = [];
+          if (!VALIDATE.isValidPassword(_request.body.oldPassword)) invalidParams.push('oldPassword');
+          if (!VALIDATE.isValidPassword(_request.body.newPassword)) invalidParams.push('newPassword');
 
-                _callback(errorJson);
-              } else {
-                // Verify that old password is identical to existing password
-                AUTH.validatePasswords(
-                  _request.body.oldPassword.trim(),
-                  userInfo.password,
-                  (passwordsMatch) => {
-                    if (!passwordsMatch) {
-                      let errorJson = ERROR.error(
+          if (invalidParams.length > 0) {
+            let errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.INVALID_REQUEST_ERROR,
+              `Invalid parameters: ${invalidParams.join()}`
+            );
+
+            resolve(errorJson);
+          } else {
+            // Request parameters are valid. Retrieve user information with password
+            USERS.getByUsername2(client.username, true)
+              .then((userInfo) => {
+                if (userInfo === null) {
+                  // User with that username does not exist
+                  let errorJson = ERROR.error(
+                    SOURCE,
+                    _request,
+                    _response,
+                    ERROR.CODE.API_ERROR,
+                    null,
+                    `${client.username} is null in the database even though authentication passed`
+                  );
+
+                  resolve(errorJson);
+                } else {
+                  // Verify that oldPassword is identical to existing password
+                  AUTH.validatePasswords2(_request.body.oldPassword, userInfo.password)
+                    .then((passwordsMatch) => {
+                      if (!passwordsMatch) {
+                        let errorJson = ERROR.error(
+                          SOURCE,
+                          _request,
+                          _response,
+                          ERROR.CODE.RESOURCE_ERROR,
+                          'oldPassword parameter does not match existing password'
+                        );
+
+                        resolve(errorJson);
+                      } else if (_request.body.oldPassword === _request.body.newPassword) {
+                        // The new password will not actually update the old password
+                        let errorJson = ERROR.error(
+                          SOURCE,
+                          _request,
+                          _response,
+                          ERROR.CODE.INVALID_REQUEST_ERROR,
+                          'Unchanged parameters: newPassword'
+                        );
+
+                        resolve(errorJson);
+                      } else {
+                        // Update username information
+                        USERS.updateAttribute2(userInfo, 'password', _request.body.newPassword)
+                          .then((updatedUserInfo) => {
+                            let successJson = {
+                              success: {
+                                message: 'Successfully updated password',
+                              },
+                            };
+
+                            resolve(successJson);
+                          })
+                          .catch((udpatePasswordError) => {
+                            let errorJson = ERROR.determineUserError(
+                              SOURCE,
+                              _request,
+                              _response,
+                              udpatePasswordError
+                            );
+
+                            resolve(errorJson);
+                          }); // End USERS.updateAttribute2()
+                      }
+                    })
+                    .catch((validatePasswordsError) => {
+                      let errorJson = ERROR.determineBcryptError(
                         SOURCE,
                         _request,
                         _response,
-                        ERROR.CODE.RESOURCE_ERROR,
-                        'oldPassword does not match existing password'
+                        validatePasswordsError
                       );
 
-                      _callback(errorJson);
-                    } else if (
-                      _request.body.oldPassword.trim() === _request.body.newPassword.trim()
-                    ) {
-                      // The new password will not actually update the old password
-                      let errorJson = ERROR.error(
-                        SOURCE,
-                        _request,
-                        _response,
-                        ERROR.CODE.INVALID_REQUEST_ERROR,
-                        'Unchanged parameters: newPassword'
-                      );
-
-                      _callback(errorJson);
-                    } else {
-                      // Update password information
-                      USERS.updateAttribute(
-                        userInfo,
-                        'password',
-                        _request.body.newPassword,
-                        (updatedUserInfo) => {
-                          let successJson = {
-                            success: {
-                              message: 'Successfully updated password',
-                            },
-                          };
-
-                          _callback(successJson);
-                        }, // End (updatedUserInfo)
-                        (updatePasswordError) => {
-                          let errorJson = ERROR.determineUserError(
-                            SOURCE,
-                            _request,
-                            _response,
-                            updatePasswordError
-                          );
-
-                          _callback(errorJson);
-                        } // End (updatePasswordError)
-                      ); // End USERS.updateAttribute()
-                    }
-                  }, // End (passwordsMatch)
-                  (validatePasswordsError) => {
-                    let errorJson = ERROR.determineBcryptError(
-                      SOURCE,
-                      _request,
-                      _response,
-                      validatePasswordsError
-                    );
-
-                    _callback(errorJson);
-                  } // End (validatePasswordsError)
-                ); // End AUTH.verifyPasswords()
-              }
-            }, // End (userInfo)
-            (getUserInfoError) => {
-              let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserInfoError);
-              _callback(errorJson);
-            } // End (getUserInfoError)
-          ); // End USERS.getByUsername()
+                      resolve(errorJson);
+                    }); // End AUTH.validatePasswords2()
+                }
+              }) // End then(userInfo)
+              .catch((getUserError) => {
+                let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserError);
+                resolve(errorJson);
+              }); // End USERS.getByUsername2()
+          }
         }
-      }
-    }, // End (client)
-    (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
-
-      _callback(errorJson);
-    }
-  ); // End AUTH.verifyToken()
+      }) // End then(client)
+      .catch((authError) => {
+        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        resolve(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
 }; // End updateUserPassword()
 
 /**
