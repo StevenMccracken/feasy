@@ -12,6 +12,8 @@ const JWT_CONFIG = require(`${process.cwd()}/config/jwt`);
 const PASSPORT = require('passport');
 require('../../config/passport')(PASSPORT);
 
+const STANDARD_EXPIRATION_TIME = '24h';
+
 /**
  * validatePasswords - Verifies a given password against a saved password
  * @param {String} _givenPassword a given value for the supposed password
@@ -136,7 +138,7 @@ var verifyGoogleRequest = function(_request, _response) {
  * @returns {String} a JSON web token
  */
 var generateToken = function(_userInfo) {
-  return JWT.sign(_userInfo, JWT_CONFIG.secret, { expiresIn: '24h' });
+  return JWT.sign(_userInfo, JWT_CONFIG.secret, { expiresIn: STANDARD_EXPIRATION_TIME });
 }
 
 module.exports = {

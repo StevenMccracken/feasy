@@ -91,7 +91,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users/:username/username').put((_request, _response) => (
-    MIDDLEWARE.updateUserUsername(_request, _response, result => _response.json(result))
+    MIDDLEWARE.updateUserUsername2(_request, _response).then(result => _response.json(result))
   ));
 
   /**
