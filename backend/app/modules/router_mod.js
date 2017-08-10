@@ -177,9 +177,14 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments').post((_request, _response) => (
-    MIDDLEWARE.createAssignment(_request, _response, result => _response.json(result))
-  ));
+  router.route('/users/:username/assignments').post((_request, _response) => {
+    MIDDLEWARE.createAssignment(_request, _response)
+      .then(result => {
+        _response.status(201);
+        _response.json(result);
+      })
+      .catch(error => _response.json(error));
+  });
 
   /**
    * The GET route for retrieving all of a user's assignments. Sends an error
@@ -187,9 +192,11 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments').get((_request, _response) => (
-    MIDDLEWARE.getAssignments(_request, _response, result => _response.json(result))
-  ));
+  router.route('/users/:username/assignments').get((_request, _response) => {
+    MIDDLEWARE.getAssignments(_request, _response)
+      .then(result => _response.json(result))
+      .then(error => _response.json(error));
+  });
 
   /**
    * The GET route for retrieving an assignment. Sends an error JSON or
@@ -197,9 +204,11 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/:assignmentId').get((_request, _response) => (
-    MIDDLEWARE.getAssignmentById(_request, _response, result => _response.json(result))
-  ));
+  router.route('/users/:username/assignments/:assignmentId').get((_request, _response) => {
+    MIDDLEWARE.getAssignmentById2(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
 
   /**
    * THE PUT route for updating an assignment's title. Sends an error JSON or

@@ -849,302 +849,249 @@ var deleteUser = function(_request, _response) {
   }); // End return promise
 }; // End deleteUser()
 
-// TODO: Start promisifying here
-
 /**
  * createAssignment - Creates a new assignment for a user and returns the created assignment
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to return the response
+ * @return {Promise<Object>} a success JSON or error JSON
  */
-var createAssignment = function(_request, _response, _callback) {
+var createAssignment = function(_request, _response) {
   const SOURCE = 'createAssignment()';
   log(SOURCE, _request);
 
-  // Verify client's web token first
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Token is valid. Check username parameter
-      if (!VALIDATE.isValidUsername(_request.params.username)) {
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.INVALID_REQUEST_ERROR,
-          'Invalid parameters: username'
-        );
+  return new Promise((resolve, reject) => {
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Token is valid. Check if client is requesting themself
+        if (client.username !== _request.params.username) {
+          // Client attempted to create an assignment for another user
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.RESOURCE_ERROR,
+            'You cannot create another user\'s assignments',
+            `${client.username} tried to create an assignment for ${_request.params.username}`
+          );
 
-        _callback(errorJson);
-      } else if (client.username !== _request.params.username) {
-        // Client attempted to create an assignment for another user
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.RESOURCE_ERROR,
-          'You cannot create another user\'s assignments',
-          `${client.username} tried to create an assignment for ${_request.params.username}'s'`
-        );
-
-        _callback(errorJson);
-      } else {
-        // URL request parameters are valid. Check request body parameters
-        let hasValidClass = false, hasValidType = false, hasValidDescription = false,
-          hasValidCompleted = false;
-
-        let invalidParams = [];
-        if (!VALIDATE.isValidString(_request.body.title)) invalidParams.push('title');
-        if (!VALIDATE.isValidInteger(_request.body.dueDate)) invalidParams.push('dueDate');
-
-        // Check optional parameters
-        if (_request.body.class !== undefined) {
-          if (!VALIDATE.isValidString(_request.body.class)) invalidParams.push('class');
-          else hasValidClass = true;
-        }
-
-        if (_request.body.type !== undefined) {
-          if (!VALIDATE.isValidString(_request.body.type)) invalidParams.push('type');
-          else hasValidType = true;
-        }
-
-        if (_request.body.description !== undefined) {
-          if (!VALIDATE.isValidString(_request.body.description)) invalidParams.push('description');
-          else hasValidDescription = true;
-        }
-
-        if (_request.body.completed !== undefined) {
-          if (_request.body.completed !== 'true' && _request.body.completed !== 'false') {
-            invalidParams.push('completed');
-          } else hasValidCompleted = true
-        }
-
-        if (invalidParams.length > 0) {
+          reject(errorJson);
+        } else if (!VALIDATE.isValidUsername(_request.params.username)) {
           let errorJson = ERROR.error(
             SOURCE,
             _request,
             _response,
             ERROR.CODE.INVALID_REQUEST_ERROR,
-            `Invalid parameters: ${invalidParams.join()}`
+            'Invalid parameters: username'
           );
 
-          _callback(errorJson);
+          reject(errorJson);
         } else {
-          // Request parameters are valid. Build assignment JSON
-          let assignmentInfo = {
-            userId: client._id.toString(),
-            title: _request.body.title,
-            dueDate: new Date(parseInt(_request.body.dueDate) * 1000),
-          };
+          // Check request body parameters. Start with required parameters
+          let invalidParams = [];
+          if (!VALIDATE.isValidString(_request.body.title)) invalidParams.push('title');
+          if (!VALIDATE.isValidInteger(_request.body.dueDate)) invalidParams.push('dueDate');
 
-          // Add completed boolean value to assignment info from request parameter string
-          if (hasValidCompleted && _request.body.completed === 'true') {
-            assignmentInfo.completed = true;
-          } else if (hasValidCompleted && _request.body.completed === 'false') {
-            assignmentInfo.completed = false;
-          } else assignmentInfo.completed = false;
+          // Check optional parameters
+          let hasValidClass = false;
+          if (_request.body.class !== undefined) {
+            if (!VALIDATE.isValidString(_request.body.class)) invalidParams.push('class');
+            else hasValidClass = true;
+          }
 
-          // Check for optional parameters
-          if (hasValidClass) assignmentInfo.class = _request.body.class;
-          if (hasValidType) assignmentInfo.type = _request.body.type;
-          if (hasValidDescription) assignmentInfo.description = _request.body.description;
+          let hasValidType = false;
+          if (_request.body.type !== undefined) {
+            if (!VALIDATE.isValidString(_request.body.type)) invalidParams.push('type');
+            else hasValidType = true;
+          }
 
-          // Save assignment to database
-          ASSIGNMENTS.create(
-            assignmentInfo,
-            (createdAssignment) => {
-              // Set response status code
-              _response.status(201);
-              _callback(createdAssignment);
-            }, // End (createdAssignment)
-            (createAssignmentError) => {
-              let errorJson = ERROR.determineAssignmentError(
-                SOURCE,
-                _request,
-                _response,
-                createAssignmentError
-              );
+          let hasValidDescription = false;
+          if (_request.body.description !== undefined) {
+            if (!VALIDATE.isValidString(_request.body.description)) invalidParams.push('description');
+            else hasValidDescription = true;
+          }
 
-              _callback(errorJson);
-            } // End (createAssignmentError)
-          ); // End ASSIGNMENTS.create()
+          let hasValidCompleted = false;
+          if (_request.body.completed !== undefined) {
+            if (_request.body.completed !== 'true' && _request.body.completed !== 'false') {
+              invalidParams.push('completed');
+            } else hasValidCompleted = true
+          }
+
+          if (invalidParams.length > 0) {
+            let errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.INVALID_REQUEST_ERROR,
+              `Invalid parameters: ${invalidParams.join()}`
+            );
+
+            reject(errorJson);
+          } else {
+            // All request parameters are valid. First add required parameters
+            let assignmentInfo = {
+              userId: client._id.toString(),
+              title: _request.body.title,
+              dueDate: new Date(parseInt(_request.body.dueDate) * 1000),
+            };
+
+            // Add completed boolean value to assignment
+            if (hasValidCompleted && _request.body.completed === 'true') {
+              assignmentInfo.completed = true;
+            } else if (hasValidCompleted && _request.body.completed === 'false') {
+              assignmentInfo.completed = false;
+            } else assignmentInfo.completed = false;
+
+            // Add optional parameters
+            if (hasValidClass) assignmentInfo.class = _request.body.class;
+            if (hasValidType) assignmentInfo.type = _request.body.type;
+            if (hasValidDescription) assignmentInfo.description = _request.body.description;
+
+            // Save assignment to database
+            ASSIGNMENTS.create2(assignmentInfo)
+              .then(createdAssignment => resolve(createdAssignment)) // End then(createdAssignment)
+              .catch((createError) => {
+                let errorJson = ERROR.determineAssignmentError(
+                  SOURCE,
+                  _request,
+                  _response,
+                  createError
+                );
+
+                reject(errorJson);
+              }); // End ASSIGNMENTS.create2()
+          }
         }
-      }
-    }, // End (client)
-    (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
-
-      _callback(errorJson);
-    }
-  ); // End AUTH.verifyToken()
+      }) // End then(client)
+      .catch((authError) => {
+        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
 }; // End createAssignment()
 
 /**
  * getAssignments - Retrieve all assignments created by a user
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to return the response
+ * @return {Promise<Object>} a success JSON or error JSON
  */
-var getAssignments = function(_request, _response, _callback) {
+var getAssignments = function(_request, _response) {
   const SOURCE = 'getAssignments()';
   log(SOURCE, _request);
 
-  // Verify client's web token first
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Token is valid. Check username parameter
-      if (!VALIDATE.isValidUsername(_request.params.username)) {
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.INVALID_REQUEST_ERROR,
-          'Invalid parameters: username'
-        );
+  return new Promise((resolve, reject) => {
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Token is valid. Check if client is requesting themself
+        if (client.username !== _request.params.username) {
+          // Client attempted to get assignments of another user
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.RESOURCE_ERROR,
+            'You cannot get another user\'s assignments',
+            `${client.username} tried to get assignments of ${_request.params.username}`
+          );
 
-        _callback(errorJson);
-      } else if (client.username !== _request.params.username) {
-        // Client attempted to get assignments of another user
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.RESOURCE_ERROR,
-          'You cannot get another user\'s assignments',
-          `${client.username} tried to get assignments of ${_request.params.username}`
-        );
+          reject(errorJson);
+        } else if (!VALIDATE.isValidUsername(_request.params.username)) {
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.INVALID_REQUEST_ERROR,
+            'Invalid parameters: username'
+          );
 
-        _callback(errorJson);
-      } else {
-        // Request is valid. Get assignments from the database created by client
-        ASSIGNMENTS.getAll(
-          client._id,
-          (assignments) => {
-            // Assignments are in array. Iterate over them and add them to response JSON
-            let assignmentsJson = {};
-            for (let assignment of assignments) assignmentsJson[assignment._id] = assignment;
-            _callback(assignmentsJson);
-          }, // End (assignments)
-          (getAssignmentsError) => {
-            let errorJson = ERROR.determineAssignmentError(
-              SOURCE,
-              _request,
-              _response,
-              getAssignmentsError
-            );
-
-            _callback(errorJson);
-          } // End (getAssignmentsError)
-        ); // End ASSIGNMENTS.getAll()
-      }
-    }, // End (client)
-    (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
-
-      _callback(errorJson);
-    }
-  ); // End AUTH.verifyToken()
+          reject(errorJson);
+        } else {
+          // Request is valid. Retrieve assignments from the database
+          ASSIGNMENTS.getAll2(client._id)
+            .then((assignments) => {
+              // Convert assignments array to JSON
+              let assignmentsJson = {};
+              for (let assignment of assignments) assignmentsJson[assignment._id] = assignment;
+              resolve(assignmentsJson);
+            }) // End then(assignments)
+            .catch((getError) => {
+              let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
+              reject(errorJson);
+            }); // End ASSIGNMENTS.getAll2()
+        }
+      }) // End then(client)
+      .catch((authError) => {
+        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
 }; // End getAssignments()
 
 /**
  * getAssignmentById - Retrieve a specific assignment
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to return the response
+ * @return {Promise<Object>} a success JSON or error JSON
  */
-var getAssignmentById = function(_request, _response, _callback) {
+var getAssignmentById = function(_request, _response) {
   const SOURCE = 'getAssignmentById()';
   log(SOURCE, _request);
 
-  // Verify client's web token first
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Token is valid. Check username parameter
-      if (!VALIDATE.isValidUsername(_request.params.username)) {
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.INVALID_REQUEST_ERROR,
-          'Invalid parameters: username'
-        );
+  return new Promise((resolve, reject) => {
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Token is valid. Check if user is requesting themself
+        if (client.username !== _request.params.username) {
+          // Client attempted to create an assignment for another user
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.RESOURCE_ERROR,
+            'You cannot get another user\'s assignment',
+            `${client.username} tried to get an assignment of ${_request.params.username}`
+          );
 
-        _callback(errorJson);
-      } else if (client.username !== _request.params.username) {
-        // Client attempted to create an assignment for another user
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.RESOURCE_ERROR,
-          'You cannot get another user\'s assignment',
-          `${client.username} tried to get an assignment of ${_request.params.username}`
-        );
+          reject(errorJson);
+        } else if (!VALIDATE.isValidUsername(_request.params.username)) {
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.INVALID_REQUEST_ERROR,
+            'Invalid parameters: username'
+          );
 
-        _callback(errorJson);
-      } else {
-        // Request is valid. Get assignments from the database
-        ASSIGNMENTS.getById(
-          _request.params.assignmentId,
-          (assignment) => {
-            if (assignment !== null) _callback(assignment);
-            else {
-              let errorJson = ERROR.error(
-                SOURCE,
-                _request,
-                _response,
-                ERROR.CODE.RESOURCE_DNE_ERROR,
-                'That assignment does not exist'
-              );
+          reject(errorJson);
+        } else {
+          // Get assignment from the database
+          ASSIGNMENTS.getById2(_request.params.assignmentId)
+            .then((assignment) => {
+              if (assignment !== null) resolve(assignment);
+              else {
+                let errorJson = ERROR.error(
+                  SOURCE,
+                  _request,
+                  _response,
+                  ERROR.CODE.RESOURCE_DNE_ERROR,
+                  'That assignment does not exist'
+                );
 
+                reject(errorJson);
+              }
+            }) // End then(assignment)
+            .catch((getError) => {
+              let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
               _callback(errorJson);
-            }
-          }, // End (assignment)
-          (getAssignmentError) => {
-            let errorJson = ERROR.determineAssignmentError(
-              SOURCE,
-              _request,
-              _response,
-              getAssignmentError
-            );
-
-            _callback(errorJson);
-          } // End (getAssignmentError)
-        ); // End ASSIGNMENTS.getById()
-      }
-    }, // End (client)
-    (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
-
-      _callback(errorJson);
-    }
-  ); // End AUTH.verifyToken()
+            }); // End ASSIGNMENTS.getById2()
+        }
+      }) // End then(client)
+      .catch((authError) => {
+        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
 }; // End getAssignmentById()
 
 /**
