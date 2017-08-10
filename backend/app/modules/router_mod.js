@@ -2,6 +2,7 @@
  * router_mod - @module for HTTP request routing
  */
 
+const Uuid = require('uuid/v4');
 const LOG = require('./log_mod');
 const MEDIA = require('./media_mod');
 const MIDDLEWARE = require('./middleware_mod');
@@ -17,6 +18,11 @@ var routing = function(_router) {
    * @param {callback} next the callback to execute after metadata logging
    */
   router.use((_request, _response, _next) => {
+    // Add unique request ID to request and response headers
+    let uniqueRequestId = Uuid();
+    _request.headers.requestId = uniqueRequestId;
+    _response.header('requestId', uniqueRequestId);
+
     log(`${_request.method} ${_request.url}`, _request);
     _next();
   });
@@ -205,7 +211,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users/:username/assignments/:assignmentId').get((_request, _response) => {
-    MIDDLEWARE.getAssignmentById2(_request, _response)
+    MIDDLEWARE.getAssignmentById(_request, _response)
       .then(result => _response.json(result))
       .catch(error => _response.json(error));
   });
