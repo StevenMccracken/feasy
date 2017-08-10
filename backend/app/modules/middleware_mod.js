@@ -106,7 +106,7 @@ var authenticate = function(_request, _response) {
           reject(errorJson);
         }); // End USERS.getByUsername2()
     }
-  }); // End return new promise
+  }); // End return promise
 }; // End authenticate()
 
 /**
@@ -123,12 +123,12 @@ var authenticateGoogle = function(_request, _response) {
     // Send the request to verify with Google's authentication API
     AUTH.verifyGoogleRequest(_request, _response)
       .then(client => resolve()) // End then(client)
-      .catch((verifyTokenError) => {
+      .catch((verifyGoogleRequestError) => {
         let errorJson = ERROR.determineAuthenticationError2(
           SOURCE,
           _request,
           _response,
-          verifyTokenError
+          verifyGoogleRequestError
         );
 
         reject(errorJson);
@@ -137,13 +137,13 @@ var authenticateGoogle = function(_request, _response) {
 }; // End authenticateGoogle()
 
 /**
- * finishAuthenticateGoogle - Concludes the authentication of a Google sign-in
+ * authenticateGoogleCallback - Concludes the authentication of a Google sign-in
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var finishAuthenticateGoogle = function(_request, _response) {
-  const SOURCE = 'finishAuthenticateGoogle()';
+var authenticateGoogleCallback = function(_request, _response) {
+  const SOURCE = 'authenticateGoogleCallback()';
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
@@ -165,7 +165,7 @@ var finishAuthenticateGoogle = function(_request, _response) {
         };
 
         resolve(successJson);
-      })
+      }) // End then(client)
       .catch((verifyTokenError) => {
         let errorJson = ERROR.determineAuthenticationError2(
           SOURCE,
@@ -177,7 +177,7 @@ var finishAuthenticateGoogle = function(_request, _response) {
         reject(errorJson);
       }); // End AUTH.verifyToken2()
   }); // End return promise
-}; // End finishGoogleAuthenticate()
+}; // End authenticateGoogleCallback()
 
 /**
  * createUser - Adds a new user to the database and sends the client a web token
@@ -240,8 +240,6 @@ var createUser = function(_request, _response) {
             },
           };
 
-          // Set the response status code
-          _response.status(201);
           resolve(successJson);
         }) // End then(newUser)
         .catch((createUserError) => {
@@ -297,7 +295,7 @@ var retrieveUser = function(_request, _response) {
             .catch((getUserInfoError) => {
               let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserInfoError);
               reject(errorJson);
-            }); // End USERS.getByUsername()
+            }); // End USERS.getByUsername2()
         }
       }) // End then(client)
       .catch((verifyTokenError) => {
@@ -396,7 +394,7 @@ var updateUserUsername = function(_request, _response) {
                       };
 
                       resolve(successJson);
-                    })
+                    }) // End then(updatedUserInfo)
                     .catch((updateUsernameError) => {
                       let errorJson = ERROR.determineUserError(
                         SOURCE,
@@ -406,7 +404,7 @@ var updateUserUsername = function(_request, _response) {
                       );
 
                       reject(errorJson);
-                    });
+                    }); // End USERS.updateAttribute2()
                 }
               }) // End then(userInfo)
               .catch((getUserError) => {
@@ -575,144 +573,10 @@ var updateUserPassword = function(_request, _response) {
  * @param {String} _attribute the desired user attribute to update
  * @param {Object} _verifyAttributeFunction the function to
  * validate the new attribute value from the request body
- * @param {callback} _callback the callback to send the database response
- */
-function updateUserAttribute(
-  _client,
-  _request,
-  _response,
-  _attribute,
-  _verifyAttributeFunction,
-  _callback
-) {
-  const SOURCE = 'updateUserAttribute()';
-  log(SOURCE, _request);
-
-  // Token is valid. Check request parameter in the URL
-  if (!VALIDATE.isValidUsername(_request.params.username)) {
-    let errorJson = ERROR.error(
-      SOURCE,
-      _request,
-      _response,
-      ERROR.CODE.INVALID_REQUEST_ERROR,
-      'Invalid parameters: username'
-    );
-  } else {
-    // URL request parameter is valid. Check that the client is updating themself
-     if (_client.username !== _request.params.username) {
-       // Client attempted to update another user's attribute
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.RESOURCE_ERROR,
-          'You cannot update another user',
-          `${_client.username} tried to update ${_request.params.username}`
-        );
-
-       _callback(errorJson);
-     } else {
-       // URL parameters are valid. Create newAttribute var
-       let newAttributeName = `new${_attribute.charAt(0).toUpperCase()}${_attribute.slice(1)}`;
-
-       // Check request body parameter with provided verify function
-       if (!_verifyAttributeFunction(_request.body[newAttributeName])) {
-         let errorJson = ERROR.error(
-           SOURCE,
-           _request,
-           _response,
-           ERROR.CODE.INVALID_REQUEST_ERROR,
-           `Invalid parameters: ${newAttributeName}`
-         );
-
-         _callback(errorJson);
-       } else {
-         // Request parameters are valid. Get user from the database
-         USERS.getByUsername(
-           _request.params.username,
-           false,
-           (userInfo) => {
-             if (userInfo === null) {
-               // User with that username does not exist
-               let errorJson = ERROR.error(
-                 SOURCE,
-                 _request,
-                 _response,
-                 ERROR.CODE.API_ERROR,
-                 null,
-                 `${_client.username} is null in the database even though authentication passed`
-               );
-
-               _callback(errorJson);
-             } else {
-               // User exists, trim request body parameter if it's a string
-               let newValue;
-               if (typeof userInfo[_attribute] === 'string') {
-                 newValue = _request.body[newAttributeName].trim();
-               } else newValue = _request.body[newAttributeName];
-
-               if (newValue === userInfo[_attribute]) {
-                 // Request body parameter is identical to existing user attribute
-                 let errorJson = ERROR.error(
-                   SOURCE,
-                   _request,
-                   _response,
-                   ERROR.CODE.INVALID_REQUEST_ERROR,
-                   `Unchanged parameters: ${newAttributeName}`
-                 );
-
-                 _callback(errorJson);
-               } else {
-                 // New value for user attribute is different from existing one
-                 USERS.updateAttribute(
-                   userInfo,
-                   _attribute,
-                   newValue,
-                   (updatedUser) => {
-                     let successJson = {
-                       success: {
-                         message: `Successfully updated ${_attribute}`,
-                       },
-                     };
-
-                     _callback(successJson);
-                   }, // End (updatedUser)
-                   (updateUserError) => {
-                     let errorJson = ERROR.determineUserError(
-                       SOURCE,
-                       _request,
-                       _response,
-                       updateUserError
-                     );
-
-                     _callback(errorJson);
-                   } // End (updateUserError)
-                 ); // End USERS.updateAttribute()
-               }
-             }
-           }, // End (userInfo)
-           (getUserError) => {
-             let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserError);
-             _callback(errorJson);
-           } // End (getUserError)
-         ); // End USERS.getByUsername()
-       }
-     }
-   }
-}; // End updateUserAttribute()
-
-/**
- * updateUserAttribute2 - Updates a user's attribute information in the database
- * @param {Object} _client the user Mongoose object
- * @param {Object} _request the HTTP request
- * @param {Object} _response the HTTP response
- * @param {String} _attribute the desired user attribute to update
- * @param {Object} _verifyAttributeFunction the function to
- * validate the new attribute value from the request body
  * @return {Promise<Object>} a success JSON or error JSON
  */
-function updateUserAttribute2(_client, _request, _response, _attribute, _verifyAttributeFunction) {
-  const SOURCE = 'updateUserAttribute2()';
+function updateUserAttribute(_client, _request, _response, _attribute, _verifyAttributeFunction) {
+  const SOURCE = 'updateUserAttribute()';
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
@@ -813,7 +677,7 @@ function updateUserAttribute2(_client, _request, _response, _attribute, _verifyA
       }
     }
   }); // End return promise
-}; // End updateUserAttribute2
+}; // End updateUserAttribute
 
 /**
  * updateUserEmail - Updates a user's email information in the database
@@ -842,7 +706,7 @@ var updateUserEmail = function(_request, _response) {
           reject(errorJson);
         } else {
           // Update the user's email
-          updateUserAttribute2(client, _request, _response, 'email', VALIDATE.isValidEmail)
+          updateUserAttribute(client, _request, _response, 'email', VALIDATE.isValidEmail)
             .then(successJson => resolve(successJson))
             .catch(errorJson => reject(errorJson));
         }
@@ -868,7 +732,7 @@ var updateUserFirstName = function(_request, _response) {
     AUTH.verifyToken2(_request, _response)
       .then((client) => {
         // Token is valid. Update the user's first name
-        updateUserAttribute2(client, _request, _response, 'firstName', VALIDATE.isValidName)
+        updateUserAttribute(client, _request, _response, 'firstName', VALIDATE.isValidName)
           .then(successJson => resolve(successJson))
           .catch(errorJson => reject(errorJson));
       }) // End then(client)
@@ -893,7 +757,7 @@ var updateUserLastName = function(_request, _response) {
     AUTH.verifyToken2(_request, _response)
       .then((client) => {
         // Token is valid. Update the user's first name
-        updateUserAttribute2(client, _request, _response, 'lastName', VALIDATE.isValidName)
+        updateUserAttribute(client, _request, _response, 'lastName', VALIDATE.isValidName)
           .then(successJson => resolve(successJson))
           .catch(errorJson => reject(errorJson));
       }) // End then(client)
@@ -984,6 +848,8 @@ var deleteUser = function(_request, _response) {
       }); // End AUTH.verifyToken2()
   }); // End return promise
 }; // End deleteUser()
+
+// TODO: Start promisifying here
 
 /**
  * createAssignment - Creates a new assignment for a user and returns the created assignment
@@ -2074,7 +1940,7 @@ var parseSchedule = function(_request, _response) {
 module.exports = {
   authenticate: authenticate,
   authenticateGoogle: authenticateGoogle,
-  finishAuthenticateGoogle, finishAuthenticateGoogle,
+  authenticateGoogleCallback, authenticateGoogleCallback,
   createUser: createUser,
   retrieveUser: retrieveUser,
   updateUserUsername: updateUserUsername,

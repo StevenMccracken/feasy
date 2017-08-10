@@ -63,7 +63,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/auth/google/callback').get((_request, _response) => {
-    MIDDLEWARE.finishAuthenticateGoogle(_request, _response)
+    MIDDLEWARE.authenticateGoogleCallback(_request, _response)
       .then(result => _response.json(result))
       .catch(error => _response.json(error));
   });
@@ -77,7 +77,10 @@ var routing = function(_router) {
    */
   router.route('/users').post((_request, _response) => {
     MIDDLEWARE.createUser(_request, _response)
-      .then(result => _response.json(result))
+      .then((result) => {
+        _response.status(201);
+        _response.json(result);
+      })
       .catch(error => _response.json(error));
   });
 
@@ -165,6 +168,8 @@ var routing = function(_router) {
       .then(result => _response.json(result))
       .catch(error => _response.json(error));
   });
+
+  // TODO: Start promisifying here
 
   /**
    * The POST route for creating an assignment. Sends an error JSON or a
