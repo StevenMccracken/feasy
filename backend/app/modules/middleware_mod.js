@@ -1698,114 +1698,94 @@ function updateAssignmentDueDate(_request, _response, _callback) {
  * deleteAssignment - Deletes an assignment's information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to send the database response
+ * @return {Promise<Object>} a success JSON or error JSON
  */
-var deleteAssignment = function(_request, _response, _callback) {
+var deleteAssignment = function(_request, _response) {
   const SOURCE = 'deleteAssignment()';
   log(SOURCE, _request);
 
-  // Verify client's web token first
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Token is valid. Check request parameters in the URL
-      let invalidParams = [];
-      if (!VALIDATE.isValidUsername(_request.params.username)) invalidParams.push('username');
-      if (!VALIDATE.isValidObjectId(_request.params.assignmentId)) invalidParams.push('assignmentId');
+  return new Promise((resolve, reject) => {
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Token is valid. Check that client is requesting themself
+        if (client.username !== _request.params.username) {
+          // Client attempted to delete an assignment that was not their own
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.RESOURCE_ERROR,
+            'You cannot delete another user\'s assignment',
+            `${client.username} tried to delete ${_request.params.username}'s assignment`
+          );
 
-      if (invalidParams.length > 0) {
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.INVALID_REQUEST_ERROR,
-          `Invalid parameters: ${invalidParams.join()}`
-        );
+          reject(errorJson);
+        } else {
+          // Check request parameters
+          let invalidParams = [];
+          if (!VALIDATE.isValidUsername(_request.params.username)) invalidParams.push('username');
+          if (!VALIDATE.isValidObjectId(_request.params.assignmentId)) invalidParams.push('assignmentId');
 
-        _callback(errorJson);
-      } else {
-        // URL request parameters are valid. Check that the client is deleting their own assignment
-         if (client.username !== _request.params.username) {
-           // Client attempted to delete an assignment that was not their own
-           let errorJson = ERROR.error(
-             SOURCE,
-             _request,
-             _response,
-             ERROR.CODE.RESOURCE_ERROR,
-             'You cannot delete another user\'s assignment',
-             `${client.username} tried to delete ${_request.params.username}'s assignment`
-           );
+          if (invalidParams.length > 0) {
+            let errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.INVALID_REQUEST_ERROR,
+              `Invalid parameters: ${invalidParams.join()}`
+            );
 
-           _callback(errorJson);
-         } else {
-           // Request is valid. Retrieve that assignment from the database
-           ASSIGNMENTS.getById(
-             _request.params.assignmentId,
-             (assignment) => {
-               if (assignment === null) {
-                 let errorJson = ERROR.error(
-                   SOURCE,
-                   _request,
-                   _response,
-                   ERROR.CODE.RESOURCE_DNE_ERROR,
-                   'That assignment does not exist'
-                 );
+            reject(errorJson);
+          } else {
+            // Request is valid. Retrieve assignment from the database
+            ASSIGNMENTS.getById2(_request.params.assignmentId)
+              .then((assignment) => {
+                if (assignment === null) {
+                  let errorJson = ERROR.error(
+                    SOURCE,
+                    _request,
+                    _response,
+                    ERROR.CODE.RESOURCE_DNE_ERROR,
+                    'That assignment does not exist'
+                  );
 
-                 _callback(errorJson);
-               } else {
-                 // Assignment exists. Delete it from the database
-                 ASSIGNMENTS.remove(
-                   assignment,
-                   () => {
-                     let successJson = {
-                       success: {
-                         message: 'Successfully deleted assignment',
-                       },
-                     };
+                  reject(errorJson);
+                } else {
+                  // Assignment exists. Delete it
+                  ASSIGNMENTS.remove2(assignment)
+                    .then(() => {
+                      let successJson = {
+                        success: {
+                          message: 'Successfully deleted assignment',
+                        },
+                      };
 
-                     _callback(successJson);
-                   }, // End ()
-                   (removeAssignmentError) => {
-                     let errorJson = ERROR.determineAssignmentError(
-                       SOURCE,
-                       _request,
-                       _response,
-                       removeAssignmentError
-                     );
+                      resolve(successJson);
+                    }) // End then()
+                    .catch((removeError) => {
+                      let errorJson = ERROR.determineAssignmentError(
+                        SOURCE,
+                        _request,
+                        _response,
+                        removeError
+                      );
 
-                     _callback(errorJson);
-                   } // End (removeAssignmentError)
-                 ); // End ASSIGNMENTS.remove()
-               }
-             }, // End (assignment)
-             (getAssignmentError) => {
-               let errorJson = ERROR.determineAssignmentError(
-                 SOURCE,
-                 _request,
-                 _response,
-                 getAssignmentError
-               );
-
-               _callback(errorJson);
-             } // End (getAssignmentError)
-           ); // End ASSIGNMENTS.getById()
-         }
-       }
-     }, // End (client)
-     (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
-
-      _callback(errorJson);
-    }
-  ); // End AUTH.verifyToken()
+                      reject(errorJson);
+                    }); // End ASSIGNMENTS.remove2()
+                }
+              }) // End then(assignment)
+              .catch((getError) => {
+                let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
+                reject(errorJson);
+              }); // End ASSIGNMENTS.getById2()
+          }
+        }
+      }) // End then(client)
+      .catch((authError) => {
+        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
 }; // End deleteAssignment()
 
 /**
