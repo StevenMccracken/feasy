@@ -246,9 +246,11 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/:assignmentId/type').put((_request, _response) => (
-    MIDDLEWARE.updateAssignmentType(_request, _response, result => _response.json(result))
-  ));
+  router.route('/users/:username/assignments/:assignmentId/type').put((_request, _response) => {
+    MIDDLEWARE.updateAssignmentType(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
 
   /**
    * THE PUT route for updating an assignment's description. Sends an error JSON

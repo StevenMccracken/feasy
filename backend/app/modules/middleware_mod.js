@@ -1408,40 +1408,25 @@ var updateAssignmentClass = function(_request, _response) {
  * updateAssignmentType - Updates an assignments's type information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to send the database response
+ * @return {Promise<Object>} a success JSON or error JSON
  */
-var updateAssignmentType = function(_request, _response, _callback) {
+var updateAssignmentType = function(_request, _response) {
   const SOURCE = 'updateAssignmentType()';
   log(SOURCE, _request);
 
-  // Verify client's web token first
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Token is valid. Update the assignment type
-      updateAssignmentAttribute(
-        client,
-        _request,
-        _response,
-        'type',
-        VALIDATE.isValidString,
-        updateResult => _callback(updateResult)
-      ); // End updateAssignmentAttribute()
-    }, // End (client)
-    (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
-
-      _callback(errorJson);
-    }
-  ); // End AUTH.verifyToken()
+  return new Promise((resolve, reject) => {
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Token is valid. Update the assignment's title
+        updateAssignmentAttribute2(client, _request, _response, 'type', VALIDATE.isValidString)
+          .then(successJson => resolve(successJson)) // End then(successJson)
+          .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute2()
+      }) // End then(client)
+      .catch((authError) => {
+        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
 }; // End updateAssignmentType()
 
 /**
