@@ -1433,40 +1433,25 @@ var updateAssignmentType = function(_request, _response) {
  * updateAssignmentDescription - Updates an assignments's description information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to send the database response
+ * @return {Promise<Object>} a success JSON or error JSON
  */
-var updateAssignmentDescription = function(_request, _response, _callback) {
+var updateAssignmentDescription = function(_request, _response) {
   const SOURCE = 'updateAssignmentDescription()';
   log(SOURCE, _request);
 
-  // Verify client's web token first
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Token is valid. Update the assignment description
-      updateAssignmentAttribute(
-        client,
-        _request,
-        _response,
-        'description',
-        VALIDATE.isValidString,
-        updateResult => _callback(updateResult)
-      ); // End updateAssignmentAttribute()
-    }, // End (client)
-    (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
-
-      _callback(errorJson);
-    }
-  ); // End AUTH.verifyToken()
+  return new Promise((resolve, reject) => {
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Token is valid. Update the assignment's title
+        updateAssignmentAttribute2(client, _request, _response, 'description', VALIDATE.isValidString)
+          .then(successJson => resolve(successJson)) // End then(successJson)
+          .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute2()
+      }) // End then(client)
+      .catch((authError) => {
+        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
 }; // End updateAssignmentDescription()
 
 /**

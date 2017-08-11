@@ -259,9 +259,11 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/users/:username/assignments/:assignmentId/description')
-    .put((_request, _response) => (
-      MIDDLEWARE.updateAssignmentDescription(_request, _response, result => _response.json(result))
-    )
+    .put((_request, _response) => {
+      MIDDLEWARE.updateAssignmentDescription(_request, _response)
+        .then(result => _response.json(result))
+        .catch(error => _response.json(error));
+    }
   );
 
   /**
