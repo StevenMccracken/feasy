@@ -286,6 +286,12 @@ export class CalendarComponent implements OnInit {
     }
   }
 
+  /**
+    This is used to display the popup shown on the calendar
+    The first click is used to show a list of events for the day clicked
+    The second click will show a list of events in a view that allows
+    users to edit or add events.
+  */
   displayPopUp(): void {
     if (this.e !== null && this.e !== undefined) {
       if ($(this.e).is('#popup')) {
@@ -438,6 +444,20 @@ export class CalendarComponent implements OnInit {
     }
   }
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Error Handler
+//
+// Helper functions that checks if there are any errors with the call back
+// from the service
+//
+/////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Handles the error where a user's token has expeired
+   * @param {Response} error response taken from the service.
+   */
   private handleError(error: Response): void {
     if (error.status == 401) {
       // Token is stale. Clear the user and token local storage, route them to login screen
@@ -455,6 +475,10 @@ export class CalendarComponent implements OnInit {
     }
   }
 
+  /**
+   * Handles the error where a an assignment is non-existant
+   * @param {Assignment} assignment (assignment object)
+   */
   private handle404Error(assignment: Assignment): void {
     // Find the assignment in the current day array
     for (let i = 0; i < this.currentDayArray.length; i++) {
@@ -469,6 +493,11 @@ export class CalendarComponent implements OnInit {
     this.events = this.events.filter(iEvent => iEvent !== event);
   }
 
+  /**
+   * Handles an error if there are any problems in updating the
+   * the user's data.
+   * @param {Assignment} assignment (assignment object)
+   */
   private handleUpdateError(attribute: string, reason: string): void {
     switch (reason) {
       case 'invalid':
