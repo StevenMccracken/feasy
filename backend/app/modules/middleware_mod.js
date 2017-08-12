@@ -1458,148 +1458,114 @@ var updateAssignmentDescription = function(_request, _response) {
  * updateAssignmentCompleted - Updates an assignment's completed information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to send the database response
+ * @return {Promise<Object>} a success JSON or error JSON
  */
-function updateAssignmentCompleted(_request, _response, _callback) {
+function updateAssignmentCompleted(_request, _response) {
   const SOURCE = 'updateAssignmentCompleted()';
   log(SOURCE, _request);
 
-  // Verify client's web token first
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Token is valid. Check request parameters in the URL
-      let invalidParams = [];
-      if (!VALIDATE.isValidUsername(_request.params.username)) invalidParams.push('username');
-      if (!VALIDATE.isValidObjectId(_request.params.assignmentId)) invalidParams.push('assignmentId');
+  return new Promise((resolve, reject) => {
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Token is valid. Check that client is updating their own assignment
+        if (client.username !== _request.params.username) {
+          // Client attempted to update an assignment that was not their own
+           let errorJson = ERROR.error(
+             SOURCE,
+             _request,
+             _response,
+             ERROR.CODE.RESOURCE_ERROR,
+             'You cannot update another user\'s assignment',
+             `${client.username} tried to update ${_request.params.username}'s assignment`
+           );
 
-      if (invalidParams.length > 0) {
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.INVALID_REQUEST_ERROR,
-          `Invalid parameters: ${invalidParams.join()}`
-        );
+          reject(errorJson);
+        } else {
+          // Check request parameters
+          let invalidParams = [];
+          if (!VALIDATE.isValidUsername(_request.params.username)) invalidParams.push('username');
+          if (!VALIDATE.isValidObjectId(_request.params.assignmentId)) {
+            invalidParams.push('assignmentId');
+          }
 
-        _callback(errorJson);
-      } else {
-        /**
-         * URL request parameters are valid. Check that
-         * the client is updating their own assignment
-         */
-         if (client.username !== _request.params.username) {
-           // Client attempted to update an assignment that was not their own
+          if (_request.body.newCompleted !== 'true' && _request.body.newCompleted !== 'false') {
+            invalidParams.push('newCompleted');
+          }
+
+          if (invalidParams.length > 0) {
             let errorJson = ERROR.error(
               SOURCE,
               _request,
               _response,
-              ERROR.CODE.RESOURCE_ERROR,
-              'You cannot update another user\'s assignment',
-              `${client.username} tried to update ${_request.params.username}'s assignment`
+              ERROR.CODE.INVALID_REQUEST_ERROR,
+              `Invalid parameters: ${invalidParams.join()}`
             );
 
-           _callback(errorJson);
-         } else {
-           // URL parameters are valid. Check newCompleted parameter
-           if (_request.body.newCompleted !== 'true' && _request.body.newCompleted !== 'false') {
-             let errorJson = ERROR.error(
-               SOURCE,
-               _request,
-               _response,
-               ERROR.CODE.INVALID_REQUEST_ERROR,
-               'Invalid parameters: newCompleted'
-             );
+            reject(errorJson);
+          } else {
+            // Request is valid. Retrieve assignment from the database
+            ASSIGNMENTS.getById2(_request.params.assignmentId)
+              .then((assignment) => {
+                if (assignment === null) {
+                  let errorJson = ERROR.error(
+                    SOURCE,
+                    _request,
+                    _response,
+                    ERROR.CODE.RESOURCE_DNE_ERROR,
+                    'That assignment does not exist'
+                  );
 
-             _callback(errorJson);
-           } else {
-             // Request parameters are valid. Get assignment from the database
-             ASSIGNMENTS.getById(
-               _request.params.assignmentId,
-               (assignment) => {
-                 if (assignment === null) {
-                   let errorJson = ERROR.error(
-                     SOURCE,
-                     _request,
-                     _response,
-                     ERROR.CODE.RESOURCE_DNE_ERROR,
-                     'That assignment does not exist'
-                   );
+                  reject(errorJson);
+                } else {
+                  // Assignment exists. Check if new completed value is different from existing
+                  let newCompletedBoolean = _request.body.newCompleted === 'true' ? true : false;
+                  if (newCompletedBoolean === assignment.completed) {
+                    let errorJson = ERROR.error(
+                      SOURCE,
+                      _request,
+                      _response,
+                      ERROR.CODE.INVALID_REQUEST_ERROR,
+                      'Unchanged parameters: newCompleted'
+                    );
 
-                   _callback(errorJson);
-                 } else {
-                   // Create boolean value from request body string value
-                   let newCompletedBoolean = _request.body.newCompleted === 'true' ? true : false;
+                    reject(errorJson);
+                  } else {
+                    // Request is completely valid. Update the assignment
+                    ASSIGNMENTS.updateAttribute2(assignment, 'completed', newCompletedBoolean)
+                      .then((updatedAssignment) => {
+                        let successJson = {
+                          success: {
+                            message: 'Successfully updated completed',
+                          },
+                        };
 
-                   // Check if new value is the same as existing value
-                   if (newCompletedBoolean === assignment.completed) {
-                     let errorJson = ERROR.error(
-                       SOURCE,
-                       _request,
-                       _response,
-                       ERROR.CODE.INVALID_REQUEST_ERROR,
-                       'Unchanged parameters: newCompleted'
-                     );
+                        resolve(successJson);
+                      }) // End then(updatedAssignment)
+                      .catch((updateError) => {
+                        let errorJson = ERROR.determineAssignmentError(
+                          SOURCE,
+                          _request,
+                          _response,
+                          updateError
+                        );
 
-                     _callback(errorJson);
-                   } else {
-                     // Request is valid. Update the assignment attribute
-                     ASSIGNMENTS.updateAttribute(
-                       assignment,
-                       'completed',
-                       newCompletedBoolean,
-                       (updatedAssignment) => {
-                         let successJson = {
-                           success: {
-                             message: 'Successfully updated completed',
-                           },
-                         };
-
-                         _callback(successJson);
-                       }, // End (updatedAssignment)
-                       (updateAssignmentError) => {
-                         let errorJson = ERROR.determineAssignmentError(
-                           SOURCE,
-                           _request,
-                           _response,
-                           updateAssignmentError
-                         );
-
-                         _callback(errorJson);
-                       } // End (updateAssignmentError)
-                     ); // End ASSIGNMENTS.updateAttribute()
-                   }
-                 }
-               }, // End (assignment)
-               (getAssignmentError) => {
-                 let errorJson = ERROR.determineAssignmentError(
-                   SOURCE,
-                   _request,
-                   _response,
-                   getAssignmentError
-                 );
-
-                 _callback(errorJson);
-               } // End (getAssignmentError)
-             ); // End ASSIGNMENTS.getById()
-           }
-         }
-       }
-     }, // End (client)
-     (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
-
-      _callback(errorJson);
-    }
-  ); // End AUTH.verifyToken()
+                        reject(errorJson);
+                      }); // End ASSGINEMNTS.updateAttribute2()
+                  }
+                }
+              }) // End then(assignment)
+              .catch((getError) => {
+                let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
+                reject(errorJson);
+              }); // End ASSIGNMENTS.getById2()
+          }
+        }
+      }) // End then(client)
+      .catch((authError) => {
+        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
 }; // End updateAssignmentCompleted()
 
 /**
