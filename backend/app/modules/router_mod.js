@@ -175,8 +175,6 @@ var routing = function(_router) {
       .catch(error => _response.json(error));
   });
 
-  // TODO: Start promisifying here
-
   /**
    * The POST route for creating an assignment. Sends an error JSON or a
    * JSON of the created assignment. This route requires token authentication
@@ -191,6 +189,25 @@ var routing = function(_router) {
       })
       .catch(error => _response.json(error));
   });
+
+  /**
+   * The POST route for uploading a PDF to add assignments to
+   * a user's schedule. The request body Content-Type MUST be
+   * multipart/form-data. This route requires token authentication
+   * @param {Object} _request the HTTP request
+   * @param {Object} _response the HTTP response
+   */
+  router.route('/users/:username/assignments/pdf').post(
+    MEDIA.upload.single('pdf'),
+    (_request, _response) => {
+      MIDDLEWARE.parseSchedule(_request, _response).then((result) => {
+        _response.json(result);
+
+        // Remove temp file that multer created if it existed
+        if (_request.file !== undefined) MEDIA.removeTempFile(_request.file.path);
+      });
+    }
+  );
 
   /**
    * The GET route for retrieving all of a user's assignments. Sends an error
@@ -302,25 +319,6 @@ var routing = function(_router) {
       .then(result => _response.json(result))
       .catch(error => _response.json(error));
   });
-
-  /**
-   * The POST route for uploading a PDF to add assignments to
-   * a user's schedule. The request body Content-Type MUST be
-   * multipart/form-data. This route requires token authentication
-   * @param {Object} _request the HTTP request
-   * @param {Object} _response the HTTP response
-   */
-  router.route('/users/:username/assignments/pdf').post(
-    MEDIA.upload.single('pdf'),
-    (_request, _response) => {
-      MIDDLEWARE.parseSchedule(_request, _response).then((result) => {
-        _response.json(result);
-
-        // Remove temp file that multer created if it existed
-        if (_request.file !== undefined) MEDIA.removeTempFile(_request.file.path);
-      });
-    }
-  );
 
   return router;
 };

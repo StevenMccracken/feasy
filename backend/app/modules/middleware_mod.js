@@ -912,6 +912,82 @@ var createAssignment = function(_request, _response) {
 }; // End createAssignment()
 
 /**
+ * parseSchedule - Parses a pdf schedule for assignment due dates
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ */
+var parseSchedule = function(_request, _response) {
+  const SOURCE = 'parseSchedule()';
+  log(SOURCE, _request);
+
+  return new Promise((resolve, reject) => {
+    AUTH.verifyToken(_request, _response)
+      .then((client) => {
+        // Token is valid. Check request parameters in the URL
+        let invalidParams = [];
+        if (_request.file === undefined || _request.file === null) invalidParams.push('pdf');
+
+        if (invalidParams.length > 0) {
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.INVALID_REQUEST_ERROR,
+            `Invalid parameters: ${invalidParams.join()}`
+          );
+
+          reject(errorJson);
+        } else if (client.username !== _request.params.username) {
+          // Client attempted to upload a pdf schedule that was not their own
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.RESOURCE_ERROR,
+            'You cannot upload a schedule for another user',
+            `${client.username} tried to upload a schedule for ${_request.params.username}`
+          );
+
+          reject(errorJson);
+        } else if (_request.file.mimetype !== 'application/pdf') {
+          let errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.INVALID_MEDIA_TYPE,
+            'File must be a PDF',
+            `File received had ${_request.file.mimetype} mimetype`
+          );
+
+          reject(errorJson);
+        } else {
+          // Parse the PDF schedule
+          MEDIA.parsePdf(_request.file.path)
+            .then((pdfText) => {
+              resolve(pdfText);
+            })
+            .catch((parseError) => {
+              let errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.API_ERROR,
+                null,
+                parseError
+              );
+
+              reject(errorJson);
+            }); // End MEDIA.parsePdf()
+        }
+      })
+      .catch((authError) => {
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.verifyToken()
+  }); // End return promise
+}; // End parseSchedule()
+
+/**
  * getAssignments - Retrieve all assignments created by a user
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
@@ -1557,82 +1633,6 @@ var deleteAssignment = function(_request, _response) {
   }); // End return promise
 }; // End deleteAssignment()
 
-/**
- * parseSchedule - Parses a pdf schedule for assignment due dates
- * @param {Object} _request the HTTP request
- * @param {Object} _response the HTTP response
- */
-var parseSchedule = function(_request, _response) {
-  const SOURCE = 'parseSchedule()';
-  log(SOURCE, _request);
-
-  return new Promise((resolve, reject) => {
-    AUTH.verifyToken(_request, _response)
-      .then((client) => {
-        // Token is valid. Check request parameters in the URL
-        let invalidParams = [];
-        if (_request.file === undefined || _request.file === null) invalidParams.push('pdf');
-
-        if (invalidParams.length > 0) {
-          let errorJson = ERROR.error(
-            SOURCE,
-            _request,
-            _response,
-            ERROR.CODE.INVALID_REQUEST_ERROR,
-            `Invalid parameters: ${invalidParams.join()}`
-          );
-
-          reject(errorJson);
-        } else if (client.username !== _request.params.username) {
-          // Client attempted to upload a pdf schedule that was not their own
-          let errorJson = ERROR.error(
-            SOURCE,
-            _request,
-            _response,
-            ERROR.CODE.RESOURCE_ERROR,
-            'You cannot upload a schedule for another user',
-            `${client.username} tried to upload a schedule for ${_request.params.username}`
-          );
-
-          reject(errorJson);
-        } else if (_request.file.mimetype !== 'application/pdf') {
-          let errorJson = ERROR.error(
-            SOURCE,
-            _request,
-            _response,
-            ERROR.CODE.INVALID_MEDIA_TYPE,
-            'File must be a PDF',
-            `File received had ${_request.file.mimetype} mimetype`
-          );
-
-          reject(errorJson);
-        } else {
-          // Parse the PDF schedule
-          MEDIA.parsePdf(_request.file.path)
-            .then((pdfText) => {
-              resolve(pdfText);
-            })
-            .catch((parseError) => {
-              let errorJson = ERROR.error(
-                SOURCE,
-                _request,
-                _response,
-                ERROR.CODE.API_ERROR,
-                null,
-                parseError
-              );
-
-              reject(errorJson);
-            }); // End MEDIA.parsePdf()
-        }
-      })
-      .catch((authError) => {
-        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
-        reject(errorJson);
-      }); // End AUTH.verifyToken()
-  }); // End return promise
-}; // End parseSchedule()
-
 module.exports = {
   authenticate: authenticate,
   authenticateGoogle: authenticateGoogle,
@@ -1646,6 +1646,7 @@ module.exports = {
   updateUserLastName: updateUserLastName,
   deleteUser: deleteUser,
   createAssignment: createAssignment,
+  parseSchedule: parseSchedule,
   getAssignments: getAssignments,
   getAssignmentById: getAssignmentById,
   updateAssignmentTitle: updateAssignmentTitle,
@@ -1655,7 +1656,6 @@ module.exports = {
   updateAssignmentCompleted: updateAssignmentCompleted,
   updateAssignmentDueDate: updateAssignmentDueDate,
   deleteAssignment: deleteAssignment,
-  parseSchedule: parseSchedule,
 };
 
 /**
