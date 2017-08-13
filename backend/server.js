@@ -4,9 +4,11 @@
 
 const Cors = require('cors');
 const Express = require('express');
+const BUGSNAG = require('bugsnag');
 const MONGOOSE = require('mongoose');
 const BODY_PARSER = require('body-parser');
 const DB_CONFIG = require('./config/database');
+const BUGSNAG_CONFIG = require('./config/bugsnagSecret');
 
 const app = Express();
 const ROUTER = require('./app/modules/router_mod')(Express.Router());
@@ -15,6 +17,10 @@ MONGOOSE.Promise = require('bluebird');
 
 let port = 8080;
 if (process.env.TEST) port = 3000;
+
+// Bugsnag notifier setup
+BUGSNAG.register(BUGSNAG_CONFIG.apiKey);
+app.use(BUGSNAG.requestHandler);
 
 app.use(Cors());
 app.use(BODY_PARSER.urlencoded({
@@ -25,6 +31,9 @@ app.use(BODY_PARSER.urlencoded({
 
 // Set the base route path
 app.use('/', ROUTER);
+
+// Bugsnag error handler setup
+app.use(BUGSNAG.errorHandler);
 
 // Connect to database server before express server starts
 MONGOOSE.connect(DB_CONFIG.path, { useMongoClient: true });
