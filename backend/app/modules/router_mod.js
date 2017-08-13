@@ -285,9 +285,11 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/:assignmentId/dueDate').put((_request, _response) => (
-    MIDDLEWARE.updateAssignmentDueDate(_request, _response, result => _response.json(result))
-  ));
+  router.route('/users/:username/assignments/:assignmentId/dueDate').put((_request, _response) => {
+    MIDDLEWARE.updateAssignmentDueDate(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
 
   /**
    * The DELETE route for deleting an assignment. Sends an error JSON or a

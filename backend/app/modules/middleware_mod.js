@@ -1572,147 +1572,111 @@ function updateAssignmentCompleted(_request, _response) {
  * updateAssignmentDueDate - Updates an assignment's due date information in the database
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @param {callback} _callback the callback to send the database response
+ * @return {Promise<Object>} a success JSON or error JSON
  */
-function updateAssignmentDueDate(_request, _response, _callback) {
+function updateAssignmentDueDate(_request, _response) {
   const SOURCE = 'updateAssignmentDueDate()';
   log(SOURCE, _request);
 
-  // Verify client's web token first
-  AUTH.verifyToken(
-    _request,
-    _response,
-    (client) => {
-      // Token is valid. Check request parameters in the URL
-      let invalidParams = [];
-      if (!VALIDATE.isValidUsername(_request.params.username)) invalidParams.push('username');
-      if (!VALIDATE.isValidObjectId(_request.params.assignmentId)) invalidParams.push('assignmentId');
+  return new Promise((resolve, reject) => {
+    AUTH.verifyToken2(_request, _response)
+      .then((client) => {
+        // Token is valid. Check that client is requesting themself
+        if (client.username !== _request.params.username) {
+          // Client attempted to update an assignment that was not their own
+           let errorJson = ERROR.error(
+             SOURCE,
+             _request,
+             _response,
+             ERROR.CODE.RESOURCE_ERROR,
+             'You cannot update another user\'s assignment',
+             `${client.username} tried to update ${_request.params.username}'s assignment`
+           );
 
-      if (invalidParams.length > 0) {
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.INVALID_REQUEST_ERROR,
-          `Invalid parameters: ${invalidParams.join()}`
-        );
+          reject(errorJson);
+        } else {
+          // Check request parameters
+          let invalidParams = [];
+          if (!VALIDATE.isValidUsername(_request.params.username)) invalidParams.push('username');
+          if (!VALIDATE.isValidObjectId(_request.params.assignmentId)) invalidParams.push('assignmentId');
+          if (!VALIDATE.isValidInteger(_request.body.newDueDate)) invalidParams.push('newDueDate');
 
-        _callback(errorJson);
-      } else {
-        /**
-         * URL request parameters are valid. Check that
-         * the client is updating their own assignment
-         */
-         if (client.username !== _request.params.username) {
-           // Client attempted to update an assignment that was not their own
+          if (invalidParams.length > 0) {
             let errorJson = ERROR.error(
               SOURCE,
               _request,
               _response,
-              ERROR.CODE.RESOURCE_ERROR,
-              'You cannot update another user\'s assignment',
-              `${client.username} tried to update ${_request.params.username}'s assignment`
+              ERROR.CODE.INVALID_REQUEST_ERROR,
+              `Invalid parameters: ${invalidParams.join()}`
             );
 
-           _callback(errorJson);
-         } else {
-           // URL parameters are valid. Check newDueDate parameter
-           if (!VALIDATE.isValidInteger(_request.body.newDueDate)) {
-             let errorJson = ERROR.error(
-               SOURCE,
-               _request,
-               _response,
-               ERROR.CODE.INVALID_REQUEST_ERROR,
-               'Invalid parameters: newDueDate'
-             );
+            reject(errorJson);
+          } else {
+            // Request parameters are valid. Retrieve assignment from the database
+            ASSIGNMENTS.getById2(_request.params.assignmentId)
+              .then((assignment) => {
+                if (assignment === null) {
+                  let errorJson = ERROR.error(
+                    SOURCE,
+                    _request,
+                    _response,
+                    ERROR.CODE.RESOURCE_DNE_ERROR,
+                    'That assignment does not exist'
+                  );
 
-             _callback(errorJson);
-           } else {
-             // Request parameters are valid. Get assignment from the database
-             ASSIGNMENTS.getById(
-               _request.params.assignmentId,
-               (assignment) => {
-                 if (assignment === null) {
-                   let errorJson = ERROR.error(
-                     SOURCE,
-                     _request,
-                     _response,
-                     ERROR.CODE.RESOURCE_DNE_ERROR,
-                     'That assignment does not exist'
-                   );
+                  reject(errorJson);
+                } else {
+                  // Assignment exists. Ensure new due date is different
+                  let newDueDateUnix = Number(_request.body.newDueDate);
+                  let oldDueDateUnix = assignment.dueDate.getTime() / 1000;
+                  if (oldDueDateUnix === newDueDateUnix) {
+                    let errorJson = ERROR.error(
+                      SOURCE,
+                      _request,
+                      _response,
+                      ERROR.CODE.INVALID_REQUEST_ERROR,
+                      'Unchanged parameters: newDueDate'
+                    );
 
-                   _callback(errorJson);
-                 } else {
-                   // Compare dueDates as UNIX seconds timestamps
-                   let oldDueDateUnix = assignment.dueDate.getTime() / 1000;
-                   if (Number(_request.body.newDueDate) === oldDueDateUnix) {
-                     let errorJson = ERROR.error(
-                       SOURCE,
-                       _request,
-                       _response,
-                       ERROR.CODE.INVALID_REQUEST_ERROR,
-                       'Unchanged parameters: newDueDate'
-                     );
+                    reject(errorJson);
+                  } else {
+                    // Request is completely valid. Update the assignment
+                    let newDueDate = new Date(newDueDateUnix * 1000);
+                    ASSIGNMENTS.updateAttribute2(assignment, 'dueDate', newDueDate)
+                      .then((updatedAssignment) => {
+                        let successJson = {
+                          success: {
+                            message: 'Successfully updated dueDate',
+                          },
+                        };
 
-                     _callback(errorJson);
-                   } else {
-                     // New parameter value is valid. Update the assignment
-                     let newDueDate = new Date(_request.body.newDueDate * 1000);
-                     ASSIGNMENTS.updateAttribute(
-                       assignment,
-                       'dueDate',
-                       newDueDate,
-                       (updatedAssignment) => {
-                         let successJson = {
-                           success: {
-                             message: 'Successfully updated dueDate',
-                           },
-                         };
+                        resolve(successJson);
+                      }) // End then(updatedAssignment)
+                      .catch((updateError) => {
+                        let errorJson = ERROR.determineAssignmentError(
+                          SOURCE,
+                          _request,
+                          _response,
+                          updateError
+                        );
 
-                         _callback(successJson);
-                       }, // End (updatedAssignment)
-                       (updateAssignmentError) => {
-                         let errorJson = ERROR.determineAssignmentError(
-                           SOURCE,
-                           _request,
-                           _response,
-                           updateAssignmentError
-                         );
-
-                         _callback(errorJson);
-                       } // End (updateAssignmentError)
-                     ); // End ASSIGNMENTS.updateAttribute()
-                   }
-                 }
-               }, // End (assignment)
-               (getAssignmentError) => {
-                 let errorJson = ERROR.determineAssignmentError(
-                   SOURCE,
-                   _request,
-                   _response,
-                   getAssignmentError
-                 );
-
-                 _callback(errorJson);
-               } // End (getAssignmentError)
-             ); // End ASSIGNMENTS.getById()
-           }
-         }
-       }
-     }, // End (client)
-     (passportError, tokenError, userInfoMissing) => {
-      let errorJson = ERROR.determineAuthenticationError(
-        SOURCE,
-        _request,
-        _response,
-        passportError,
-        tokenError,
-        userInfoMissing
-      );
-
-      _callback(errorJson);
-    }
-  ); // End AUTH.verifyToken()
+                        reject(errorJson);
+                      }); // End ASSIGNMENTS.updateAttribute2()
+                  }
+                }
+              }) // End then(assignment)
+              .catch((getError) => {
+                let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
+                reject(errorJson);
+              }); // End ASSIGNMENTS.getById2()
+          }
+        }
+      }) // End then(client)
+      .catch((authError) => {
+        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.verifyToken2()
+  }); // End return promise
 }; // End updateAssignmentDueDate()
 
 /**
