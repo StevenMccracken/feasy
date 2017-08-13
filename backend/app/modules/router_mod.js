@@ -197,17 +197,19 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/users/:username/assignments/pdf').post(
-    MEDIA.upload.single('pdf'),
-    (_request, _response) => {
-      MIDDLEWARE.parseSchedule(_request, _response).then((result) => {
-        _response.json(result);
-
+  router.route('/users/:username/assignments/pdf').post((_request, _response) => {
+    MIDDLEWARE.parseSchedule(_request, _response)
+      .then((result) => {
         // Remove temp file that multer created if it existed
         if (_request.file !== undefined) MEDIA.removeTempFile(_request.file.path);
+        _response.json(result);
+      })
+      .catch((error) => {
+        // Remove temp file that multer created if it existed
+        if (_request.file !== undefined) MEDIA.removeTempFile(_request.file.path);
+        _response.json(error);
       });
-    }
-  );
+  });
 
   /**
    * The GET route for retrieving all of a user's assignments. Sends an error

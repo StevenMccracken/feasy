@@ -554,6 +554,7 @@ function updateUserAttribute(_client, _request, _response, _attribute, _verifyFu
     } else {
       // Check request parameters
       let invalidParams = [];
+      let newAttributeName = `new${_attribute.charAt(0).toUpperCase()}${_attribute.slice(1)}`;
       if (!VALIDATE.isValidUsername(_request.params.username)) invalidParams.push('username');
       if (!_verifyFunction(_request.body[newAttributeName])) {
         invalidParams.push(newAttributeName);
@@ -923,62 +924,71 @@ var parseSchedule = function(_request, _response) {
   return new Promise((resolve, reject) => {
     AUTH.verifyToken(_request, _response)
       .then((client) => {
-        // Token is valid. Check request parameters in the URL
-        let invalidParams = [];
-        if (_request.file === undefined || _request.file === null) invalidParams.push('pdf');
+        // Token is valid. Get the uploaded file from multer
+        let getPdf = MEDIA.upload.single('pdf');
+        getPdf(_request, _response, (multerError) => {
+          if (multerError !== undefined) {
+            let errorJson = ERROR.multerError(SOURCE, _request, _response, multerError);
+            reject(errorJson);
+          } else {
+            // Check request parameters
+            let invalidParams = [];
+            if (_request.file === undefined || _request.file === null) invalidParams.push('pdf');
 
-        if (invalidParams.length > 0) {
-          let errorJson = ERROR.error(
-            SOURCE,
-            _request,
-            _response,
-            ERROR.CODE.INVALID_REQUEST_ERROR,
-            `Invalid parameters: ${invalidParams.join()}`
-          );
-
-          reject(errorJson);
-        } else if (client.username !== _request.params.username) {
-          // Client attempted to upload a pdf schedule that was not their own
-          let errorJson = ERROR.error(
-            SOURCE,
-            _request,
-            _response,
-            ERROR.CODE.RESOURCE_ERROR,
-            'You cannot upload a schedule for another user',
-            `${client.username} tried to upload a schedule for ${_request.params.username}`
-          );
-
-          reject(errorJson);
-        } else if (_request.file.mimetype !== 'application/pdf') {
-          let errorJson = ERROR.error(
-            SOURCE,
-            _request,
-            _response,
-            ERROR.CODE.INVALID_MEDIA_TYPE,
-            'File must be a PDF',
-            `File received had ${_request.file.mimetype} mimetype`
-          );
-
-          reject(errorJson);
-        } else {
-          // Parse the PDF schedule
-          MEDIA.parsePdf(_request.file.path)
-            .then((pdfText) => {
-              resolve(pdfText);
-            })
-            .catch((parseError) => {
+            if (invalidParams.length > 0) {
               let errorJson = ERROR.error(
                 SOURCE,
                 _request,
                 _response,
-                ERROR.CODE.API_ERROR,
-                null,
-                parseError
+                ERROR.CODE.INVALID_REQUEST_ERROR,
+                `Invalid parameters: ${invalidParams.join()}`
               );
 
               reject(errorJson);
-            }); // End MEDIA.parsePdf()
-        }
+            } else if (client.username !== _request.params.username) {
+              // Client attempted to upload a pdf schedule that was not their own
+              let errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.RESOURCE_ERROR,
+                'You cannot upload a schedule for another user',
+                `${client.username} tried to upload a schedule for ${_request.params.username}`
+              );
+
+              reject(errorJson);
+            } else if (_request.file.mimetype !== 'application/pdf') {
+              let errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.INVALID_MEDIA_TYPE,
+                'File must be a PDF',
+                `File received had ${_request.file.mimetype} mimetype`
+              );
+
+              reject(errorJson);
+            } else {
+              // Parse the PDF schedule
+              MEDIA.parsePdf(_request.file.path)
+                .then((pdfText) => {
+                  resolve(pdfText);
+                })
+                .catch((parseError) => {
+                  let errorJson = ERROR.error(
+                    SOURCE,
+                    _request,
+                    _response,
+                    ERROR.CODE.API_ERROR,
+                    null,
+                    parseError
+                  );
+
+                  reject(errorJson);
+                }); // End MEDIA.parsePdf()
+            }
+          }
+        });
       })
       .catch((authError) => {
         let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);

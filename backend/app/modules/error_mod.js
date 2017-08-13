@@ -114,6 +114,42 @@ var bcryptError = function(_source, _request, _response, _error) {
 };
 
 /**
+ * multerError - Builds a client error repsonse based on a given multer error
+ * @param {String} _source the function where the error occurred
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {Object} _error JSON containing the specific multer error
+ * @return {Object} a formalized error JSON
+ */
+var multerError = function(_source, _request, _response, _error) {
+  let errorJson;
+  switch (_error.code) {
+    case 'LIMIT_UNEXPECTED_FILE':
+      errorJson = error(
+        _source,
+        _request,
+        _response,
+        ERROR_CODE.INVALID_REQUEST_ERROR,
+        'Invalid parameters: pdf',
+        `Client attempted to upload a file with the field '${_error.field}'`
+      );
+
+      break;
+    default:
+      errorJson = error(
+        _source,
+        _request,
+        _response,
+        ERROR_CODE.API_ERROR,
+        null,
+        `Unknown multer error: ${_error}`
+      );
+  }
+
+  return errorJson;
+};
+
+/**
  * userError - Determines the correct error JSON
  * for a mongoose error associated with the User schema
  * @param {String} _source the function where the error occurred
@@ -267,6 +303,7 @@ module.exports = {
   CODE: ERROR_CODE,
   userError: userError,
   bcryptError: bcryptError,
+  multerError: multerError,
   assignmentError: assignmentError,
   authenticationError: authenticationError,
 };
