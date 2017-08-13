@@ -29,41 +29,30 @@ module.exports = function(passport) {
     // Try to retrieve the user corresponding to the identifier in the payload
     if (jwtPayload._doc.googleId !== undefined) {
       // If the token payload has a google ID, the user is a google user
-      USERS.getByGoogleId(
-        jwtPayload._doc.googleId,
-        (userInfo) => {
+      let googleId = jwtPayload._doc.googleId;
+      USERS.getByGoogleId2(googleId)
+        .then((userInfo) => {
           if (userInfo !== null) done(null, userInfo);
           else {
             // The user was not found in the database
-            console.log(
-              'Google user %s not found while authenticating with JWT strategy',
-              jwtPayload._doc.googleId
-            );
-
+            console.log('Google user %s not found while authenticating with JWT strategy', googleId);
             done(null, null);
           }
-        },
-        getUserInfoError => done(getUserInfoError, null)
-      );
+        }) // End then(userInfo)
+        .catch(getUserError => done(getUserError, null)); // End USERS.getByGoogleId2()
     } else {
       // The user is a local user because there is no google ID in the payload
-      USERS.getByUsername(
-        jwtPayload._doc.username,
-        false,
-        (userInfo) => {
+      let username = jwtPayload._doc.username;
+      USERS.getByUsername2(username, false)
+        .then((userInfo) => {
           if (userInfo !== null) done(null, userInfo);
           else {
             // The user was not found in the database
-            console.log(
-              'Local user %s not found while authenticating with JWT strategy',
-              jwtPayload._doc.username
-            );
-
+            console.log('Local user %s not found while authenticating with JWT strategy', username);
             done(null, null);
           }
-        },
-        getUserInfoError => done(getUserInfoError, null)
-      );
+        }) // End then(userInfo)
+        .catch(getUserError => done(getUserError, null)); // End USERS.getByUsername2()
     }
   }));
 
@@ -80,9 +69,8 @@ module.exports = function(passport) {
     googleOptions,
     (request, accessToken, refreshToken, profile, done) => {
       // Try and find the user by google ID from the profile given by Google's authentication API
-      USERS.getByGoogleId(
-        profile.id,
-        (userInfo) => {
+      USERS.getByGoogleId2(profile.id)
+        .then((userInfo) => {
           if (userInfo !== null) done(null, userInfo);
           else {
             // Google user does not exist in the database yet
@@ -97,7 +85,7 @@ module.exports = function(passport) {
 
             // Attempt to create the new user with the info from the google profile
             USERS.createGoogle(googleUserInfo)
-              .then(newUser => done(null, newUser))
+              .then(newUser => done(null, newUser)) // End then(newUser)
               .catch((createGoogleUserError) => {
                 if (
                   createGoogleUserError.name === 'MongoError' &&
@@ -112,11 +100,10 @@ module.exports = function(passport) {
                     .then(newUser => done(null, newUser))
                     .catch(createGoogleUserError2 => done(createGoogleUserError2, null));
                 } else done(createGoogleUserError, null);
-              });
+              }); // End USERS.createGoogle()
           }
-        },
-        getUserInfoError => done(getUserInfoError, null)
-      );
+        }) // End then(userInfo)
+        .catch(getUserError => done(getUserError, null)); // End USERS.getByGoogleId2()
     }
   ));
 };
