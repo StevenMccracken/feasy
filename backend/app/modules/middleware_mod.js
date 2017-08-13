@@ -1083,7 +1083,7 @@ var getAssignmentById = function(_request, _response) {
             }) // End then(assignment)
             .catch((getError) => {
               let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
-              _callback(errorJson);
+              reject(errorJson);
             }); // End ASSIGNMENTS.getById2()
         }
       }) // End then(client)
@@ -1095,7 +1095,7 @@ var getAssignmentById = function(_request, _response) {
 }; // End getAssignmentById()
 
 /**
- * updateAssignmentAttribute2 - Updates an
+ * updateAssignmentAttribute - Updates an
  * assignments's attribute information in the database
  * @param {Object} _client the user Mongoose object
  * @param {Object} _request the HTTP request
@@ -1105,8 +1105,8 @@ var getAssignmentById = function(_request, _response) {
  * validate the new attribute value from the request body
  * @return {Promise<Object>} a success JSON or error JSON
  */
-function updateAssignmentAttribute2(_client, _request, _response, _attribute, _verifyFunction) {
-  const SOURCE = 'updateAssignmentAttribute2()';
+function updateAssignmentAttribute(_client, _request, _response, _attribute, _verifyFunction) {
+  const SOURCE = 'updateAssignmentAttribute()';
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
@@ -1156,7 +1156,7 @@ function updateAssignmentAttribute2(_client, _request, _response, _attribute, _v
                 'That assignment does not exist'
               );
 
-              _callback(errorJson);
+              reject(errorJson);
             } else {
               // Assignment exists. Check if new value is actually different from existing value
               let newValue;
@@ -1207,151 +1207,6 @@ function updateAssignmentAttribute2(_client, _request, _response, _attribute, _v
       }
     }
   }); // End return promise
-}; // End updateAssignmentAttribute2()
-
-/**
- * updateAssignmentAttribute - Updates an assignments's attribute information in the database
- * @param {Object} _client the user Mongoose object
- * @param {Object} _request the HTTP request
- * @param {Object} _response the HTTP response
- * @param {String} _attribute the assignment attribute to update
- * @param {Object} _verifyFunction the function to
- * validate the new attribute value from the request body
- * @param {callback} _callback the callback to send the database response
- */
-function updateAssignmentAttribute(
-  _client,
-  _request,
-  _response,
-  _attribute,
-  _verifyFunction,
-  _callback
-) {
-  const SOURCE = 'updateAssignmentAttribute()';
-  log(SOURCE, _request);
-
-  // Token is valid. Check request parameters
-  let invalidParams = [];
-  if (!VALIDATE.isValidUsername(_request.params.username)) invalidParams.push('username');
-  if (!VALIDATE.isValidObjectId(_request.params.assignmentId)) invalidParams.push('assignmentId');
-
-  if (invalidParams.length > 0) {
-    let errorJson = ERROR.error(
-      SOURCE,
-      _request,
-      _response,
-      ERROR.CODE.INVALID_REQUEST_ERROR,
-      `Invalid parameters: ${invalidParams.join()}`
-    );
-
-    _callback(errorJson);
-  } else {
-    /**
-     * URL request parameters are valid. Check that
-     * the client is updating their own assignment
-     */
-     if (_client.username !== _request.params.username) {
-       // Client attempted to update an assignment that was not their own
-        let errorJson = ERROR.error(
-          SOURCE,
-          _request,
-          _response,
-          ERROR.CODE.RESOURCE_ERROR,
-          'You cannot update another user\'s assignment',
-          `${_client.username} tried to update ${_request.params.username}'s assignment`
-        );
-
-       _callback(errorJson);
-     } else {
-       // URL parameters are valid. Create newAttribute var
-       let newAttributeName = `new${_attribute.charAt(0).toUpperCase()}${_attribute.slice(1)}`;
-
-       // Check request body attribute with provided verify function
-       if (!_verifyFunction(_request.body[newAttributeName])) {
-         let errorJson = ERROR.error(
-           SOURCE,
-           _request,
-           _response,
-           ERROR.CODE.INVALID_REQUEST_ERROR,
-           `Invalid parameters: ${newAttributeName}`
-         );
-
-         _callback(errorJson);
-       } else {
-         // Request parameters are valid. Get assignment from the database
-         ASSIGNMENTS.getById(
-           _request.params.assignmentId,
-           (assignment) => {
-             if (assignment === null) {
-               let errorJson = ERROR.error(
-                 SOURCE,
-                 _request,
-                 _response,
-                 ERROR.CODE.RESOURCE_DNE_ERROR,
-                 'That assignment does not exist'
-               );
-
-               _callback(errorJson);
-             } else {
-               // Trim new value if it is a string
-               let newValue;
-               if (typeof assignment[_attribute] === 'string') {
-                 newValue = _request.body[newAttributeName].trim();
-               } else newValue = _request.body[newAttributeName];
-
-               // If new value is the same as existing attribute, don't update
-               if (newValue === assignment[_attribute]) {
-                 let errorJson = ERROR.error(
-                   SOURCE,
-                   _request,
-                   _response,
-                   ERROR.CODE.INVALID_REQUEST_ERROR,
-                   `Unchanged parameters: ${newAttributeName}`
-                 );
-
-                 _callback(errorJson);
-               } else {
-                 ASSIGNMENTS.updateAttribute(
-                   assignment,
-                   _attribute,
-                   newValue,
-                   (updatedAssignment) => {
-                     let successJson = {
-                       success: {
-                         message: `Successfully updated ${_attribute}`,
-                       },
-                     };
-
-                     _callback(successJson);
-                   }, // End (updatedAssignment)
-                   (updateAssignmentError) => {
-                     let errorJson = ERROR.determineAssignmentError(
-                       SOURCE,
-                       _request,
-                       _response,
-                       updateAssignmentError
-                     );
-
-                     _callback(errorJson);
-                   } // End (updateAssignmentError)
-                 ); // End ASSIGNMENTS.updateAttribute()
-               }
-             }
-           }, // End (assignment)
-           (getAssignmentError) => {
-             let errorJson = ERROR.determineAssignmentError(
-               SOURCE,
-               _request,
-               _response,
-               getAssignmentError
-             );
-
-             _callback(errorJson);
-           } // End (getAssignmentError)
-         ); // End ASSIGNMENTS.getById()
-       }
-     }
-   }
 }; // End updateAssignmentAttribute()
 
 /**
@@ -1368,9 +1223,9 @@ var updateAssignmentTitle = function(_request, _response) {
     AUTH.verifyToken2(_request, _response)
       .then((client) => {
         // Token is valid. Update the assignment's title
-        updateAssignmentAttribute2(client, _request, _response, 'title', VALIDATE.isValidString)
+        updateAssignmentAttribute(client, _request, _response, 'title', VALIDATE.isValidString)
           .then(successJson => resolve(successJson)) // End then(successJson)
-          .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute2()
+          .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute()
       }) // End then(client)
       .catch((authError) => {
         let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
@@ -1393,9 +1248,9 @@ var updateAssignmentClass = function(_request, _response) {
     AUTH.verifyToken2(_request, _response)
       .then((client) => {
         // Token is valid. Update the assignment's title
-        updateAssignmentAttribute2(client, _request, _response, 'class', VALIDATE.isValidString)
+        updateAssignmentAttribute(client, _request, _response, 'class', VALIDATE.isValidString)
           .then(successJson => resolve(successJson)) // End then(successJson)
-          .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute2()
+          .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute()
       }) // End then(client)
       .catch((authError) => {
         let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
@@ -1418,9 +1273,9 @@ var updateAssignmentType = function(_request, _response) {
     AUTH.verifyToken2(_request, _response)
       .then((client) => {
         // Token is valid. Update the assignment's title
-        updateAssignmentAttribute2(client, _request, _response, 'type', VALIDATE.isValidString)
+        updateAssignmentAttribute(client, _request, _response, 'type', VALIDATE.isValidString)
           .then(successJson => resolve(successJson)) // End then(successJson)
-          .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute2()
+          .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute()
       }) // End then(client)
       .catch((authError) => {
         let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
@@ -1443,9 +1298,9 @@ var updateAssignmentDescription = function(_request, _response) {
     AUTH.verifyToken2(_request, _response)
       .then((client) => {
         // Token is valid. Update the assignment's title
-        updateAssignmentAttribute2(client, _request, _response, 'description', VALIDATE.isValidString)
+        updateAssignmentAttribute(client, _request, _response, 'description', VALIDATE.isValidString)
           .then(successJson => resolve(successJson)) // End then(successJson)
-          .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute2()
+          .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute()
       }) // End then(client)
       .catch((authError) => {
         let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
