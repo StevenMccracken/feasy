@@ -9,7 +9,7 @@ const Uuid = require('uuid/v4');
 /**
  * create - Saves a new user in the database
  * @param {Object} _userInfo JSON containing the user attributes
- * @return {Promise<User>|Promise<Error>} the Mongoose object or a Mongoose error
+ * @return {Promise<User>} the Mongoose object
  */
 var create = function(_userInfo) {
   const SOURCE = 'create()';
@@ -37,7 +37,7 @@ var create = function(_userInfo) {
 /**
  * createGoogle - Saves a new google user in the database
  * @param {Object} _userInfo JSON containing the google user attributes
- * @return {Promise<User>|Promise<Error>} the Mongoose object or a Mongoose error
+ * @return {Promise<User>} the Mongoose object
  */
 var createGoogle = function(_userInfo) {
   const SOURCE = 'createGoogle()';
@@ -72,7 +72,7 @@ var createGoogle = function(_userInfo) {
  * @param {String|ObjectId} _attribute the attribute to select the users on
  * @param {String|Date} _value the value that the specific attribute should equal
  * @param {String} _projection the space-separated attributes to retrieve
- * @return {Promise<Object>} the Mongoose error or success JSON
+ * @return {Promise<User[]>} the Mongoose object array
  */
 var getAllByAttribute = function(_attribute, _value, _projection) {
   const SOURCE = 'getAllByAttribute()';
@@ -90,7 +90,7 @@ var getAllByAttribute = function(_attribute, _value, _projection) {
  * @param {String} _username the username of the user
  * @param {Boolean} _includePassword includes or excludes
  * the password with the user information from the database
- * @return {Promise<Object>} the Mongoose error or success JSON
+ * @return {Promise<User>} the Mongoose object
  */
 var getByUsername = function(_username, _includePassword) {
   const SOURCE = 'getByUsername()';
@@ -110,7 +110,7 @@ var getByUsername = function(_username, _includePassword) {
 /**
  * getByGoogleId - Retrieves a user by their google ID
  * @param {String} _googleId the google ID of the user
- * @return {Promise<Object>} the Mongoose error or success JSON
+ * @return {Promise<User>} the Mongoose object
  */
 var getByGoogleId = function(_googleId) {
   const SOURCE = 'getByGoogleId()';
@@ -128,7 +128,7 @@ var getByGoogleId = function(_googleId) {
  * getAttribute - Retrieves a specific attribute of a user
  * @param {String} _username the username of the user
  * @param {String} _attribute the name of the desired attribute
- * @return {Promise<Any>} the Mongoose error or user attribute
+ * @return {Promise<Any>} the user attribute
  */
 var getAttribute = function(_username, _attribute) {
   const SOURCE = 'getAttribute()';
@@ -144,7 +144,7 @@ var getAttribute = function(_username, _attribute) {
 /**
  * update - Executes a database save on a user object to update any new attributes
  * @param {Object} _user the Mongoose object
- * @return {Promise<User>|Promise<Error>} the updated Mongoose object or a Mongoose error
+ * @return {Promise<User>} the updated Mongoose object
  */
 var update = function(_user) {
   const SOURCE = 'update()';
@@ -161,7 +161,7 @@ var update = function(_user) {
  * @param {Object} _user the Mongoose object
  * @param {String} _attribute the attribute name of the user to update
  * @param {String|Date} _newValue the updated value of the user attribute
- * @return {Promise<User>|Promise<Error>} the updated Mongoose object or a Mongoose error
+ * @return {Promise<User>} the updated Mongoose object
  */
 var updateAttribute = function(_user, _attribute, _newValue) {
   const SOURCE = 'updateAttribute()';
@@ -180,7 +180,7 @@ var updateAttribute = function(_user, _attribute, _newValue) {
 /**
  * remove - Deletes a user from the user database
  * @param {Object} _user JSON of the user attributes
- * @return {Promise|Promise<Error>} the success Promise or a Mongoose error
+ * @return {Promise} an empty promise
  */
 var remove = function(_user) {
   const SOURCE = 'remove()';
@@ -196,7 +196,7 @@ var remove = function(_user) {
 /**
  * removeByUsername - Deletes a user from the user database
  * @param {String} _username the username of the user to delete
- * @return {Promise|Promise<Error>} the success Promise or a Mongoose error
+ * @return {Promise} an empty promise
  */
 var removeByUsername = function(_username) {
   const SOURCE = 'removeByUsername()';

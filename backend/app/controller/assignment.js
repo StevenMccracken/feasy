@@ -10,7 +10,7 @@ const UNIVERSAL_PROJECTION = '_id title class type description completed dueDate
 /**
  * create - Saves a new assignment for a user in the database
  * @param {Object} _assignmentInfo JSON containing the assignment attributes
- * @return {Promise<Assignment>|Promise<Error>} the Mongoose object or a Mongoose error
+ * @return {Promise<Assignment>} the Mongoose object
  */
 var create = function(_assignmentInfo) {
   const SOURCE = 'create()';
@@ -42,7 +42,7 @@ var create = function(_assignmentInfo) {
 /**
  * getById - Retrieves an assignment by it's id
  * @param {ObjectId} _assignmentId the desired assignment's id
- * @return {Promise<Assignment>|Promise<Error>} the Mongoose object or a Mongoose error
+ * @return {Promise<Assignment>} the Mongoose object
  */
 var getById = function(_assignmentId) {
   const SOURCE = 'getById()';
@@ -58,7 +58,7 @@ var getById = function(_assignmentId) {
 /**
  * getAll - Retrieves all assignments created by a user
  * @param {Object} _userId the ObjectId of the user who created the assignments
- * @return {Promise<Assignment>|Promise<Error>[]} the Mongoose object array or a Mongoose error
+ * @return {Promise<Assignment[]>} the Mongoose object array
  */
 var getAll = function(_userId) {
   const SOURCE = 'getAll()';
@@ -77,7 +77,7 @@ var getAll = function(_userId) {
  * @param {Object} _userId the ObjectId of the user who created the assignments
  * @param {String} _attribute the desired attribute of the assignment
  * @param {String} _value the value that the attribute should be equal to
- * @return {Promise<Assignment>|Promise<Error>[]} the Mongoose object array or a Mongoose error
+ * @return {Promise<Assignment[]>} the Mongoose object array
  */
 var getAllByAttribute = function(_userId, _attribute, _value) {
   const SOURCE = 'getAllByAttribute()';
@@ -94,7 +94,7 @@ var getAllByAttribute = function(_userId, _attribute, _value) {
  * getAttribute - Retrieves a specific attribute of an assignment
  * @param {ObjectId} _assignmentId the desired assignment's id
  * @param {String} _attribute the desired attribute of the assignment
- * @return {Promise<Any>|Promise<Error>} the assignment attribute or a Mongoose error
+ * @return {Promise<Assignment>} the Mongoose object
 
  */
 var getAttribute = function(_assignmentId, _attribute) {
@@ -111,7 +111,7 @@ var getAttribute = function(_assignmentId, _attribute) {
 /**
  * update - Executes a database save on an assignment object to update any new attributes
  * @param {Object} _assignment the Mongoose object
- * @return {Promise<Assignment>|Promise<Error>} the updated Mongoose object or a Mongoose error
+ * @return {Promise<Assignment>} the updated Mongoose object
  */
 var update = function(_assignment) {
   const SOURCE = 'update()';
@@ -129,7 +129,7 @@ var update = function(_assignment) {
  * @param {Object} _assignment the Mongoose object
  * @param {String} _attribute the specific attribute of the assignment to update
  * @param {String|Date|Boolean} _newValue the updated value of the assignment attribute
- * @return {Promise<Assignment>|Promise<Error>} the updated Mongoose object or a Mongoose error
+ * @return {Promise<Assignment>} the updated Mongoose object
  */
 var updateAttribute = function(_assignment, _attribute, _newValue) {
   const SOURCE = 'updateAttribute()';
@@ -148,7 +148,7 @@ var updateAttribute = function(_assignment, _attribute, _newValue) {
 /**
  * remove - Deletes an assignment from the assignment database
  * @param {Object} _assignment the Mongoose object
- * @return {Promise|Promise<Error>} the success Promise or a Mongoose error
+ * @return {Promise} an empty promise
  */
 var remove = function(_assignment) {
   const SOURCE = 'remove()';
@@ -164,7 +164,7 @@ var remove = function(_assignment) {
 /**
  * removeAllByUser - Deletes all assignments created by a user
  * @param {Object} _userId the ObjectId of the desired user
- * @return {Promise|Promise<Error>} the success Promise or a Mongoose error
+ * @return {Promise} an empty promise
  */
 var removeAllByUser = function(_userId, _callback, _errorCallback) {
   const SOURCE = 'removeAllByUser()';

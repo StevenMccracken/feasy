@@ -18,7 +18,7 @@ const STANDARD_EXPIRATION_TIME = '24h';
  * validatePasswords - Verifies a given password against a hashed password
  * @param {String} _givenPassword a given value for the supposed password
  * @param {String} _hashedPassword a hashed password
- * @return {Promise<Boolean>|Promise<Error>} whether the passwords match or a Bcrypt error
+ * @return {Promise<Boolean>} whether the passwords match or a Bcrypt error
  */
 var validatePasswords = function(_givenPassword, _actualPassword) {
   const SOURCE = 'validatePasswords()';

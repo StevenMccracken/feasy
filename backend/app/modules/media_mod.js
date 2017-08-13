@@ -19,7 +19,7 @@ const parser = new PdfParser(this, 1);
 /**
  * parsePdf - Parses a pdf file and returns the content, split by whitespace
  * @param {String} _filepath the path where the pdf file exists
- * @return {Promise<String>|Promise<Error>[]} array of pdf text content or pdf2json error
+ * @return {Promise<String[]>} array of pdf text content
  */
 var parsePdf = function(_filepath) {
   const SOURCE = 'parsePdf()';
