@@ -17,7 +17,7 @@ var log = function(_source, _message, _request = null) {
     // Log information about an incoming HTTP request
     let requestId = _request.headers.requestId;
     let ipAddress = _request.headers['x-forwarded-for'] || _request.connection.remoteAddress;
-    console.log('{%s} [%s] (%s) (rid: %s): %s', now, _source, ipAddress, requestId, _message);
+    console.log('{%s} [%s] (%s) <%s>: %s', now, _source, ipAddress, requestId, _message);
   }
 };
 

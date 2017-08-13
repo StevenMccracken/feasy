@@ -39,7 +39,7 @@ var authenticate = function(_request, _response) {
       reject(errorJson);
     } else {
       // Parameters are valid. Retrieve user info from database
-      USERS.getByUsername2(_request.body.username, true)
+      USERS.getByUsername(_request.body.username, true)
         .then((user) => {
           if (user === null) {
             let errorJson = ERROR.error(
@@ -64,7 +64,7 @@ var authenticate = function(_request, _response) {
 
             reject(errorJson);
           } else {
-            AUTH.validatePasswords2(_request.body.password, user.password)
+            AUTH.validatePasswords(_request.body.password, user.password)
               .then((passwordsMatch) => {
                 if (passwordsMatch) {
                   // Password is valid. Generate the JWT for the client
@@ -89,22 +89,16 @@ var authenticate = function(_request, _response) {
                   reject(errorJson);
                 }
               }) // End then(passwordsMatch)
-              .catch((validatePasswordsError) => {
-                let errorJson = ERROR.determineBcryptError(
-                  SOURCE,
-                  _request,
-                  _response,
-                  validatePasswordsError
-                );
-
+              .catch((validationError) => {
+                let errorJson = ERROR.bcryptError(SOURCE, _request, _response, validationError);
                 reject(errorJson);
-              }); // End AUTH.validatePasswords2()
+              }); // End AUTH.validatePasswords()
           }
         }) // End then(user)
         .catch((getUserError) => {
-          let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserError);
+          let errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
           reject(errorJson);
-        }); // End USERS.getByUsername2()
+        }); // End USERS.getByUsername()
     }
   }); // End return promise
 }; // End authenticate()
@@ -123,16 +117,10 @@ var authenticateGoogle = function(_request, _response) {
     // Send the request to verify with Google's authentication API
     AUTH.verifyGoogleRequest(_request, _response)
       .then(client => resolve()) // End then(client)
-      .catch((verifyGoogleRequestError) => {
-        let errorJson = ERROR.determineAuthenticationError2(
-          SOURCE,
-          _request,
-          _response,
-          verifyGoogleRequestError
-        );
-
+      .catch((verifyRequestError) => {
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, verifyRequestError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End authenticateGoogle()
 
@@ -166,16 +154,10 @@ var authenticateGoogleCallback = function(_request, _response) {
 
         resolve(successJson);
       }) // End then(client)
-      .catch((verifyTokenError) => {
-        let errorJson = ERROR.determineAuthenticationError2(
-          SOURCE,
-          _request,
-          _response,
-          verifyTokenError
-        );
-
+      .catch((authError) => {
+        let errorJson = ERROR.authenticationError( SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End authenticateGoogleCallback()
 
@@ -243,7 +225,7 @@ var createUser = function(_request, _response) {
           resolve(successJson);
         }) // End then(newUser)
         .catch((createUserError) => {
-          let errorJson = ERROR.determineUserError(SOURCE, _request, _response, createUserError);
+          let errorJson = ERROR.userError(SOURCE, _request, _response, createUserError);
           reject(errorJson);
         }); // End USERS.create()
     }
@@ -262,7 +244,7 @@ var retrieveUser = function(_request, _response) {
 
   return new Promise((resolve, reject) => {
     // Verify client's web token first
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check request paramerters
         if (!VALIDATE.isValidUsername(_request.params.username)) {
@@ -277,7 +259,7 @@ var retrieveUser = function(_request, _response) {
           reject(errorJson);
         } else {
           // Request parameters are valid. Retrieve user from database
-          USERS.getByUsername2(_request.params.username, false)
+          USERS.getByUsername(_request.params.username, false)
             .then((userInfo) => {
               if (userInfo === null) {
                 // User with that username does not exist
@@ -293,21 +275,15 @@ var retrieveUser = function(_request, _response) {
               } else resolve(userInfo);
             }) // End then(userInfo)
             .catch((getUserInfoError) => {
-              let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserInfoError);
+              let errorJson = ERROR.userError(SOURCE, _request, _response, getUserInfoError);
               reject(errorJson);
-            }); // End USERS.getByUsername2()
+            }); // End USERS.getByUsername()
         }
       }) // End then(client)
-      .catch((verifyTokenError) => {
-        let errorJson = ERROR.determineAuthenticationError2(
-          SOURCE,
-          _request,
-          _response,
-          verifyTokenError
-        );
-
+      .catch((authError) => {
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End retrieveUser()
 
@@ -323,7 +299,7 @@ var updateUserUsername = function(_request, _response) {
 
   return new Promise((resolve, reject) => {
     // Verify client's web token first
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check if client is sending a valid request
         if (client.username !== _request.params.username) {
@@ -366,7 +342,7 @@ var updateUserUsername = function(_request, _response) {
             reject(errorJson);
           } else {
             // Reuqest is valid. Retrieve user to update their information
-            USERS.getByUsername2(client.username, false)
+            USERS.getByUsername(client.username, false)
               .then((userInfo) => {
                 if (userInfo === null) {
                   // User with that username does not exist
@@ -382,7 +358,7 @@ var updateUserUsername = function(_request, _response) {
                   reject(errorJson);
                 } else {
                   // Update username information
-                  USERS.updateAttribute2(userInfo, 'username', _request.body.newUsername)
+                  USERS.updateAttribute(userInfo, 'username', _request.body.newUsername)
                     .then((updatedUserInfo) => {
                       // Generate a new JWT for authenticating future requests
                       let token = AUTH.generateToken(updatedUserInfo);
@@ -395,29 +371,23 @@ var updateUserUsername = function(_request, _response) {
 
                       resolve(successJson);
                     }) // End then(updatedUserInfo)
-                    .catch((updateUsernameError) => {
-                      let errorJson = ERROR.determineUserError(
-                        SOURCE,
-                        _request,
-                        _response,
-                        updateUsernameError
-                      );
-
+                    .catch((updateError) => {
+                      let errorJson = ERROR.userError(SOURCE, _request, _response, updateError);
                       reject(errorJson);
-                    }); // End USERS.updateAttribute2()
+                    }); // End USERS.updateAttribute()
                 }
               }) // End then(userInfo)
               .catch((getUserError) => {
-                let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserError);
+                let errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
                 reject(errorJson);
-              }); // End USERS.getByUsername2()
+              }); // End USERS.getByUsername()
           }
         }
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End updateUserUsername()
 
@@ -432,7 +402,7 @@ var updateUserPassword = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check if client is sending a valid request
         if (client.username !== _request.params.username) {
@@ -476,7 +446,7 @@ var updateUserPassword = function(_request, _response) {
             reject(errorJson);
           } else {
             // Request parameters are valid. Retrieve user information with password
-            USERS.getByUsername2(client.username, true)
+            USERS.getByUsername(client.username, true)
               .then((userInfo) => {
                 if (userInfo === null) {
                   // User with that username does not exist
@@ -492,7 +462,7 @@ var updateUserPassword = function(_request, _response) {
                   reject(errorJson);
                 } else {
                   // Verify that oldPassword is identical to existing password
-                  AUTH.validatePasswords2(_request.body.oldPassword, userInfo.password)
+                  AUTH.validatePasswords(_request.body.oldPassword, userInfo.password)
                     .then((passwordsMatch) => {
                       if (!passwordsMatch) {
                         let errorJson = ERROR.error(
@@ -517,7 +487,7 @@ var updateUserPassword = function(_request, _response) {
                         reject(errorJson);
                       } else {
                         // Update username information
-                        USERS.updateAttribute2(userInfo, 'password', _request.body.newPassword)
+                        USERS.updateAttribute(userInfo, 'password', _request.body.newPassword)
                           .then((updatedUserInfo) => {
                             let successJson = {
                               success: {
@@ -527,41 +497,29 @@ var updateUserPassword = function(_request, _response) {
 
                             resolve(successJson);
                           })
-                          .catch((udpatePasswordError) => {
-                            let errorJson = ERROR.determineUserError(
-                              SOURCE,
-                              _request,
-                              _response,
-                              udpatePasswordError
-                            );
-
+                          .catch((updateError) => {
+                            let errorJson = ERROR.userError(SOURCE, _request, _response, updateError);
                             reject(errorJson);
-                          }); // End USERS.updateAttribute2()
+                          }); // End USERS.updateAttribute()
                       }
                     })
-                    .catch((validatePasswordsError) => {
-                      let errorJson = ERROR.determineBcryptError(
-                        SOURCE,
-                        _request,
-                        _response,
-                        validatePasswordsError
-                      );
-
+                    .catch((validationError) => {
+                      let errorJson = ERROR.bcryptError(SOURCE, _request, _response, validationError);
                       reject(errorJson);
-                    }); // End AUTH.validatePasswords2()
+                    }); // End AUTH.validatePasswords()
                 }
               }) // End then(userInfo)
               .catch((getUserError) => {
-                let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserError);
+                let errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
                 reject(errorJson);
-              }); // End USERS.getByUsername2()
+              }); // End USERS.getByUsername()
           }
         }
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End updateUserPassword()
 
@@ -613,7 +571,7 @@ function updateUserAttribute(_client, _request, _response, _attribute, _verifyFu
         reject(errorJson);
       } else {
         // Request parameters are valid. Retrieve user
-        USERS.getByUsername2(_request.params.username, false)
+        USERS.getByUsername(_request.params.username, false)
           .then((userInfo) => {
             if (userInfo === null) {
               // User with that username does not exist
@@ -647,7 +605,7 @@ function updateUserAttribute(_client, _request, _response, _attribute, _verifyFu
                 reject(errorJson);
               } else {
                 // New value for user attribute is different from existing one. Update the attribute
-                USERS.updateAttribute2(userInfo, _attribute, newValue)
+                USERS.updateAttribute(userInfo, _attribute, newValue)
                   .then((updatedUser) => {
                     let successJson = {
                       success: {
@@ -658,22 +616,16 @@ function updateUserAttribute(_client, _request, _response, _attribute, _verifyFu
                     resolve(successJson);
                   }) // End then(updatedUser)
                   .catch((updateUserError) => {
-                    let errorJson = ERROR.determineUserError(
-                      SOURCE,
-                      _request,
-                      _response,
-                      updateUserError
-                    );
-
+                    let errorJson = ERROR.userError(SOURCE, _request, _response, updateUserError);
                     reject(errorJson);
-                  }); // End USERS.updateAttribute2()
+                  }); // End USERS.updateAttribute()
               }
             }
           }) // End then(userInfo)
           .catch((getUserError) => {
-            let errorJson = ERROR.determineUserError(SOURCE, _request, _response, getUserError);
+            let errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
             reject(errorJson);
-          }); // End USERS.getByUsername2()
+          }); // End USERS.getByUsername()
       }
     }
   }); // End return promise
@@ -690,7 +642,7 @@ var updateUserEmail = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check if user is a google user
         if (USERS.isTypeGoogle(client)) {
@@ -712,9 +664,9 @@ var updateUserEmail = function(_request, _response) {
         }
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End updateUserEmail()
 
@@ -729,7 +681,7 @@ var updateUserFirstName = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Update the user's first name
         updateUserAttribute(client, _request, _response, 'firstName', VALIDATE.isValidName)
@@ -737,9 +689,9 @@ var updateUserFirstName = function(_request, _response) {
           .catch(errorJson => reject(errorJson));
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End updateUserFirstName()
 
@@ -754,7 +706,7 @@ var updateUserLastName = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Update the user's first name
         updateUserAttribute(client, _request, _response, 'lastName', VALIDATE.isValidName)
@@ -762,9 +714,9 @@ var updateUserLastName = function(_request, _response) {
           .catch(errorJson => reject(errorJson));
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End updateUserLastName()
 
@@ -779,7 +731,7 @@ var deleteUser = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check if client is requesting to delete themself
         if (client.username !== _request.params.username) {
@@ -805,7 +757,7 @@ var deleteUser = function(_request, _response) {
           reject(errorJson);
         } else {
           // Request is valid. Remove the user object
-          USERS.removeByUsername2(client.username)
+          USERS.removeByUsername(client.username)
             .then(() => {
               // User was deleted. Define successJson to send whether assignments are deleted or not
               let successJson = {
@@ -815,16 +767,11 @@ var deleteUser = function(_request, _response) {
               };
 
               // Delete all of the user's assignments
-              ASSIGNMENTS.removeAllByUser2(client._id)
+              ASSIGNMENTS.removeAllByUser(client._id)
                 .then(() => resolve(successJson)) // End then()
                 .catch((deleteAssignmentsError) => {
                   // Call error function to log error
-                  ERROR.determineAssignmentError(
-                    _SOURCE,
-                    _request,
-                    _response,
-                    deleteAssignmentsError
-                  );
+                  ERROR.assignmentError(_SOURCE, _request, _response, deleteAssignmentsError);
 
                   // Still send success message to client
                   let successJson = {
@@ -834,18 +781,18 @@ var deleteUser = function(_request, _response) {
                   };
 
                   resolve(successJson);
-                }); // End ASSIGNMENTS.removeAllByUser2()
+                }); // End ASSIGNMENTS.removeAllByUser()
             }) // End then()
             .catch((deleteUserError) => {
-              let errorJson = ERROR.determineUserError(SOURCE, _request, _response, deleteUserError);
+              let errorJson = ERROR.userError(SOURCE, _request, _response, deleteUserError);
               reject(errorJson);
-            }); // End USERS.removeByUsername2()
+            }); // End USERS.removeByUsername()
         }
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End deleteUser()
 
@@ -860,7 +807,7 @@ var createAssignment = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check if client is requesting themself
         if (client.username !== _request.params.username) {
@@ -948,25 +895,19 @@ var createAssignment = function(_request, _response) {
             if (hasValidDescription) assignmentInfo.description = _request.body.description;
 
             // Save assignment to database
-            ASSIGNMENTS.create2(assignmentInfo)
+            ASSIGNMENTS.create(assignmentInfo)
               .then(createdAssignment => resolve(createdAssignment)) // End then(createdAssignment)
               .catch((createError) => {
-                let errorJson = ERROR.determineAssignmentError(
-                  SOURCE,
-                  _request,
-                  _response,
-                  createError
-                );
-
+                let errorJson = ERROR.assignmentError(SOURCE, _request, _response, createError);
                 reject(errorJson);
-              }); // End ASSIGNMENTS.create2()
+              }); // End ASSIGNMENTS.create()
           }
         }
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End createAssignment()
 
@@ -981,7 +922,7 @@ var getAssignments = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check if client is requesting themself
         if (client.username !== _request.params.username) {
@@ -1008,7 +949,7 @@ var getAssignments = function(_request, _response) {
           reject(errorJson);
         } else {
           // Request is valid. Retrieve assignments from the database
-          ASSIGNMENTS.getAll2(client._id)
+          ASSIGNMENTS.getAll(client._id)
             .then((assignments) => {
               // Convert assignments array to JSON
               let assignmentsJson = {};
@@ -1016,15 +957,15 @@ var getAssignments = function(_request, _response) {
               resolve(assignmentsJson);
             }) // End then(assignments)
             .catch((getError) => {
-              let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
+              let errorJson = ERROR.assignmentError(SOURCE, _request, _response, getError);
               reject(errorJson);
-            }); // End ASSIGNMENTS.getAll2()
+            }); // End ASSIGNMENTS.getAll()
         }
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End getAssignments()
 
@@ -1039,7 +980,7 @@ var getAssignmentById = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check if user is requesting themself
         if (client.username !== _request.params.username) {
@@ -1066,7 +1007,7 @@ var getAssignmentById = function(_request, _response) {
           reject(errorJson);
         } else {
           // Get assignment from the database
-          ASSIGNMENTS.getById2(_request.params.assignmentId)
+          ASSIGNMENTS.getById(_request.params.assignmentId)
             .then((assignment) => {
               if (assignment !== null) resolve(assignment);
               else {
@@ -1082,15 +1023,15 @@ var getAssignmentById = function(_request, _response) {
               }
             }) // End then(assignment)
             .catch((getError) => {
-              let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
+              let errorJson = ERROR.assignmentError(SOURCE, _request, _response, getError);
               reject(errorJson);
-            }); // End ASSIGNMENTS.getById2()
+            }); // End ASSIGNMENTS.getById()
         }
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End getAssignmentById()
 
@@ -1145,7 +1086,7 @@ function updateAssignmentAttribute(_client, _request, _response, _attribute, _ve
         reject(errorJson);
       } else {
         // Request parameters are valid. Retrieve the assignment
-        ASSIGNMENTS.getById2(_request.params.assignmentId)
+        ASSIGNMENTS.getById(_request.params.assignmentId)
           .then((assignment) => {
             if (assignment === null) {
               let errorJson = ERROR.error(
@@ -1177,7 +1118,7 @@ function updateAssignmentAttribute(_client, _request, _response, _attribute, _ve
                 reject(errorJson);
               } else {
                 // Request is completely valid. Update the assignment attribute
-                ASSIGNMENTS.updateAttribute2(assignment, _attribute, newValue)
+                ASSIGNMENTS.updateAttribute(assignment, _attribute, newValue)
                   .then((updatedAssignment) => {
                     let successJson = {
                       success: {
@@ -1188,22 +1129,16 @@ function updateAssignmentAttribute(_client, _request, _response, _attribute, _ve
                     resolve(successJson);
                   }) // End then(updatedAssignment)
                   .catch((updateError) => {
-                    let errorJson = ERROR.determineAssignmentError(
-                      SOURCE,
-                      _request,
-                      _response,
-                      updateError
-                    );
-
+                    let errorJson = ERROR.assignmentError(SOURCE, _request, _response, updateError);
                     reject(errorJson);
-                  }); // End ASSIGNMENTS.updateAttribute2()
+                  }); // End ASSIGNMENTS.updateAttribute()
               }
             }
           }) // End then(assignment)
           .catch((getError) => {
-            let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
+            let errorJson = ERROR.assignmentError(SOURCE, _request, _response, getError);
             reject(errorJson);
-          }); // End ASSIGNMENTS.getById2()
+          }); // End ASSIGNMENTS.getById()
       }
     }
   }); // End return promise
@@ -1220,7 +1155,7 @@ var updateAssignmentTitle = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Update the assignment's title
         updateAssignmentAttribute(client, _request, _response, 'title', VALIDATE.isValidString)
@@ -1228,9 +1163,9 @@ var updateAssignmentTitle = function(_request, _response) {
           .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute()
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End updateAssignmentTitle()
 
@@ -1245,7 +1180,7 @@ var updateAssignmentClass = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Update the assignment's title
         updateAssignmentAttribute(client, _request, _response, 'class', VALIDATE.isValidString)
@@ -1253,9 +1188,9 @@ var updateAssignmentClass = function(_request, _response) {
           .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute()
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End updateAssignmentClass()
 
@@ -1270,7 +1205,7 @@ var updateAssignmentType = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Update the assignment's title
         updateAssignmentAttribute(client, _request, _response, 'type', VALIDATE.isValidString)
@@ -1278,9 +1213,9 @@ var updateAssignmentType = function(_request, _response) {
           .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute()
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End updateAssignmentType()
 
@@ -1295,7 +1230,7 @@ var updateAssignmentDescription = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Update the assignment's title
         updateAssignmentAttribute(client, _request, _response, 'description', VALIDATE.isValidString)
@@ -1303,9 +1238,9 @@ var updateAssignmentDescription = function(_request, _response) {
           .catch(errorJson => reject(errorJson)); // End updateAssignmentAttribute()
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End updateAssignmentDescription()
 
@@ -1320,7 +1255,7 @@ function updateAssignmentCompleted(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check that client is updating their own assignment
         if (client.username !== _request.params.username) {
@@ -1359,7 +1294,7 @@ function updateAssignmentCompleted(_request, _response) {
             reject(errorJson);
           } else {
             // Request is valid. Retrieve assignment from the database
-            ASSIGNMENTS.getById2(_request.params.assignmentId)
+            ASSIGNMENTS.getById(_request.params.assignmentId)
               .then((assignment) => {
                 if (assignment === null) {
                   let errorJson = ERROR.error(
@@ -1386,7 +1321,7 @@ function updateAssignmentCompleted(_request, _response) {
                     reject(errorJson);
                   } else {
                     // Request is completely valid. Update the assignment
-                    ASSIGNMENTS.updateAttribute2(assignment, 'completed', newCompletedBoolean)
+                    ASSIGNMENTS.updateAttribute(assignment, 'completed', newCompletedBoolean)
                       .then((updatedAssignment) => {
                         let successJson = {
                           success: {
@@ -1397,7 +1332,7 @@ function updateAssignmentCompleted(_request, _response) {
                         resolve(successJson);
                       }) // End then(updatedAssignment)
                       .catch((updateError) => {
-                        let errorJson = ERROR.determineAssignmentError(
+                        let errorJson = ERROR.assignmentError(
                           SOURCE,
                           _request,
                           _response,
@@ -1405,21 +1340,21 @@ function updateAssignmentCompleted(_request, _response) {
                         );
 
                         reject(errorJson);
-                      }); // End ASSGINEMNTS.updateAttribute2()
+                      }); // End ASSIGNMENTS.updateAttribute()
                   }
                 }
               }) // End then(assignment)
               .catch((getError) => {
-                let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
+                let errorJson = ERROR.assignmentError(SOURCE, _request, _response, getError);
                 reject(errorJson);
-              }); // End ASSIGNMENTS.getById2()
+              }); // End ASSIGNMENTS.getById()
           }
         }
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End updateAssignmentCompleted()
 
@@ -1434,7 +1369,7 @@ function updateAssignmentDueDate(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check that client is requesting themself
         if (client.username !== _request.params.username) {
@@ -1468,7 +1403,7 @@ function updateAssignmentDueDate(_request, _response) {
             reject(errorJson);
           } else {
             // Request parameters are valid. Retrieve assignment from the database
-            ASSIGNMENTS.getById2(_request.params.assignmentId)
+            ASSIGNMENTS.getById(_request.params.assignmentId)
               .then((assignment) => {
                 if (assignment === null) {
                   let errorJson = ERROR.error(
@@ -1497,7 +1432,7 @@ function updateAssignmentDueDate(_request, _response) {
                   } else {
                     // Request is completely valid. Update the assignment
                     let newDueDate = new Date(newDueDateUnix * 1000);
-                    ASSIGNMENTS.updateAttribute2(assignment, 'dueDate', newDueDate)
+                    ASSIGNMENTS.updateAttribute(assignment, 'dueDate', newDueDate)
                       .then((updatedAssignment) => {
                         let successJson = {
                           success: {
@@ -1508,7 +1443,7 @@ function updateAssignmentDueDate(_request, _response) {
                         resolve(successJson);
                       }) // End then(updatedAssignment)
                       .catch((updateError) => {
-                        let errorJson = ERROR.determineAssignmentError(
+                        let errorJson = ERROR.assignmentError(
                           SOURCE,
                           _request,
                           _response,
@@ -1516,21 +1451,21 @@ function updateAssignmentDueDate(_request, _response) {
                         );
 
                         reject(errorJson);
-                      }); // End ASSIGNMENTS.updateAttribute2()
+                      }); // End ASSIGNMENTS.updateAttribute()
                   }
                 }
               }) // End then(assignment)
               .catch((getError) => {
-                let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
+                let errorJson = ERROR.assignmentError(SOURCE, _request, _response, getError);
                 reject(errorJson);
-              }); // End ASSIGNMENTS.getById2()
+              }); // End ASSIGNMENTS.getById()
           }
         }
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End updateAssignmentDueDate()
 
@@ -1545,7 +1480,7 @@ var deleteAssignment = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check that client is requesting themself
         if (client.username !== _request.params.username) {
@@ -1578,7 +1513,7 @@ var deleteAssignment = function(_request, _response) {
             reject(errorJson);
           } else {
             // Request is valid. Retrieve assignment from the database
-            ASSIGNMENTS.getById2(_request.params.assignmentId)
+            ASSIGNMENTS.getById(_request.params.assignmentId)
               .then((assignment) => {
                 if (assignment === null) {
                   let errorJson = ERROR.error(
@@ -1592,7 +1527,7 @@ var deleteAssignment = function(_request, _response) {
                   reject(errorJson);
                 } else {
                   // Assignment exists. Delete it
-                  ASSIGNMENTS.remove2(assignment)
+                  ASSIGNMENTS.remove(assignment)
                     .then(() => {
                       let successJson = {
                         success: {
@@ -1603,28 +1538,22 @@ var deleteAssignment = function(_request, _response) {
                       resolve(successJson);
                     }) // End then()
                     .catch((removeError) => {
-                      let errorJson = ERROR.determineAssignmentError(
-                        SOURCE,
-                        _request,
-                        _response,
-                        removeError
-                      );
-
+                      let errorJson = ERROR.assignmentError(SOURCE, _request, _response, removeError);
                       reject(errorJson);
-                    }); // End ASSIGNMENTS.remove2()
+                    }); // End ASSIGNMENTS.remove()
                 }
               }) // End then(assignment)
               .catch((getError) => {
-                let errorJson = ERROR.determineAssignmentError(SOURCE, _request, _response, getError);
+                let errorJson = ERROR.assignmentError(SOURCE, _request, _response, getError);
                 reject(errorJson);
-              }); // End ASSIGNMENTS.getById2()
+              }); // End ASSIGNMENTS.getById()
           }
         }
       }) // End then(client)
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End deleteAssignment()
 
@@ -1638,7 +1567,7 @@ var parseSchedule = function(_request, _response) {
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    AUTH.verifyToken2(_request, _response)
+    AUTH.verifyToken(_request, _response)
       .then((client) => {
         // Token is valid. Check request parameters in the URL
         let invalidParams = [];
@@ -1679,7 +1608,7 @@ var parseSchedule = function(_request, _response) {
           reject(errorJson);
         } else {
           // Parse the PDF schedule
-          MEDIA.parsePdf2(_request.file.path)
+          MEDIA.parsePdf(_request.file.path)
             .then((pdfText) => {
               resolve(pdfText);
             })
@@ -1694,13 +1623,13 @@ var parseSchedule = function(_request, _response) {
               );
 
               reject(errorJson);
-            }); // End MEDIA.parsePdf2()
+            }); // End MEDIA.parsePdf()
         }
       })
       .catch((authError) => {
-        let errorJson = ERROR.determineAuthenticationError2(SOURCE, _request, _response, authError);
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
-      }); // End AUTH.verifyToken2()
+      }); // End AUTH.verifyToken()
   }); // End return promise
 }; // End parseSchedule()
 

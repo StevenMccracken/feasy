@@ -5,7 +5,7 @@
 /**
  * isValidUsername - Validates a username
  * @param {String} _username a username
- * @returns {Boolean} validity of _username
+ * @return {Boolean} validity of _username
  */
 var isValidUsername = function(_username) {
   /**
@@ -21,7 +21,7 @@ var isValidUsername = function(_username) {
 /**
  * isValidEmail - Validates an email address
  * @param {String} _email an email
- * @returns {Boolean} validity of _email
+ * @return {Boolean} validity of _email
  */
 var isValidEmail = function(_email) {
   /*
@@ -37,7 +37,7 @@ var isValidEmail = function(_email) {
 /**
  * isValidPassword - Validates a password
  * @param {String} _password a password
- * @returns {Boolean} validity of _password
+ * @return {Boolean} validity of _password
  */
 var isValidPassword = function(_password) {
   /**
@@ -50,7 +50,7 @@ var isValidPassword = function(_password) {
 /**
  * isValidName - Validates a name
  * @param {String} _name a name
- * @returns {Boolean} validity of _name
+ * @return {Boolean} validity of _name
  */
 var isValidName = function(_name) {
   /**
@@ -63,7 +63,7 @@ var isValidName = function(_name) {
 /**
  * isValidString - Validates a string
  * @param {String} _string a string
- * @returns {Boolean} validity of _string
+ * @return {Boolean} validity of _string
  */
 var isValidString = function(_string) {
   // Evaluates to true if _string is not null, not undefined, and not empty
@@ -73,7 +73,7 @@ var isValidString = function(_string) {
 /**
  * isValidInteger - Validates an integer
  * @param {Number} _number a number
- * @returns {Boolean} validity of _number
+ * @return {Boolean} validity of _number
  */
 var isValidInteger = function(_number) {
   // Evalutes to true if _number is not null, not undefined, not empty, and only numeric
@@ -84,7 +84,7 @@ var isValidInteger = function(_number) {
 /**
  * isValidObjectId - Validates a Mongoose object ID string
  * @param {String} _id an ID
- * @returns {Boolean} validity of _id
+ * @return {Boolean} validity of _id
  */
 var isValidObjectId = function(_id) {
   /**

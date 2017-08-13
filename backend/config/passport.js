@@ -30,7 +30,7 @@ module.exports = function(passport) {
     if (jwtPayload._doc.googleId !== undefined) {
       // If the token payload has a google ID, the user is a google user
       let googleId = jwtPayload._doc.googleId;
-      USERS.getByGoogleId2(googleId)
+      USERS.getByGoogleId(googleId)
         .then((userInfo) => {
           if (userInfo !== null) done(null, userInfo);
           else {
@@ -39,11 +39,11 @@ module.exports = function(passport) {
             done(null, null);
           }
         }) // End then(userInfo)
-        .catch(getUserError => done(getUserError, null)); // End USERS.getByGoogleId2()
+        .catch(getUserError => done(getUserError, null)); // End USERS.getByGoogleId()
     } else {
       // The user is a local user because there is no google ID in the payload
       let username = jwtPayload._doc.username;
-      USERS.getByUsername2(username, false)
+      USERS.getByUsername(username, false)
         .then((userInfo) => {
           if (userInfo !== null) done(null, userInfo);
           else {
@@ -52,7 +52,7 @@ module.exports = function(passport) {
             done(null, null);
           }
         }) // End then(userInfo)
-        .catch(getUserError => done(getUserError, null)); // End USERS.getByUsername2()
+        .catch(getUserError => done(getUserError, null)); // End USERS.getByUsername()
     }
   }));
 
@@ -69,7 +69,7 @@ module.exports = function(passport) {
     googleOptions,
     (request, accessToken, refreshToken, profile, done) => {
       // Try and find the user by google ID from the profile given by Google's authentication API
-      USERS.getByGoogleId2(profile.id)
+      USERS.getByGoogleId(profile.id)
         .then((userInfo) => {
           if (userInfo !== null) done(null, userInfo);
           else {
@@ -103,7 +103,7 @@ module.exports = function(passport) {
               }); // End USERS.createGoogle()
           }
         }) // End then(userInfo)
-        .catch(getUserError => done(getUserError, null)); // End USERS.getByGoogleId2()
+        .catch(getUserError => done(getUserError, null)); // End USERS.getByGoogleId()
     }
   ));
 };
