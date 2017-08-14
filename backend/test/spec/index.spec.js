@@ -16,7 +16,7 @@ describe('Start server', () => {
     it('gets the welcome message and returns status code 200', (done) => {
       REQUEST.get(baseUrl, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log(baseApiRoute, body);
+        LOG(baseApiRoute, body);
         done();
       });
     });
@@ -45,7 +45,7 @@ describe('Start server', () => {
     it('creates a new user and returns status code 201', (done) => {
       REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(201);
-        log(createUser1, body);
+        LOG(createUser1, body);
 
         // Parse JSON response for the token
         let data = JSON.parse(body);
@@ -75,7 +75,7 @@ describe('Start server', () => {
     it('creates a new user and returns status code 201', (done) => {
       REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(201);
-        log(createUser2, body);
+        LOG(createUser2, body);
 
         // Parse JSON response for the token
         let data = JSON.parse(body);
@@ -104,7 +104,7 @@ describe('Start server', () => {
     it('generates a token and returns status code 200', (done) => {
       REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log(login, body);
+        LOG(login, body);
 
         // Parse JSON response for the token
         let data = JSON.parse(body);
@@ -129,7 +129,7 @@ describe('Start server', () => {
     it('gets user\'s information and returns status code 200', (done) => {
       REQUEST.get(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log(getUser1Info, body);
+        LOG(getUser1Info, body);
         done();
       });
     });
@@ -151,7 +151,7 @@ describe('Start server', () => {
     it('updates user\'s username and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log(updateUser1Username, body);
+        LOG(updateUser1Username, body);
 
         // Parse JSON response for the token
         let data = JSON.parse(body);
@@ -187,7 +187,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(updateUser1Password, body);
+        LOG(updateUser1Password, body);
         user1Password = newUser1Password;
         done();
       });
@@ -213,7 +213,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(updateUser1Email, body);
+        LOG(updateUser1Email, body);
         done();
       });
     });
@@ -238,7 +238,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(updateUser1FirstName, body);
+        LOG(updateUser1FirstName, body);
         done();
       });
     });
@@ -263,7 +263,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(updateUser1LastName, body);
+        LOG(updateUser1LastName, body);
         done();
       });
     });
@@ -288,7 +288,7 @@ describe('Start server', () => {
     it('creates an assignment and returns status code 201', (done) => {
       REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(201);
-        log(createAssignment1, body);
+        LOG(createAssignment1, body);
 
         // Parse JSON response for the assignment id
         let data = JSON.parse(body);
@@ -314,7 +314,7 @@ describe('Start server', () => {
     it('uploads a pdf and returns status code 200', (done) => {
       REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log(createAssignment2);
+        LOG(createAssignment2);
         done();
       });
     });
@@ -342,7 +342,7 @@ describe('Start server', () => {
     it('creates an assignment and returns status code 201', (done) => {
       REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(201);
-        log(createAssignment2, body);
+        LOG(createAssignment2, body);
 
         // Parse JSON response for the assignment id
         let data = JSON.parse(body);
@@ -370,7 +370,7 @@ describe('Start server', () => {
 
         // Parse JSON response for the assignments
         let data = JSON.parse(body);
-        log(getUser1Assignments, `Count = ${Object.keys(data).length}`);
+        LOG(getUser1Assignments, `Count = ${Object.keys(data).length}`);
         done();
       });
     });
@@ -390,7 +390,7 @@ describe('Start server', () => {
     it('gets the assignment and returns status code 200', (done) => {
       REQUEST.get(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        log(getAssignment1, body);
+        LOG(getAssignment1, body);
         done();
       });
     });
@@ -415,7 +415,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(updateAssignment1Title, body);
+        LOG(updateAssignment1Title, body);
         done();
       });
     });
@@ -440,7 +440,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(updateAssignment1Class, body);
+        LOG(updateAssignment1Class, body);
         done();
       });
     });
@@ -465,7 +465,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(updateAssignment1Type, body);
+        LOG(updateAssignment1Type, body);
         done();
       });
     });
@@ -490,7 +490,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(updateAssignment1Description, body);
+        LOG(updateAssignment1Description, body);
         done();
       });
     });
@@ -515,7 +515,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(updateAssignment1Completed, body);
+        LOG(updateAssignment1Completed, body);
         done();
       });
     });
@@ -540,7 +540,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(updateAssignment1DueDate, body);
+        LOG(updateAssignment1DueDate, body);
         done();
       });
     });
@@ -564,7 +564,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(deleteAssignment1, body);
+        LOG(deleteAssignment1, body);
         done();
       });
     });
@@ -588,7 +588,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(deleteUser1, body);
+        LOG(deleteUser1, body);
         done();
       });
     });
@@ -612,7 +612,7 @@ describe('Start server', () => {
         let data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
-        log(deleteUser2, body);
+        LOG(deleteUser2, body);
         done();
       });
     });
@@ -623,19 +623,9 @@ describe('Start server', () => {
   describe(closeServer, () => {
     it('shuts down the test server', (done) => {
       SERVER.closeServer();
-      log(closeServer, 'closed');
-      log('Test duration', `${(Date.now() - start) / 1000} seconds`);
+      LOG(closeServer, 'closed');
+      LOG('Test duration', `${(Date.now() - start) / 1000} seconds`);
       done();
     });
   }); // End close the server
 }); // End start server
-
-/**
- * log - Logs testing messages to the console
- * @param {string} _topic the test specification
- * @param {string} _message a result of the test
- */
-function log(_topic, _message) {
-  if (_message === undefined) console.log('[GRUNT]: %s', _topic);
-  else console.log('[GRUNT] %s: %s', _topic, _message);
-}
