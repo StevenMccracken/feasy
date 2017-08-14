@@ -7,9 +7,9 @@ module.exports = function(grunt) {
         match:'.',
         matchall: false,
         extensions: 'js',
-        specNameMatcher: 'spec'
+        specNameMatcher: 'spec',
       },
-      all:['spec/']
+      all: ['spec/'],
     },
     shell: {
       mongo: {
@@ -18,9 +18,9 @@ module.exports = function(grunt) {
           async: true,
           stderr: true,
           stdout: false,
-        }
-      }
-    }
+        },
+      },
+    },
   });
 
   // Load npm libraries to initialize database and API tests

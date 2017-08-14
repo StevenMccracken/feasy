@@ -438,6 +438,19 @@ export class CalendarComponent implements OnInit {
     }
   }
 
+  ////////////////////////////////////////////////////////////////////
+  //
+  // Error Handler
+  //
+  // Helper functions used to handle all or any error that comes
+  // during the use of the service.
+  //
+  ////////////////////////////////////////////////////////////////////
+
+  /**
+   * Handles error that comes when a token has expired
+   * @param {Reponse} error error from service
+   */
   private handleError(error: Response): void {
     if (error.status == 401) {
       // Token is stale. Clear the user and token local storage, route them to login screen
@@ -455,6 +468,10 @@ export class CalendarComponent implements OnInit {
     }
   }
 
+  /**
+   * Handles error that comes when an assigment does not exist or is not found
+   * @param {Assigment} assignment - object 
+   */
   private handle404Error(assignment: Assignment): void {
     // Find the assignment in the current day array
     for (let i = 0; i < this.currentDayArray.length; i++) {
@@ -469,6 +486,11 @@ export class CalendarComponent implements OnInit {
     this.events = this.events.filter(iEvent => iEvent !== event);
   }
 
+  /**
+   * Handles error that comes during an update
+   * @param {string} attribute  - a part of the object that couldn't be updated
+   * @param {string} reason     - why the attribute couldn't be updated.
+   */
   private handleUpdateError(attribute: string, reason: string): void {
     switch (reason) {
       case 'invalid':
