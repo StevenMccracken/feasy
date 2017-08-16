@@ -11,7 +11,7 @@ args = parser.parse_args()
 
 pdfFileObj = open(args.pdf, 'rb')
 pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
-print("encrypted: ",pdfReader.isEncrypted)
+print("encrypted: ",pdfReader.isEncrypted, end='\n\n')
 
 text = [] # each page's text is store in the text array
 for pageNum in range(pdfReader.getNumPages()-1):
