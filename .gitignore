@@ -33,3 +33,5 @@ Thumbs.db
 
 # Secrets
 googleSecret.json
+bugsnagSecret.json
+secrets.tar
