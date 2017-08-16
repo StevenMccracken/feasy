@@ -4,7 +4,7 @@ import PyPDF2 #docs https://pythonhosted.org/PyPDF2/
 import sys
 #import dateutil.parser #docs https://dateutil.readthedocs.io/ (doesnt seem like this lib will work out)
 
-#allows arguments: python loadnlearn.py file.pdf
+#allows arguments: python script.py file.pdf
 parser = argparse.ArgumentParser()
 parser.add_argument("pdf", help="pdf file location")
 args = parser.parse_args()
