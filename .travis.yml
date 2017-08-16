@@ -10,7 +10,7 @@ before_install:
 - echo Decrypting secrets.tar
 - openssl aes-256-cbc -K $encrypted_b7d9be5f6c08_key -iv $encrypted_b7d9be5f6c08_iv -in ./backend/config/secrets.tar.enc -out ./backend/config/secrets.tar -d
 - echo Unzipping secrets.tar for secret API keys
-- tar xvf secrets.tar -C ./backend/config/
+- tar xvf secrets.tar -C /backend/config
 - echo All sensitive files are in place
 before_script:
 - echo Moving back to /backend to run grunt
