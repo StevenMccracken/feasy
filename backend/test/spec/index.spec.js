@@ -1,4 +1,5 @@
 const FS = require('fs');
+const LOG = require('../log_mod');
 const UuidV4 = require('uuid/v4');
 const REQUEST = require('request');
 const FormData = require('form-data');
