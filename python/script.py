@@ -4,11 +4,31 @@ import PyPDF2 #docs https://pythonhosted.org/PyPDF2/
 import sys
 #import dateutil.parser #docs https://dateutil.readthedocs.io/ (doesnt seem like this lib will work out)
 
-#allows arguments: python script.py file.pdf
-parser = argparse.ArgumentParser()
-parser.add_argument("pdf", help="pdf file location")
+#allows arguments: python script.py file [-pdf | -txt | -docx] [-h] [-v]
+parser = argparse.ArgumentParser(prog='Project Alpha', description='converts file to pure text before extracting information')
+parser.add_argument('file', help="file location")
+parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.1')
+group = parser.add_mutually_exclusive_group()
+group.add_argument('-p', '-pdf', help='specify file type pdf (default)', action="store_true")
+group.add_argument('-t', '-txt', help='specify file type txt', action="store_true")
+group.add_argument('-d', '-docx', help='specify file type docx', action="store_true")
 args = parser.parse_args()
 
+print(args)
+if args.pdf:
+	print("PDF MODE ENABLED")
+	file_type = 'pdf'
+elif args.txt:
+	print("TEXT MODE ENABLED")
+	file_type = 'txt'
+elif args.docx:
+	print("DOCX MODE ENABLED")
+	file_type = 'docx'
+else:
+	print("PDF MODE ENABLED (DEFAULT)")
+	file_type = 'pdf'
+
+'''
 pdfFileObj = open(args.pdf, 'rb')
 pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
 print("encrypted: ",pdfReader.isEncrypted, end='\n\n')
@@ -40,3 +60,4 @@ for s in range(len(text[0])-4):
 					temp += text[0][s+3]
 				print("Time", temp, "Found at index", s)
 	temp = ''
+'''
