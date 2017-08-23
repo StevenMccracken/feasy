@@ -21,7 +21,9 @@
     "passport-google-oauth2": "^0.1.6",
     "passport-jwt": "^2.2.1",
     "pdf2json": "^1.1.7",
-    "uuid": "^3.0.1"
+    "uuid": "^3.0.1",
+    "google-calendar": "latest",
+    "googleapis": "latest"
   },
   "devDependencies": {
     "form-data": "^2.2.0",
