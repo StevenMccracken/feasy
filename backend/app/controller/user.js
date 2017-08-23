@@ -2,16 +2,16 @@
  * user - Database controller for the User model
  */
 
+const Uuid = require('uuid/v4');
 let USER = require('../models/user.js');
 const LOG = require('../modules/log_mod.js');
-const Uuid = require('uuid/v4');
 
 /**
  * create - Saves a new user in the database
  * @param {Object} _userInfo JSON containing the user attributes
  * @return {Promise<User>} the Mongoose object
  */
-var create = function(_userInfo) {
+let create = function(_userInfo) {
   const SOURCE = 'create()';
   log(SOURCE);
 
@@ -21,25 +21,22 @@ var create = function(_userInfo) {
     newUser.username = _userInfo.username.trim();
     newUser.password = _userInfo.password.trim();
 
-    // Check optional attributes
-    if (_userInfo.firstName !== undefined) newUser.firstName = _userInfo.firstName.trim();
-    else newUser.firstName = '';
-
-    if (_userInfo.lastName !== undefined) newUser.lastName = _userInfo.lastName.trim();
-    else newUser.lastName = '';
+    // Add optional properties
+    newUser.firstName = _userInfo.firstName === undefined ? '' : _userInfo.firstName.trim();
+    newUser.lastName = _userInfo.lastName === undefined ? '' : _userInfo.lastName.trim();
 
     newUser.save()
-      .then(() => resolve(newUser))
-      .catch(saveError => reject(saveError));
-  });
-};
+      .then(() => resolve(newUser)) // End then()
+      .catch(saveError => reject(saveError)); // End newUser.save()
+  }); // End return promise
+}; // End crete()
 
 /**
  * createGoogle - Saves a new google user in the database
  * @param {Object} _userInfo JSON containing the google user attributes
  * @return {Promise<User>} the Mongoose object
  */
-var createGoogle = function(_userInfo) {
+let createGoogle = function(_userInfo) {
   const SOURCE = 'createGoogle()';
   log(SOURCE);
 
@@ -47,25 +44,22 @@ var createGoogle = function(_userInfo) {
   newUser.email = _userInfo.email.trim();
   newUser.username = _userInfo.username.trim();
   newUser.googleId = _userInfo.googleId.trim();
+  newUser.refreshToken = _userInfo.refreshToken;
 
   // There is no password for a Google user, so randomly generate it
   newUser.password = Uuid();
 
-  // Check optional attributes
-  if (_userInfo.firstName !== undefined) newUser.firstName = _userInfo.firstName.trim();
-  else newUser.firstName = '';
-
-  if (_userInfo.lastName !== undefined) newUser.lastName = _userInfo.lastName.trim();
-  else newUser.lastName = '';
-
+  // Add optional properties
+  newUser.firstName = _userInfo.firstName === undefined ? '' : _userInfo.firstName.trim();
+  newUser.lastName = _userInfo.lastName === undefined ? '' : _userInfo.lastName.trim();
   if (_userInfo.accessToken !== undefined) newUser.accessToken = _userInfo.accessToken.trim();
 
   return new Promise((resolve, reject) => {
     newUser.save()
-      .then(() => resolve(newUser))
-      .catch(saveError => reject(saveError));
-  });
-};
+      .then(() => resolve(newUser)) // End then()
+      .catch(saveError => reject(saveError)); // End newUser.save()
+  }); // End return promise
+}; // End createGoogle()
 
 /**
  * getAllByAttribute - Retrieves users from the database based on a specific attribute of those users
@@ -74,16 +68,16 @@ var createGoogle = function(_userInfo) {
  * @param {String} _projection the space-separated attributes to retrieve
  * @return {Promise<User[]>} the Mongoose object array
  */
-var getAllByAttribute = function(_attribute, _value, _projection) {
+let getAllByAttribute = function(_attribute, _value, _projection) {
   const SOURCE = 'getAllByAttribute()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     USER.findOne({ [_attribute]: _value }, _projection)
-      .then(users => resolve(users))
-      .catch(findError => reject(findError));
-  });
-};
+      .then(users => resolve(users)) // End then(users)
+      .catch(findError => reject(findError)); // End USER.findOne()
+  }); // End return promise
+}; // End getAllByAttribute()
 
 /**
  * getByUsername - Retrieves a user by their username
@@ -92,7 +86,7 @@ var getAllByAttribute = function(_attribute, _value, _projection) {
  * the password with the user information from the database
  * @return {Promise<User>} the Mongoose object
  */
-var getByUsername = function(_username, _includePassword) {
+let getByUsername = function(_username, _includePassword) {
   const SOURCE = 'getByUsername()';
   log(SOURCE);
 
@@ -102,27 +96,27 @@ var getByUsername = function(_username, _includePassword) {
     else projection = '_id username email firstName lastName';
 
     USER.findOne({ username: _username }, projection)
-      .then(userInfo => resolve(userInfo))
-      .catch(findError => reject(findError));
-  });
-};
+      .then(userInfo => resolve(userInfo)) // End then(userInfo)
+      .catch(findError => reject(findError)); // End USER.findOne()
+  }); // End return promise
+}; // End getByUsername()
 
 /**
  * getByGoogleId - Retrieves a user by their google ID
  * @param {String} _googleId the google ID of the user
  * @return {Promise<User>} the Mongoose object
  */
-var getByGoogleId = function(_googleId) {
+let getByGoogleId = function(_googleId) {
   const SOURCE = 'getByGoogleId()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     let projection = '_id googleId username email firstName lastName';
     USER.findOne({ googleId: _googleId }, projection)
-      .then(userInfo => resolve(userInfo))
-      .catch(findError => reject(findError));
-  });
-};
+      .then(userInfo => resolve(userInfo)) // End then(userInfo)
+      .catch(findError => reject(findError)); // End USER.findOne()
+  }); // End return promise
+}; // End getByGoogleId()
 
 /**
  * getAttribute - Retrieves a specific attribute of a user
@@ -130,32 +124,32 @@ var getByGoogleId = function(_googleId) {
  * @param {String} _attribute the name of the desired attribute
  * @return {Promise<Any>} the user attribute
  */
-var getAttribute = function(_username, _attribute) {
+let getAttribute = function(_username, _attribute) {
   const SOURCE = 'getAttribute()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     USER.findOne({ username: _username }, _attribute)
-      .then(userAttribute => resolve(userAttribute))
-      .catch(findError => reject(findError));
-  });
-};
+      .then(userAttribute => resolve(userAttribute)) // End then(userAttribute)
+      .catch(findError => reject(findError)); // End USER.findOne()
+  }); // End return promise
+}; // End getAttribute()
 
 /**
  * update - Executes a database save on a user object to update any new attributes
  * @param {Object} _user the Mongoose object
  * @return {Promise<User>} the updated Mongoose object
  */
-var update = function(_user) {
+let update = function(_user) {
   const SOURCE = 'update()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     _user.save()
-      .then(() => resolve(_user))
-      .catch(saveError => reject(saveError));
-  });
-};
+      .then(() => resolve(_user)) // End then()
+      .catch(saveError => reject(saveError)); // End _user.save()
+  }); // End return promise
+}; // End update()
 /**
  * updateAttribute - Updates a specific attribute of a user
  * @param {Object} _user the Mongoose object
@@ -163,7 +157,7 @@ var update = function(_user) {
  * @param {String|Date} _newValue the updated value of the user attribute
  * @return {Promise<User>} the updated Mongoose object
  */
-var updateAttribute = function(_user, _attribute, _newValue) {
+let updateAttribute = function(_user, _attribute, _newValue) {
   const SOURCE = 'updateAttribute()';
   log(SOURCE);
 
@@ -172,49 +166,49 @@ var updateAttribute = function(_user, _attribute, _newValue) {
     else _user[_attribute] = _newValue;
 
     _user.save()
-      .then(() => resolve(_user))
-      .catch(saveError => reject(saveError));
-  });
-};
+      .then(() => resolve(_user)) // End then()
+      .catch(saveError => reject(saveError)); // End _user.save()
+  }); // End return promise
+}; // End updateAttribute()
 
 /**
  * remove - Deletes a user from the user database
  * @param {Object} _user JSON of the user attributes
  * @return {Promise} an empty promise
  */
-var remove = function(_user) {
+let remove = function(_user) {
   const SOURCE = 'remove()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     _user.remove()
-      .then(() => resolve())
-      .catch(removeError => reject(removeError));
-  });
-};
+      .then(() => resolve()) // End then()
+      .catch(removeError => reject(removeError)); // End _user.remove()
+  }); // End return promise
+}; // End remove()
 
 /**
  * removeByUsername - Deletes a user from the user database
  * @param {String} _username the username of the user to delete
  * @return {Promise} an empty promise
  */
-var removeByUsername = function(_username) {
+let removeByUsername = function(_username) {
   const SOURCE = 'removeByUsername()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     USER.remove({ username: _username })
-      .then(() => resolve())
-      .catch(removeError => reject(removeError));
-  });
-};
+      .then(() => resolve()) // End then()
+      .catch(removeError => reject(removeError)); // End USER.remove()
+  }); // End return promise
+}; // End removeByUsername()
 
 /**
  * isTypeGoogle - Determines whether a user is a Google user
  * @param {Object} _user Mongoose object
  * @return {Boolean} whether or not _user is a Google user
  */
-var isTypeGoogle = function(_user) {
+let isTypeGoogle = function(_user) {
   const SOURCE = 'isTypeGoogle()';
   log(SOURCE);
 
@@ -222,7 +216,7 @@ var isTypeGoogle = function(_user) {
     _user !== null &&
     _user.googleId !== undefined &&
     _user.googleId !== null;
-};
+}; // End isTypeGoogle()
 
 module.exports = {
   create: create,

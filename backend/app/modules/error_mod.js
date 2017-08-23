@@ -52,7 +52,7 @@ const ERROR_CODE = {
  * @param {String} _serverMessage a custom error message for the server log
  * @return {Object} a formal error JSON for the client
  */
-var error = function(_source, _request, _response, _error, _customErrorMessage, _serverMessage) {
+let error = function(_source, _request, _response, _error, _customErrorMessage, _serverMessage) {
   // Set an HTTP status code for the error type
   _response.status(_error.status);
 
@@ -75,7 +75,7 @@ var error = function(_source, _request, _response, _error, _customErrorMessage, 
 
   log(JSON.stringify(serverLog), _request);
   return clientJson;
-};
+}; // End error()
 
 /**
  * bcryptError - Determines the correct error JSON for a given bcrypt error
@@ -85,7 +85,7 @@ var error = function(_source, _request, _response, _error, _customErrorMessage, 
  * @param {String} _error the bcrypt error string
  * @return {Object} a formalized error JSON
  */
-var bcryptError = function(_source, _request, _response, _error) {
+let bcryptError = function(_source, _request, _response, _error) {
   let errorJson;
   switch (_error) {
     case 'Not a valid BCrypt hash.':
@@ -108,10 +108,10 @@ var bcryptError = function(_source, _request, _response, _error) {
         null,
         _error
       );
-  }
+  } // End switch (_error)
 
   return errorJson;
-};
+}; // End bcryptError()
 
 /**
  * multerError - Builds a client error repsonse based on a given multer error
@@ -121,7 +121,7 @@ var bcryptError = function(_source, _request, _response, _error) {
  * @param {Object} _error JSON containing the specific multer error
  * @return {Object} a formalized error JSON
  */
-var multerError = function(_source, _request, _response, _error) {
+let multerError = function(_source, _request, _response, _error) {
   let errorJson;
   switch (_error.code) {
     case 'LIMIT_UNEXPECTED_FILE':
@@ -144,21 +144,20 @@ var multerError = function(_source, _request, _response, _error) {
         null,
         `Unknown multer error: ${_error}`
       );
-  }
+  } // End switch (_error.code)
 
   return errorJson;
-};
+}; // End multerError()
 
 /**
- * userError - Determines the correct error JSON
- * for a mongoose error associated with the User schema
+ * userError - Determines the correct error JSON for a mongoose error associated with the User schema
  * @param {String} _source the function where the error occurred
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {Object} _error the mongoose error object
  * @return {Object} a formalized error JSON
  */
-var userError = function(_source, _request, _response, _error) {
+let userError = function(_source, _request, _response, _error) {
   let errorJson;
   switch (_error.name) {
     case 'CastError':
@@ -199,21 +198,21 @@ var userError = function(_source, _request, _response, _error) {
         null,
         `${_error.name} (${_error.code}): ${_error.message}`
       );
-  }
+  } // End switch (_error.name)
 
   return errorJson;
-};
+}; // End userError()
 
 /**
- * assignmentError - Determines the correct error JSON
- * for a mongoose error associated with the Assignment schema
+ * assignmentError - Determines the correct error JSON for
+ * a mongoose error associated with the Assignment schema
  * @param {String} _source the function where the error occurred
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {Object} _error the mongoose error object
  * @return {Object} a formalized error JSON
  */
-var assignmentError = function(_source, _request, _response, _error) {
+let assignmentError = function(_source, _request, _response, _error) {
   let errorJson;
   switch (_error.name) {
     case 'CastError':
@@ -258,22 +257,21 @@ var assignmentError = function(_source, _request, _response, _error) {
         null,
         `${_error.name} (${_error.code}): ${_error.message}`
       );
-  }
+  } // End switch (_error.name)
 
   return errorJson;
-};
+}; // End assignmentError()
 
 /**
- * authenticationError - Builds a client
- * error repsonse based on a given authentication error
+ * authenticationError - Builds a client error repsonse based on a given authentication error
  * @param {String} _source the function where the error occurred
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {Object} _error JSON containing specific authentication errors
  * @return {Object} a formalized error JSON
  */
-var authenticationError = function(_source, _request, _response, _error) {
-  var serverLog;
+let authenticationError = function(_source, _request, _response, _error) {
+  let serverLog;
   let clientErrorMessage = null;
 
   if (_error.passportError !== null) serverLog = _error.passportError;
@@ -296,7 +294,32 @@ var authenticationError = function(_source, _request, _response, _error) {
   );
 
   return errorJson;
-};
+}; // End authenticationError()
+
+/**
+ * googleApiError - Determines the correct error JSON for a Google API error
+ * @param {String} _source the function where the error occurred
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {Object} _error the Google API error
+ * @return {Object} a formalized error JSON
+ */
+let googleApiError = function(_source, _request, _response, _error) {
+  let errorJson;
+  switch (_error) {
+    default:
+      errorJson = error(
+        _source,
+        _request,
+        _response,
+        ERROR_CODE.API_ERROR,
+        null,
+        _error
+      );
+  }  // End switch (_error)
+
+  return errorJson;
+}; // End googleApiError()
 
 module.exports = {
   error: error,
@@ -304,6 +327,7 @@ module.exports = {
   userError: userError,
   bcryptError: bcryptError,
   multerError: multerError,
+  googleApiError: googleApiError,
   assignmentError: assignmentError,
   authenticationError: authenticationError,
 };
@@ -349,10 +373,10 @@ function determineJwtError(errorMessage) {
       break;
     default:
       reason = 'Unknown web token error';
-  }
+  } // End switch (errorMessage)
 
   return reason;
-}
+} // End determineJwtError()
 
 /**
  * log - Logs a message to the server console
