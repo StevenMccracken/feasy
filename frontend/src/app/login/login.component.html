@@ -21,4 +21,6 @@
       <button type="button" id="signup" class="waves-effect waves-light btn col s5 offset-s2 m3 offset-m1" routerLink="/signup">Signup</button>
     </div>
   </form>
+
+  <img id="googleSignIn" (click)="googleSignIn()" (mouseover)='googleSignInHover()' (mouseout)="googleSignInUnhover()" [src]="googleSignInImageSource" alt="Sign in with Google" />
 </div>

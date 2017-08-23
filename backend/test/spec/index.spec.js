@@ -116,6 +116,28 @@ describe('Start server', () => {
     });
   }); // End login
 
+  // Get the Google OAuth URL
+  let googleOAuthUrl = 'Google OAuth URL';
+  describe(googleOAuthUrl, () => {
+    let requestParams;
+    beforeEach(() => {
+      requestParams = { url: `${baseUrl}/auth/googleUrl` };
+    });
+
+    it('gets a Google OAuth URL and returns status code 200', (done) => {
+      REQUEST.get(requestParams, (error, response, body) => {
+        expect(response.statusCode).toBe(200);
+        LOG(googleOAuthUrl, body);
+
+        // Parse JSON response for the URL
+        let data = JSON.parse(body);
+        expect(data.success).toBeDefined();
+        expect(data.success.authUrl).toBeDefined();
+        done();
+      });
+    });
+  }); // End googleOAuthUrl
+
   // Get user 1's information
   let getUser1Info = 'Get user 1\'s information';
   describe(getUser1Info, () => {

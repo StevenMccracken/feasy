@@ -2,7 +2,8 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/toPromise';
 import { Router } from '@angular/router';
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
+import { GoogleAuthService } from 'ng-gapi/lib/GoogleAuthService';
 import { Headers, Http, RequestOptions, Response } from '@angular/http';
 
 import { User } from '../objects/user';
@@ -15,7 +16,11 @@ export class UserService {
   private contentType_UrlEncoded = 'application/x-www-form-urlencoded';
   private standardHeaders = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
 
-  constructor(private _http: Http, private _router: Router) {}
+  constructor(
+    private _http: Http,
+    private _router: Router,
+    private _googleAuthService: GoogleAuthService
+  ) {}
 
   /**
    *  Sends a request to create a new user
@@ -30,11 +35,11 @@ export class UserService {
     let requestParams = `username=${user.username}&password=${user.password}&email=${user.email}`;
 
     // Add optional parameters
-    if (user.firstName != undefined && user.firstName != '') {
+    if (user.firstName !== undefined && user.firstName !== '') {
       requestParams += `&firstName=${user.firstName}`
     };
 
-    if (user.lastName != undefined && user.lastName != '') {
+    if (user.lastName !== undefined && user.lastName !== '') {
       requestParams += `&lastName=${user.lastName}`;
     }
 
@@ -45,7 +50,7 @@ export class UserService {
         // Extract the token from the response body
         let responseBody = successResponse.json();
         let token: string = responseBody && responseBody.success && responseBody.success.token;
-        return token !== undefined ? token : null;
+        return Promise.resolve(token === undefined ? null : token);
       })
       .catch((errorResponse: Response) => {
         let responseBody = errorResponse.json();
@@ -67,9 +72,9 @@ export class UserService {
         } else if (errorResponse.status == 403) {
           // A user with either the username or email already exists
           let duplicateParameter = '';
-          if (errorMessage != undefined) {
-            if (errorMessage.indexOf('username') != -1) duplicateParameter = 'username';
-            else if (errorMessage.indexOf('email') != -1) duplicateParameter = 'email';
+          if (errorMessage !== undefined) {
+            if (errorMessage.indexOf('username') !== -1) duplicateParameter = 'username';
+            else if (errorMessage.indexOf('email') !== -1) duplicateParameter = 'email';
           }
 
           return Promise.reject(duplicateParameter);
@@ -97,7 +102,7 @@ export class UserService {
       .toPromise()
       .then((successResponse: Response) => {
         let responseBody = successResponse.json();
-        return new Account().deserialize(responseBody);
+        return Promise.resolve(new Account().deserialize(responseBody));
       })
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
   }
@@ -120,8 +125,54 @@ export class UserService {
       .toPromise()
       .then((successResponse: Response) => {
         let responseBody = successResponse.json();
-        let token = responseBody && responseBody.success && responseBody.success.token;
-        return token != undefined ? token : null;
+        let token: string = responseBody && responseBody.success && responseBody.success.token;
+        return Promise.resolve(token === undefined ? null : token);
+      })
+      .catch((errorResponse: Response) => Promise.reject(errorResponse));
+  }
+
+  /**
+   * Retrieves the Feasy-specific Google OAuth2.0 URL for authenticating offline access
+   * @return {Promise<string>} the authentication URL that contains the HTML content to authenticate
+   */
+  getAuthorizationUrl(): Promise<string> {
+    // Create request information
+    let getAuthUrl = `${this.baseUrl}/auth/googleUrl`;
+
+    // Send request
+    return this._http.get(getAuthUrl, { headers: this.standardHeaders })
+      .toPromise()
+      .then((successResponse: Response) => {
+        let responseBody = successResponse.json();
+        let authUrl: string = responseBody && responseBody.success && responseBody.success.authUrl;
+        return Promise.resolve(authUrl === undefined ? null : authUrl);
+      })
+      .catch((errorResponse: Response) => Promise.reject(errorResponse));
+  }
+
+  /**
+   * Retrieves authentication info to login the user once
+   * they have granted Feasy offline access. Will only work
+   * if the Feasy-specific OAuth2.0 URL is accessed first
+   * @return {Promise<Object>} the JSON containing the user's username and a JWT
+   */
+  authenticateGoogle(): Promise<Object> {
+    // Create request information
+    let authenticateUrl = `${this.baseUrl}/auth/google/await`;
+
+    // Send request
+    return this._http.get(authenticateUrl, { headers: this.standardHeaders })
+      .toPromise()
+      .then((successResponse: Response) => {
+        let responseBody = successResponse.json();
+        let token: string = responseBody && responseBody.success && responseBody.success.token;
+        let username: string = responseBody && responseBody.success && responseBody.success.username;
+        let authInfo = {
+          token: token === undefined ? null : token,
+          username: username === undefined ? null : username,
+        };
+
+        return Promise.resolve(authInfo);
       })
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
   }

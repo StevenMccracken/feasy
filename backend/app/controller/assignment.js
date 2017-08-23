@@ -12,7 +12,7 @@ const UNIVERSAL_PROJECTION = '_id title class type description completed dueDate
  * @param {Object} _assignmentInfo JSON containing the assignment attributes
  * @return {Promise<Assignment>} the Mongoose object
  */
-var create = function(_assignmentInfo) {
+let create = function(_assignmentInfo) {
   const SOURCE = 'create()';
   log(SOURCE);
 
@@ -23,53 +23,49 @@ var create = function(_assignmentInfo) {
     newAssignment.dueDate = _assignmentInfo.dueDate;
     newAssignment.completed = _assignmentInfo.completed;
 
-    if (_assignmentInfo.class !== undefined) newAssignment.class = _assignmentInfo.class.trim();
-    else newAssignment.class = '';
-
-    if (_assignmentInfo.type !== undefined) newAssignment.type = _assignmentInfo.type.trim();
-    else newAssignment.type = '';
-
-    if (_assignmentInfo.description !== undefined) {
-      newAssignment.description = _assignmentInfo.description.trim();
-    } else newAssignment.description = '';
+    // Add optional properties
+    newAssignment.class = _assignmentInfo.class === undefined ? '' : _assignmentInfo.class.trim();
+    newAssignment.type = _assignmentInfo.type === undefined ? '' : _assignmentInfo.type.trim();
+    if (_assignmentInfo.description === undefined) newAssignment.description = '';
+    else newAssignment.description = _assignmentInfo.description.trim();
 
     newAssignment.save()
-      .then(newAssignment => resolve(newAssignment))
-      .catch(saveAssignmentError => reject(saveAssignmentError));
-  });
-};
+      .then(newAssignment => resolve(newAssignment)) // End then(newAssignment)
+      .catch(saveAssignmentError => reject(saveAssignmentError)); // End newAssignment.save()
+  }); // End return promise
+}; // End create()
 
 /**
  * getById - Retrieves an assignment by it's id
  * @param {ObjectId} _assignmentId the desired assignment's id
  * @return {Promise<Assignment>} the Mongoose object
  */
-var getById = function(_assignmentId) {
+let getById = function(_assignmentId) {
   const SOURCE = 'getById()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     ASSIGNMENT.findById(_assignmentId, UNIVERSAL_PROJECTION)
-      .then(assignment => resolve(assignment))
-      .catch(findError => reject(findError));
-  });
-};
+      .then(assignment => resolve(assignment)) // End then(assignment)
+      .catch(findError => reject(findError)); // End ASSIGNMENT.findById()
+  }); // End return promise
+}; // End getById()
 
 /**
  * getAll - Retrieves all assignments created by a user
  * @param {Object} _userId the ObjectId of the user who created the assignments
  * @return {Promise<Assignment[]>} the Mongoose object array
  */
-var getAll = function(_userId) {
+let getAll = function(_userId) {
   const SOURCE = 'getAll()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     ASSIGNMENT.find({ userId: _userId.toString() }, UNIVERSAL_PROJECTION)
-      .then(assignments => resolve(assignments))
-      .catch(findError => reject(findError));
-  });
-};
+      .then(assignments => resolve(assignments)) // End then(assignments)
+      .catch(findError => reject(findError)); // End ASSIGNMENT.find()
+  }); // End return promise
+}; // End getAll()
 
 /**
  * getAllByAttribute - Retrieves all assignments based
@@ -79,16 +75,16 @@ var getAll = function(_userId) {
  * @param {String} _value the value that the attribute should be equal to
  * @return {Promise<Assignment[]>} the Mongoose object array
  */
-var getAllByAttribute = function(_userId, _attribute, _value) {
+let getAllByAttribute = function(_userId, _attribute, _value) {
   const SOURCE = 'getAllByAttribute()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     ASSIGNMENT.find({ userId: _userId.toString(), [_attribute]: _value }, UNIVERSAL_PROJECTION)
-      .then(assignments => resolve(assignments))
-      .catch(findError => reject(findError));
-  });
-};
+      .then(assignments => resolve(assignments)) // End then(assignments)
+      .catch(findError => reject(findError)); // End ASSIGNMENT.find()
+  }); // End return promise
+}; // End getAllByAttribute()
 
 /**
  * getAttribute - Retrieves a specific attribute of an assignment
@@ -97,32 +93,32 @@ var getAllByAttribute = function(_userId, _attribute, _value) {
  * @return {Promise<Assignment>} the Mongoose object
 
  */
-var getAttribute = function(_assignmentId, _attribute) {
+let getAttribute = function(_assignmentId, _attribute) {
   const SOURCE = 'getAttribute()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     ASSIGNMENT.findById(_assignmentId, _attribute)
-      .then(attribute => resolve(attribute))
-      .catch(findError => reject(findError));
-  });
-};
+      .then(attribute => resolve(attribute)) // End then(attribute)
+      .catch(findError => reject(findError)); // End ASSIGNMENT.findById()
+  }); // End return promise
+}; // End getAttribute()
 
 /**
  * update - Executes a database save on an assignment object to update any new attributes
  * @param {Object} _assignment the Mongoose object
  * @return {Promise<Assignment>} the updated Mongoose object
  */
-var update = function(_assignment) {
+let update = function(_assignment) {
   const SOURCE = 'update()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     _assignment.save()
-      .then(() => resolve(_assignment))
-      .catch(saveError => reject(saveError));
-  });
-};
+      .then(() => resolve(_assignment)) // End then()
+      .catch(saveError => reject(saveError)); // End _assignment.save()
+  }); // End return promise
+}; // End update()
 
 /**
  * updateAttribute - Updates a specific attribute of an assignment
@@ -131,7 +127,7 @@ var update = function(_assignment) {
  * @param {String|Date|Boolean} _newValue the updated value of the assignment attribute
  * @return {Promise<Assignment>} the updated Mongoose object
  */
-var updateAttribute = function(_assignment, _attribute, _newValue) {
+let updateAttribute = function(_assignment, _attribute, _newValue) {
   const SOURCE = 'updateAttribute()';
   log(SOURCE);
 
@@ -140,42 +136,42 @@ var updateAttribute = function(_assignment, _attribute, _newValue) {
     else _assignment[_attribute] = _newValue;
 
     _assignment.save()
-      .then(() => resolve(_assignment))
-      .catch(saveError => reject(saveError));
-  });
-};
+      .then(() => resolve(_assignment)) // End then()
+      .catch(saveError => reject(saveError)); // End _assignment.save()
+  }); // End return promise
+}; // End updateAttribute()
 
 /**
  * remove - Deletes an assignment from the assignment database
  * @param {Object} _assignment the Mongoose object
  * @return {Promise} an empty promise
  */
-var remove = function(_assignment) {
+let remove = function(_assignment) {
   const SOURCE = 'remove()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     _assignment.remove()
-      .then(() => resolve())
-      .catch(removeError => reject(removeError));
-  });
-};
+      .then(() => resolve()) // End then()
+      .catch(removeError => reject(removeError)); // End _assignment.remove()
+  }); // End return promise
+}; // End remove()
 
 /**
  * removeAllByUser - Deletes all assignments created by a user
  * @param {Object} _userId the ObjectId of the desired user
  * @return {Promise} an empty promise
  */
-var removeAllByUser = function(_userId, _callback, _errorCallback) {
+let removeAllByUser = function(_userId, _callback, _errorCallback) {
   const SOURCE = 'removeAllByUser()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     ASSIGNMENT.remove({ userId: _userId.toString() })
-      .then(() => resolve())
-      .catch(removeError => reject(removeError));
-  });
-};
+      .then(() => resolve()) // End then()
+      .catch(removeError => reject(removeError)); // End ASSIGNMENT.remove()
+  }); // End return promise
+}; // End removeAllByUser()
 
 module.exports = {
   create: create,

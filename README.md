@@ -7,16 +7,16 @@
 * For almost all requests, you must have a specific token within the request’s Headers
 * There must be a key within the request header called `Authorization` (capitalization of the first letter is necessary)
   * The value associated with that key must be a token
-    * You can acquire this token in three ways
-      * Creating a user
-      * Making a request to the /login route with a matching username and password
-      * Making a request to the /auth/google route (requires front-end user interaction)
-      * Updating a user’s username
+    * You can acquire this token in four ways:
+      1. Creating a user
+      2. Making a request to the /login route with a matching username and password
+      3. Making a request to the /auth/googleUrl, opening that URL, entering Google credentials, and then making a request to the /auth/google/await
+      4. Updating a user’s username
 * Without the `Authorization` key in the request header and a valid token value, your requests will be __denied__
 * The only routes that __do not__ require the Authorization token are:
   * Base route (__GET__ https://api.feasy-app.com)
   * Login route (__POST__ https://api.feasy-app.com/login)
-  * Google Authentication route (__GET__ https://api.feasy-appy.com/auth/google)
+  * Google Authentication routes (__GET__ https://api.feasy-app.com/auth/googleUrl, https://api.feasy-app.com/auth/google/exchange, https://api.feasy-app.com/auth/google/await)
   * Create user route (__POST__ https://api.feasy-app.com/users)
 * The URLs in this guide that contain square brackets are meant to have those brackets substituted with with actual values
 * The JSON responses in this guide that contain square brackets will have actual values when returned from the server
@@ -26,26 +26,27 @@
 
 1. [Base route](#base-route)
 2. [Login](#login)
-3. [Google Authentication](#google-auth)
-4. [Create a user](#create-user)
-5. [Retrieve a user's information](#get-user)
-6. [Change a user's username](#update-username)
-7. [Change a user's password](#update-password)
-8. [Change a user's email](#update-email)
-9. [Change a user's first name](#update-firstName)
-10. [Change a user's last name](#update-lastName)
-11. [Delete a user](#delete-user)
-12. [Create an assignment](#create-assignment)
-13. [Get a user's assignments](#get-assignments)
-14. [Get an assignment's information](#get-assignment)
-15. [Change an assignment's title](#update-title)
-16. [Change an assignment's class](#update-class)
-17. [Change an assignment's type](#update-type)
-18. [Change an assignment's description](#update-description)
-19. [Change an assignment's completed](#update-completed)
-20. [Change an assignment's due date](#update-dueDate)
-21. [Delete an assignment](#delete-assignment)
-22. [Errors](#errors)
+3. [Google Authentication URL](#google-auth-url)
+4. [Google Authentication](#google-auth)
+5. [Create a user](#create-user)
+6. [Retrieve a user's information](#get-user)
+7. [Change a user's username](#update-username)
+8. [Change a user's password](#update-password)
+9. [Change a user's email](#update-email)
+10. [Change a user's first name](#update-firstName)
+11. [Change a user's last name](#update-lastName)
+12. [Delete a user](#delete-user)
+13. [Create an assignment](#create-assignment)
+14. [Get a user's assignments](#get-assignments)
+15. [Get an assignment's information](#get-assignment)
+16. [Change an assignment's title](#update-title)
+17. [Change an assignment's class](#update-class)
+18. [Change an assignment's type](#update-type)
+19. [Change an assignment's description](#update-description)
+20. [Change an assignment's completed](#update-completed)
+21. [Change an assignment's due date](#update-dueDate)
+22. [Delete an assignment](#delete-assignment)
+23. [Errors](#errors)
 
 ## Routes
 
@@ -96,11 +97,11 @@
   * This token must be sent in the headers of almost every request
 
 **[⬆ back to top](#table-of-contents)**
-<a name="google-auth"></a>
-### Google Authentication
+<a name="google-auth-url"></a>
+### Google Authentication URL
 
-* Route: __GET__ https://api.feasy-app.com/auth/google
-* Purpose: Registers the client on the server via their Google profile so that subsequent requests only require a generated token, not their username and password
+* Route: __GET__ https://api.feasy-app.com/auth/googleUrl
+* Purpose: Retrieves the custom Google OAuth URL to register a Google account with Feasy
 * Required parameters: _none_
 * Optional parameters: _none_
 * Successful request returns
@@ -109,7 +110,32 @@
   ```json
   {
     "success": {
-      "message": "Valid login credentials",
+      "authUrl": "[Google OAuth url]"
+    }
+  }
+  ```
+* Notes
+  * Sending a request to this route does not automatically start the Google authentication process
+  * You must access/open/route to the authentication URL in the response body to start the Google authentication process
+    * Opening the URL will open a Google authentication HTML page to choose/sign into a Google account
+    * After choosing an account and agreeing to the app permissions, the authentication process is started. You __still__ need to access [this route](#google-auth) to get a JWT
+    * This route will fail if another user already exists with an email identical to the primary email for the selected Google account
+
+**[⬆ back to top](#table-of-contents)**
+<a name="google-auth"></a>
+### Google Authentication
+
+* Route: __GET__ https://api.feasy-app.com/auth/google/await
+* Purpose: Registers the client on the server with the Google profile they selected via [this route](#google-auth-url) so that subsequent requests only require a generated token
+* Required parameters: _none_
+* Optional parameters: _none_
+* Successful request returns
+  * Status code: __200__
+  * Response body JSON
+  ```json
+  {
+    "success": {
+      "message": "Valid Google ['sign-in' or 'sign-up']",
       "username": "[username value]",
       "token": "JWT [random string]"
     }
@@ -120,7 +146,7 @@
   * This token must be sent in the headers of almost every request
   * The Google user's username will be provided in the response body for future API requests
     * By default, it will be the local-part of the user's email (everything before _@_)
-    * If another user already existed with that username, there will be a random string appended to the username
+    * If another user already existed with _that_ username, there will be a random string appended to the username
     * The username can be changed after the profile is created
 
 **[⬆ back to top](#table-of-contents)**

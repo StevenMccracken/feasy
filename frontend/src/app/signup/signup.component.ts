@@ -24,11 +24,16 @@ export class SignupComponent implements OnInit {
     lastName: 'last name',
   };
 
-  constructor(private _userService: UserService, private _router: Router) {}
+  constructor(private _router: Router, private _userService: UserService) {}
 
   ngOnInit() {}
 
-  add(): void {
+  /**
+   * Calls the user service to create a new user through the API.
+   * Updates the local storage with the corresponding authentication
+   * credentials. Routes the user to the main page on successful sign-up
+   */
+  signupUser(): void {
     if (!this.user) return;
 
     this._userService.create(this.user)
