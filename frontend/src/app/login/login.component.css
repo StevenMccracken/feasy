@@ -6,6 +6,12 @@
   padding-left: 5px;
 }
 
+#googleSignIn {
+  border: none;
+  width: 13.130em;
+  height: 3.250em;
+}
+
 .error-message {
   background-color: #E57373;
   color: white;

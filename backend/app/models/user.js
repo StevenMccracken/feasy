@@ -2,8 +2,8 @@
  * user - Mongoose database model for a User
  */
 
-const MONGOOSE = require('mongoose');
 const BCRYPT = require('bcryptjs');
+const MONGOOSE = require('mongoose');
 
 MONGOOSE.Promise = require('bluebird');
 
@@ -30,6 +30,7 @@ let UserSchema = MONGOOSE.Schema({
   firstName: { type: String },
   lastName: { type: String },
   accessToken: { type: String },
+  refreshToken: { type: String },
 });
 
 // Executes right before user is saved in the database
@@ -44,11 +45,11 @@ UserSchema.pre('save', function(done) {
           .then((hashedPassword) => {
             this.password = hashedPassword;
             done();
-          })
-          .catch(hashError => done(hashError));
-      })
-      .catch((genSaltError) => done(genSaltError));
+          }) // End then(hashedPassword)
+          .catch(hashError => done(hashError)); // End BCRYPT.hash()
+      }) // End then(salt)
+      .catch((genSaltError) => done(genSaltError)); // End BCRYPT.genSalt()
   }
-});
+}); // End UserSchema.pre(save)
 
 module.exports = MONGOOSE.model('User', UserSchema);

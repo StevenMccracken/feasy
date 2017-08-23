@@ -21,7 +21,7 @@ const parser = new PdfParser(this, 1);
  * @param {String} _filepath the path where the pdf file exists
  * @return {Promise<String[]>} array of pdf text content
  */
-var parsePdf = function(_filepath) {
+let parsePdf = function(_filepath) {
   const SOURCE = 'parsePdf()';
   log(SOURCE);
 
@@ -33,43 +33,15 @@ var parsePdf = function(_filepath) {
       // Split the raw text into strings and store into an array
       let textArray = parser.getRawTextContent().split(/\s+/);
       resolve(textArray);
-    });
-  });
-};
-
-/**
- * add - Adds an image
- * @param {String} _filename the name of the file
- * @param {Object} _fileJson the file attributes JSON from multer
- */
-var add = function(_filename, _fileJson) {
-  const SOURCE = 'add()';
-  log(SOURCE);
-};
-
-/**
- * get - Gets an image
- * @param {String} _filename the name of the file
- */
-var get = function(_filename) {
-  const SOURCE = 'get()';
-  log(SOURCE);
-};
-
-/**
- * DELETE - Deletes an image
- * @param {String} _filename the name of the file
- */
-var DELETE = function(_filename) {
-  const SOURCE = 'DELETE()';
-  log(SOURCE);
-};
+    }); // End parser.on(pdfParser_dataReady)
+  }); // End return promise
+}; // End parsePdf()
 
 /**
  * removeTempFile - Removes a file from the local filesystem
  * @param {String} _filePath the path to the desired file
  */
-var removeTempFile = function(_filePath) {
+let removeTempFile = function(_filePath) {
   const SOURCE = 'removeTempFile()';
   log(`${SOURCE} ${_filePath}`);
 
@@ -77,15 +49,12 @@ var removeTempFile = function(_filePath) {
     if (unlinkError) {
       log(`${SOURCE}: Failed removing temp file at ${_filePath} because ${unlinkError}`);
     } else log(`${SOURCE}: Removed temp file at ${_filePath}`);
-  });
-};
+  }); // End FS.unlink()
+}; // End removeTempFile()
 
 module.exports = {
   parsePdf: parsePdf,
   upload: UPLOAD_CONFIG,
-  ADD: add,
-  GET: get,
-  DELETE: DELETE,
   removeTempFile: removeTempFile,
 };
 

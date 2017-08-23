@@ -3,13 +3,18 @@
  * requests, call database controllers, and handles errors
  */
 
+const Uuid = require('uuid/v4');
+const EVENTS = require('events');
 const LOG = require('./log_mod');
 const ERROR = require('./error_mod');
 const MEDIA = require('./media_mod');
 const USERS = require('../controller/user');
 const AUTH = require('./authentication_mod');
 const VALIDATE = require('./validation_mod');
+const GOOGLE_API = require('./googleApi_mod');
 const ASSIGNMENTS = require('../controller/assignment');
+
+let eventEmitter = new EVENTS.EventEmitter();
 
 /**
  * authenticate - Authorizes a user and generates a JSON web token for the user
@@ -17,7 +22,7 @@ const ASSIGNMENTS = require('../controller/assignment');
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var authenticate = function(_request, _response) {
+let authenticate = function(_request, _response) {
   const SOURCE = 'authenticate()';
   log(SOURCE, _request);
 
@@ -104,62 +109,248 @@ var authenticate = function(_request, _response) {
 }; // End authenticate()
 
 /**
- * authenticateGoogle - Initiates the authentication of a Google sign-in
+ * getGoogleAuthUrl - Returns the Google OAuth URL to initiate Google profile authentication
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var authenticateGoogle = function(_request, _response) {
+let getGoogleAuthUrl = function(_request, _response) {
+  const SOURCE = 'getGoogleAuthUrl()';
+  log(SOURCE, _request);
+
+  return new Promise((resolve, reject) => {
+    // Return the custom Google oAuth URL
+    let successJson = {
+      success: { authUrl: GOOGLE_API.authUrl },
+    };
+
+    resolve(successJson);
+  }); // End return promise
+}; // End getGoogleAuthUrl()
+
+/**
+* exchangeGoogleAuthCode - Initiates the authentication of a
+* Google sign-in by exchanging an authentication code given
+* in the URL query for a refresh token for offline access
+* @param {Object} _request the HTTP request
+* @param {Object} _response the HTTP response
+* @return {Promise<Object>} a success JSON or error JSON
+ */
+let exchangeGoogleAuthCode = function(_request, _response) {
+  const SOURCE = 'exchangeGoogleAuthCode()';
+  log(SOURCE, _request);
+
+  return new Promise((resolve, reject) => {
+    // Check for code in the query parameters
+    if (_request.query.code === null || _request.query.code === undefined) {
+      let errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        'Invalid parameters: code'
+      );
+
+      reject(errorJson);
+    } else {
+      // Exchange the auth code for other codes like a refresh token for offline access
+      let authCode = _request.query.code;
+      GOOGLE_API.getAuthTokens(authCode)
+        .then((authTokens) => {
+          // Add the auth code as the refresh token to the authTokens JSON because it isn't by default
+          authTokens.refresh_token = authCode;
+
+          // Emit the event with authorization tokens to contact Google API
+          let ipAddress = getIp(_request);
+          eventEmitter.emit(`googleAuth_${ipAddress}_start`, authTokens);
+
+          // Wait for the event to finish to send the response to the Google API oAuth window
+          eventEmitter.once(`googleAuth_${ipAddress}_finish`, (googleAuthError) => {
+            if (googleAuthError !== null) reject(googleAuthError);
+            else {
+              /*
+               * Send the token and google user's username to
+               * the client because it is not entered on frontend
+               */
+              let successJson = {
+                success: { message: 'Successful Google sign-in' },
+              };
+
+              resolve(successJson);
+            }
+          });
+        }) // End then(authTokens)
+        .catch((getAuthTokensError) => {
+          let errorJson = ERROR.googleApiError(SOURCE, _request, _response, getAuthTokensError);
+          reject(errorJson);
+        }); // End GOOGLE_API.getAuthTokens()
+    }
+  }); // End return promise
+}; // End exchangeGoogleAuthCode()
+
+/**
+ * authenticateGoogle - Concludes the authentication of a Google sign-in.
+ * Uses the tokens from the Google API to fetch a user's Google+ profile
+ * and creates a user object from that, or retrieves an existing user object
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+let authenticateGoogle = function(_request, _response) {
   const SOURCE = 'authenticateGoogle()';
   log(SOURCE, _request);
 
   return new Promise((resolve, reject) => {
-    // Send the request to verify with Google's authentication API
-    AUTH.verifyGoogleRequest(_request, _response)
-      .then(client => resolve()) // End then(client)
-      .catch((verifyRequestError) => {
-        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, verifyRequestError);
-        reject(errorJson);
-      }); // End AUTH.verifyToken()
+    // Create helper function to create a JSON for successful Google authentication
+    let createSuccessJson = function(userInfo = {}, authType = 'authentication') {
+      // Generate JWT for the client
+      let token = AUTH.generateToken(userInfo);
+
+      /**
+       * Add the token and the google user's username to
+       * the client because it is unknown on the frontend
+       */
+      let successJson = {
+        success: {
+          message: `Successful Google ${authType}`,
+          username: userInfo.username,
+          token: `JWT ${token}`,
+        },
+      };
+
+      return successJson;
+    };
+
+    // Listen for the event of when the user chooses their google account
+    let ipAddress = getIp(_request);
+    eventEmitter.once(`googleAuth_${ipAddress}_start`, (tokens) => {
+      GOOGLE_API.getProfile(tokens)
+        .then((googleProfile) => {
+          let googleId = googleProfile.id;
+
+          // Check the database to see if we already have this user saved
+          USERS.getByGoogleId(googleId)
+            .then((userInfo) => {
+              if (userInfo !== null) {
+                // Google user has already been saved in the database. Save the new refresh token
+                USERS.updateAttribute(userInfo, 'refreshToken', tokens.refresh_token)
+                  .then((newUserInfo) => {
+                    let successJson = createSuccessJson(newUserInfo, 'sign-in');
+                    resolve(successJson);
+
+                    // Signal the successful end of the google sign-in process
+                    eventEmitter.emit(`googleAuth_${ipAddress}_finish`, null);
+                  })
+                  .catch((updateUserError) => {
+                    let errorJson = ERROR.userError(SOURCE, _request, _response, updateUserError);
+                    reject(errorJson);
+
+                    // Signal the unsuccessful end of the google sign-up process
+                    eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
+                  });
+              } else {
+                /**
+                 * This is a new google user. Choose an email from the google
+                 * profile's array of emails. Default main email will be the
+                 * first email, but preferred email is the one with type 'account'
+                 */
+                let counter = 0;
+                let mainEmail = '', emails = googleProfile.emails;
+                for (let emailJson of emails) {
+                  if (emailJson.type === 'account') {
+                    mainEmail = emailJson.value;
+                    break;
+                  } else if (counter == 0) mainEmail = emailJson.value;
+
+                  counter++;
+                }
+
+                // Get JSON of first and last names from the google profile
+                let names = googleProfile.name;
+
+                // Create the google user info JSON
+                let googleUserInfo = {
+                  googleId: googleId,
+                  email: mainEmail,
+                  username: mainEmail.split('@')[0],
+                  firstName: names.givenName,
+                  lastName: names.familyName,
+                  accessToken: tokens.access_token,
+                  refreshToken: tokens.refresh_token,
+                };
+
+                // Attempt to create the new user with the info from the google profile
+                USERS.createGoogle(googleUserInfo)
+                  .then((newUser) => {
+                    let successJson = createSuccessJson(newUser, 'sign-up');
+                    resolve(successJson);
+
+                    // Signal the successful end of the google sign-up process
+                    eventEmitter.emit(`googleAuth_${ipAddress}_finish`, null);
+                  }) // End then(newUser)
+                  .catch((createGoogleUserError) => {
+                    if (
+                      createGoogleUserError.name === 'MongoError' &&
+                      createGoogleUserError.message.indexOf('username') !== -1
+                    ) {
+                      /*
+                       * This error means that a user already exists with the username.
+                       * Append a random string to username to attempt a unique username value
+                       */
+                      let shortUuid = Uuid().split('-')[0];
+                      googleUserInfo.username += `-${shortUuid}`;
+                      USERS.createGoogle(googleUserInfo)
+                        .then((newUser) => {
+                          let successJson = createSuccessJson(newUser, 'sign-up');
+                          resolve(successJson);
+
+                          // Signal the successful end of the google sign-up process
+                          eventEmitter.emit(`googleAuth_${ipAddress}_finish`, null);
+                        }) // End then(newUser)
+                        .catch((createGoogleUserError2) => {
+                          let errorJson = ERROR.userError(
+                            SOURCE,
+                            _request,
+                            _response,
+                            createGoogleUserError2
+                          );
+
+                          reject(errorJson);
+
+                          // Signal the unsuccessful end of the google sign-up process
+                          eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
+                        }); // End USERS.createGoogle()
+                    } else {
+                      let errorJson = ERROR.userError(
+                        SOURCE,
+                        _request,
+                        _response,
+                        createGoogleUserError
+                      );
+
+                      reject(errorJson);
+
+                      // Signal the unsuccessful end of the google sign-up process
+                      eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
+                    }
+                  }); // End USERS.createGoogle()
+              }
+            }) // End then(userInfo)
+            .catch((getGoogleUserError) => {
+              let errorJson = ERROR.googleApiError(SOURCE, _request, _response, getGoogleUserError);
+              reject(errorJson);
+
+              // Signal the unsuccessful end of the google sign-up process
+              eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
+            }); // End USERS.getByGoogleId()
+        })
+        .catch((getProfileError) => {
+          let errorJson = ERROR.googleApiError(SOURCE, _request, _response, getProfileError);
+          reject(errorJson);
+        }); // End GOOGLE_API.getProfile()
+    }); // End eventEmitter.once()
   }); // End return promise
 }; // End authenticateGoogle()
-
-/**
- * authenticateGoogleCallback - Concludes the authentication of a Google sign-in
- * @param {Object} _request the HTTP request
- * @param {Object} _response the HTTP response
- * @return {Promise<Object>} a success JSON or error JSON
- */
-var authenticateGoogleCallback = function(_request, _response) {
-  const SOURCE = 'authenticateGoogleCallback()';
-  log(SOURCE, _request);
-
-  return new Promise((resolve, reject) => {
-    AUTH.verifyGoogleRequest(_request, _response)
-      .then((client) => {
-        // Generate the JWT for the client
-        let token = AUTH.generateToken(client);
-
-        /*
-         * Send the token and google user's username to
-         * the client because it is not entered on frontend
-         */
-        let successJson = {
-          success: {
-            message: 'Successful Google sign-in',
-            username: client.username,
-            token: `JWT ${token}`,
-          },
-        };
-
-        resolve(successJson);
-      }) // End then(client)
-      .catch((authError) => {
-        let errorJson = ERROR.authenticationError( SOURCE, _request, _response, authError);
-        reject(errorJson);
-      }); // End AUTH.verifyToken()
-  }); // End return promise
-}; // End authenticateGoogleCallback()
 
 /**
  * createUser - Adds a new user to the database and sends the client a web token
@@ -167,7 +358,7 @@ var authenticateGoogleCallback = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var createUser = function(_request, _response) {
+let createUser = function(_request, _response) {
   const SOURCE = 'createUser()';
   log(SOURCE, _request);
 
@@ -238,7 +429,7 @@ var createUser = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
 */
-var retrieveUser = function(_request, _response) {
+let retrieveUser = function(_request, _response) {
   const SOURCE = 'retrieveUser()';
   log(SOURCE, _request);
 
@@ -293,7 +484,7 @@ var retrieveUser = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
 */
-var updateUserUsername = function(_request, _response) {
+let updateUserUsername = function(_request, _response) {
   const SOURCE = 'updateUserUsername()';
   log(SOURCE, _request);
 
@@ -397,7 +588,7 @@ var updateUserUsername = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var updateUserPassword = function(_request, _response) {
+let updateUserPassword = function(_request, _response) {
   const SOURCE = 'updateUserPassword()';
   log(SOURCE, _request);
 
@@ -638,7 +829,7 @@ function updateUserAttribute(_client, _request, _response, _attribute, _verifyFu
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var updateUserEmail = function(_request, _response) {
+let updateUserEmail = function(_request, _response) {
   const SOURCE = 'updateUserEmail()';
   log(SOURCE, _request);
 
@@ -677,7 +868,7 @@ var updateUserEmail = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var updateUserFirstName = function(_request, _response) {
+let updateUserFirstName = function(_request, _response) {
   const SOURCE = 'updateUserFirstName()';
   log(SOURCE, _request);
 
@@ -702,7 +893,7 @@ var updateUserFirstName = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var updateUserLastName = function(_request, _response) {
+let updateUserLastName = function(_request, _response) {
   const SOURCE = 'updateUserLastName()';
   log(SOURCE, _request);
 
@@ -727,7 +918,7 @@ var updateUserLastName = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var deleteUser = function(_request, _response) {
+let deleteUser = function(_request, _response) {
   const SOURCE = 'deleteUser()';
   log(SOURCE, _request);
 
@@ -803,7 +994,7 @@ var deleteUser = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var createAssignment = function(_request, _response) {
+let createAssignment = function(_request, _response) {
   const SOURCE = 'createAssignment()';
   log(SOURCE, _request);
 
@@ -917,7 +1108,7 @@ var createAssignment = function(_request, _response) {
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  */
-var parseSchedule = function(_request, _response) {
+let parseSchedule = function(_request, _response) {
   const SOURCE = 'parseSchedule()';
   log(SOURCE, _request);
 
@@ -1003,7 +1194,7 @@ var parseSchedule = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var getAssignments = function(_request, _response) {
+let getAssignments = function(_request, _response) {
   const SOURCE = 'getAssignments()';
   log(SOURCE, _request);
 
@@ -1061,7 +1252,7 @@ var getAssignments = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var getAssignmentById = function(_request, _response) {
+let getAssignmentById = function(_request, _response) {
   const SOURCE = 'getAssignmentById()';
   log(SOURCE, _request);
 
@@ -1236,7 +1427,7 @@ function updateAssignmentAttribute(_client, _request, _response, _attribute, _ve
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var updateAssignmentTitle = function(_request, _response) {
+let updateAssignmentTitle = function(_request, _response) {
   const SOURCE = 'updateAssignmentTitle()';
   log(SOURCE, _request);
 
@@ -1261,7 +1452,7 @@ var updateAssignmentTitle = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var updateAssignmentClass = function(_request, _response) {
+let updateAssignmentClass = function(_request, _response) {
   const SOURCE = 'updateAssignmentClass()';
   log(SOURCE, _request);
 
@@ -1286,7 +1477,7 @@ var updateAssignmentClass = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var updateAssignmentType = function(_request, _response) {
+let updateAssignmentType = function(_request, _response) {
   const SOURCE = 'updateAssignmentType()';
   log(SOURCE, _request);
 
@@ -1311,7 +1502,7 @@ var updateAssignmentType = function(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var updateAssignmentDescription = function(_request, _response) {
+let updateAssignmentDescription = function(_request, _response) {
   const SOURCE = 'updateAssignmentDescription()';
   log(SOURCE, _request);
 
@@ -1561,7 +1752,7 @@ function updateAssignmentDueDate(_request, _response) {
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-var deleteAssignment = function(_request, _response) {
+let deleteAssignment = function(_request, _response) {
   const SOURCE = 'deleteAssignment()';
   log(SOURCE, _request);
 
@@ -1645,8 +1836,9 @@ var deleteAssignment = function(_request, _response) {
 
 module.exports = {
   authenticate: authenticate,
-  authenticateGoogle: authenticateGoogle,
-  authenticateGoogleCallback, authenticateGoogleCallback,
+  getGoogleAuthUrl: getGoogleAuthUrl,
+  exchangeGoogleAuthCode: exchangeGoogleAuthCode,
+  authenticateGoogle, authenticateGoogle,
   createUser: createUser,
   retrieveUser: retrieveUser,
   updateUserUsername: updateUserUsername,
@@ -1675,4 +1867,16 @@ module.exports = {
  */
 function log(_message, _request) {
   LOG.log('Middleware Module', _message, _request);
+}
+
+/**
+ * getIp - Helper function to get the IP address from an Express request object
+ * @param {Object} [_request={}] the Express request object
+ * @return {string} the IP address of the request
+ */
+function getIp(_request = {}) {
+  let headers = _request.headers || {};
+  let connection = _request.connection || {};
+  let ipAddress = headers['x-forwarded-for'] || connection.remoteAddress;
+  return ipAddress;
 }
