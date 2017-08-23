@@ -6,21 +6,26 @@ import { CalendarModule } from 'angular-calendar';
 import { LayoutComponent } from './layout.component';
 import { AuthGuard } from '../router-guard/auth.guard';
 import { ToDoComponent } from './to-do/to-do.component';
-import { CondorraRoutingModule } from './condorra-routing.module';
+import { LayoutRoutingModule } from './layout-routing.module';
 import { CalendarComponent } from './calendar/calendar.component';
+
+import { DragulaModule } from 'ng2-dragula';
+import { DragulaService } from 'ng2-dragula';
+
 
 @NgModule({
   imports: [
     CommonModule,
-    CondorraRoutingModule,
+    LayoutRoutingModule,
     CalendarModule.forRoot(),
     FormsModule,
+    DragulaModule
   ],
   declarations: [
     LayoutComponent,
     ToDoComponent,
     CalendarComponent,
   ],
-  providers: [AuthGuard],
+  providers: [AuthGuard, DragulaService],
 })
 export class LayoutModule {}

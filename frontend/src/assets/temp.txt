@@ -1,0 +1,6 @@
+Scripts:
+  "../node_modules/jquery/dist/jquery.min.js",
+  "../node_modules/materialize-css/dist/js/materialize.min.js"
+
+CSS:
+  "../node_modules/materialize-css/dist/css/materialize.min.css",
