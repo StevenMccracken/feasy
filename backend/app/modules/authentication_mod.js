@@ -88,6 +88,34 @@ var verifyGoogleRequest = function(_request, _response) {
 };
 
 /**
+ *
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<User>|Promise<Object>}
+ * s
+ */
+var googleCalendar = function(_request, _response) {
+  const SOURCE = 'googleCalendar()';
+  log(SOURCE, _request);
+
+  return new Promise((resolve, reject) => {
+    // Verify the client's token
+    PASSPORT.authenticate('googleCalendar', { session: false }, (passportError, googleInfo, tokenError) => {
+      if (googleInfo) resolve(googleInfo);
+      else {
+        let errorJson = {
+          passportError: passportError,
+          tokenError: tokenError === undefined ? null : tokenError,
+          userInfoMissing: !googleInfo,
+        };
+
+        reject(errorJson);
+      }
+    })(_request, _response);
+  });
+};
+
+/**
  * generateToken - Generates a JSON web token
  * @param {Object} _userInfo JSON containing user information
  * @return {String} a JSON web token
@@ -100,6 +128,7 @@ module.exports = {
   validatePasswords: validatePasswords,
   verifyToken: verifyToken,
   verifyGoogleRequest: verifyGoogleRequest,
+  googleCalendar:  googleCalendar,
   generateToken: generateToken,
 };
 
