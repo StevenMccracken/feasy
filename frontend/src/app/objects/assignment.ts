@@ -12,7 +12,13 @@ export class Assignment implements Serializable<Assignment> {
   dateCreated: Date;
   type: string;
   description: string;
-  editMode: boolean = false;
+
+  /**
+   * booleans that allows click to edit functionality of tasks
+   */
+  editModeDescription: boolean = false;
+  editModeTitle: boolean = false;
+  editModeDate: boolean = false;
 
   /**
    * Converts a JSON representing an assignment to an Assignment object
@@ -28,7 +34,8 @@ export class Assignment implements Serializable<Assignment> {
     this.dateCreated = new Date(input.dateCreated);
     this.type = input.type;
     this.description = input.description;
-    this.editMode = false;
+    this.editModeDescription = false;
+    this.editModeTitle = false;
 
     return this;
   }

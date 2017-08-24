@@ -80,7 +80,14 @@ pre {
 .label_assignment {
   color: #9e9e9e;
 }
-
+.row{
+  margin-top: 10px;
+}
 select {
   background-color: #fafafa;
+}
+.update-todo{
+  margin-top: 10px;
+  margin-bottom: 20px;
+  margin-left: 11px;
 }

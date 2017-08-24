@@ -27,4 +27,4 @@ const layoutRoutes: Routes = [{
   imports: [RouterModule.forChild(layoutRoutes)],
   exports: [RouterModule],
 })
-export class CondorraRoutingModule {}
+export class LayoutRoutingModule {}

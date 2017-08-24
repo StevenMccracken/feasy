@@ -6,9 +6,6 @@ pre {
   background-color: #e0e0eb;
 }
 
-#type-row {
-  margin-top: 80px;
-}
 
 .action {
   cursor: pointer;
@@ -30,6 +27,10 @@ pre {
 .todo-body {
   background-color: white;
   border: thin solid gray;
+}
+
+.completed-list{
+  margin-left: 30px !important;
 }
 
 .add-todo {
@@ -60,6 +61,8 @@ pre {
 
 .collection-head {
   font-family: "Quicksand", cursive;
+  display: -webkit-inline-box;
+
 }
 
 .title-collection {
@@ -93,15 +96,57 @@ pre {
   border-radius: 8px;
   border: thin solid #31708f;
 }
+.update-todo{
+  background-color: #bce8f1;
+  color: #31708f;
+  border-radius: 8px;
+  margin-left: 11.250px;
+  margin-bottom: 20px;
+  border: thin solid #31708f;
+}
 
 .row-add {
   margin-bottom: 0px;
 }
-
+.row{
+  margin-top: 10px;
+}
 .add-form {
   border: thin solid #e0e0eb;
 }
 
 .chip {
   margin-top: 13px;
+}
+.label_assignment {
+  color: #9e9e9e;
+}
+.add-todo{
+  margin-left: 10.5px;
+}
+#date-view{
+  margin-bottom: 30px;
+}
+
+.gu-mirror {
+  position: fixed !important;
+  margin: 0 !important;
+  z-index: 9999 !important;
+  background-color: white;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+  filter: alpha(opacity=80);
+}
+.gu-hide {
+  display: none !important;
+}
+.gu-unselectable {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+.gu-transit {
+  opacity: 0.0;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=20)";
+  filter: alpha(opacity=20);
 }

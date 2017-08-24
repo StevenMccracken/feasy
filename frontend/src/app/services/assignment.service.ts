@@ -35,7 +35,7 @@ export class AssignmentService {
     // Add required parameters
     let invalidParams: string[] = [];
     if (assignment.title == null || assignment.title == undefined) invalidParams.push('title');
-    if (assignment.dueDate == null || assignment.dueDate == undefined) invalidParams.push('dueDate');
+    if (assignment.dueDate == null || assignment.dueDate == undefined) assignment.dueDate = new Date();
 
     if (invalidParams.length > 0) return Promise.reject(invalidParams);
 
@@ -48,7 +48,7 @@ export class AssignmentService {
     }
 
     if (assignment.type !== undefined && assignment.type !== null) {
-      requestParams = `${requestParams}&type=${assignment.type}`;
+      assignment.type = "Misc";
     }
 
     if (assignment.description !== undefined && assignment.description !== null) {
