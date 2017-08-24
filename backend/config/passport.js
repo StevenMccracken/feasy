@@ -6,9 +6,14 @@ const Uuid = require('uuid/v4');
 const JWT_CONFIG = require('./jwt');
 const GOOGLE_CONFIG = require('./google');
 const USERS = require('../app/controller/user');
+const ASSIGNMENTS = require('../app/controller/assignment');
 const JwtStrategy = require('passport-jwt').Strategy;
 const EXTRACTJWT = require('passport-jwt').ExtractJwt;
 const GoogleStrategy = require('passport-google-oauth2').Strategy;
+const GOOGLE_CALENDAR = require('google-calendar');
+const GOOGLE_MOD = require('../app/modules/googleCalendar_mod');
+
+
 
 /**
  * exports - Defines how to generate and validate JSON web tokens
@@ -106,4 +111,93 @@ module.exports = function(passport) {
         .catch(getUserError => done(getUserError, null)); // End USERS.getByGoogleId()
     }
   ));
+  // JSON containing criteria used to compare incoming Google auth requests for calendar
+  let googleCalendarOptions = {
+    passReqToCallback: true,
+    scope:        GOOGLE_CONFIG.calendarScope,
+    clientID:     GOOGLE_CONFIG.clientId,
+    clientSecret: GOOGLE_CONFIG.secret,
+    callbackURL:  GOOGLE_CONFIG.calendarRedirectUri,
+  };
+
+  passport.use('googleCalendar',new GoogleStrategy(
+    googleCalendarOptions ,
+    (request, accessToken, refreshToken, profile, done) => {
+      // Try and find the user by google ID from the profile given by Google's authentication API
+      USERS.getByGoogleId(profile.id)
+        .then((userInfo) => {
+          if (userInfo !== null) done(null, userInfo);
+          else {
+            // Google user does not exist in the database yet
+            let googleUserInfo = {
+              googleId:   profile.id,
+              email:      profile.email,
+              username:   profile.email.split('@')[0],
+              firstName:  profile.name.givenName,
+              lastName:   profile.name.familyName,
+              accessToken: accessToken,
+            };
+
+            // Attempt to create the new user with the info from the google profile
+            USERS.createGoogle(googleUserInfo)
+              .then(newUser => done(null, newUser)) // End then(newUser)
+              .catch((createGoogleUserError) => {
+                if (
+                  createGoogleUserError.name === 'MongoError' &&
+                  createGoogleUserError.message.indexOf('username') !== -1
+                ) {
+                  /*
+                   * This error means that a user already exists with the username.
+                   * Append a random string to username to attempt a unique username
+                   */
+                  googleUserInfo.username = `${googleUserInfo.username}-${Uuid().split('-')[0]}`;
+                  USERS.createGoogle(googleUserInfo)
+                    .then(newUser => done(null, newUser))
+                    .catch(createGoogleUserError2 => done(createGoogleUserError2, null));
+                } else done(createGoogleUserError, null);
+              }); // End USERS.createGoogle()
+          }
+        }) // End then(userInfo)
+        .catch(getUserError => done(getUserError, null)); // End USERS.getByGoogleId()
+    }
+  ));
+
+
+  let gcalOptions = {
+    passReqToCallback: 'true',
+    scope:        GOOGLE_CONFIG.calendarScope,
+    clientID:     GOOGLE_CONFIG.clientId,
+    clientSecret: GOOGLE_CONFIG.secret,
+    callbackURL:  GOOGLE_CONFIG.calendarRedirectUri,
+  };
+
+  passport.use('googleCalendar',new GoogleStrategy(
+    gcalOptions,
+    (request, accessToken, refreshToken, profile, done) => {
+      // Try and find the user by google ID from the profile given by Google's authentication API
+      USERS.getByGoogleId(profile.id)
+      .then((googleInfo) => {
+
+        var gcal = new GOOGLE_CALENDAR.GoogleCalendar(accessToken);
+
+        gcal.events.list('primary',function(err, eventList){
+
+              for (var i in eventList.items){
+
+                var eventInfo = GOOGLE_MOD.convertEvent(eventList.items[i], googleInfo._id.toString());
+
+                ASSIGNMENTS.create(eventInfo);
+              }
+        });
+
+
+
+
+        var sucess="migration was a sucess!";
+        done(null,googleInfo);
+      })
+    }
+
+  ));
+
 };
