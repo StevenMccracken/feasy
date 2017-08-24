@@ -30,6 +30,7 @@ let AssignmentSchema = MONGOOSE.Schema({
   class: { type: String },
   type: { type: String },
   description: { type: String },
+  googleAssignmentId: { type: String},
 });
 
 module.exports = MONGOOSE.model('Assignment', AssignmentSchema);
