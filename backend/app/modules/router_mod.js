@@ -68,7 +68,7 @@ var routing = function(_router) {
    * @param {Object} _request the HTTP request
    * @param {Object} _response the HTTP response
    */
-  router.route('/auth/google/callback').get((_request, _response) => {
+  router.route('/auth/g').get((_request, _response) => {
     MIDDLEWARE.authenticateGoogleCallback(_request, _response)
       .then(result => _response.json(result))
       .catch(error => _response.json(error));
@@ -80,7 +80,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/auth/google/calendar').get((_request, _response) => {
-    MIDDLEWARE.authenticateGoogle(_request, _response)
+    MIDDLEWARE.authenticateGoogleCalendar(_request, _response)
       .then(result => _response.json(result))
       .catch(error => _response.json(error));
   });
@@ -91,7 +91,7 @@ var routing = function(_router) {
    * @param {Object} _response the HTTP response
    */
   router.route('/auth/google/calendar/callback').get((_request, _response) => {
-    MIDDLEWARE.authenticateGoogleCallback(_request, _response)
+    MIDDLEWARE.googleCalendarCallback(_request, _response)
       .then(result => _response.json(result))
       .catch(error => _response.json(error));
   });
