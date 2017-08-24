@@ -5,10 +5,14 @@
       <div class="card error-message">
         <div class="card-content">
           {{ this.errorMessage }}
+
+
+
         </div>
       </div>
     </div>
     <div class="row">
+
       <div class="input-field col s12 m12 l12">
         <input placeholder="Username" id="username" type="text" name="username" class="validate" pattern="^\w+([\.-]?\w+)*$" [(ngModel)]="_username" required #username="ngModel">
       </div>
@@ -22,3 +26,31 @@
     </div>
   </form>
 </div>
+
+<html>
+  <head>
+  </head>
+  <body>
+      <button type="button" id="email">Click me</button>
+
+      <script>
+
+          function gcal(){
+
+            var url2 = "http://localhost:8080/auth/google/calendar";
+            var request = new XMLHttpRequest();
+            request.onreadystatechange = function () {
+
+            }
+
+            //do a post method (@param1)
+            //to url specified (@param2)
+            //set ajax protocol to true
+            request.open("GET", url2, true);
+            request.send(null);
+          }
+
+         document.getElementById("email").addEventListener("click", gcal, false);
+      </script>
+  </body>
+</html>
