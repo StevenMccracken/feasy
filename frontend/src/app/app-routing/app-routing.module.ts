@@ -14,7 +14,7 @@ const routes: Routes = [
     path: 'main',
     canLoad: [AuthGuard],
     loadChildren: '../layout/layout.module#LayoutModule',
-  }
+  },
 ];
 
 @NgModule({

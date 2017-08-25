@@ -17,14 +17,14 @@ export const COLORS = {
   },
   GREEN: {
     primary: '#3FBF63',
-    secondary: '#AAD9B7'
+    secondary: '#AAD9B7',
   },
-  VIOLET:{
+  VIOLET: {
     primary: '#BE50A6',
-    secondary: '#DAA3CE'
+    secondary: '#DAA3CE',
   },
-  LIGHTBLUE:{
+  LIGHTBLUE: {
     primary: '#46B3D2',
-    secondary: '#BEE3EE'
-  }
+    secondary: '#BEE3EE',
+  },
 };

@@ -1,5 +1,5 @@
 interface Serializable<T> {
-  deserialize(input: Object): T;
+  deserialize(_input: Object): T;
 }
 
 export class User implements Serializable<User> {
@@ -9,12 +9,17 @@ export class User implements Serializable<User> {
   firstName: string;
   lastName: string;
 
-  deserialize(input) {
-    this.email = input.email;
-    this.username = input.username;
-    this.password = input.password;
-    this.firstName = input.firstName;
-    this.lastName = input.lastName;
+  /**
+   * Converts a JSON representing a user to a User object
+   * @param {Object = {}} _input JSON containing user information
+   * @return {User} user with the attributes from the JSON input
+   */
+  deserialize(_input: Object = {}): User {
+    this.email = _input['email'];
+    this.username = _input['username'];
+    this.password = _input['password'];
+    this.firstName = _input['firstName'];
+    this.lastName = _input['lastName'];
 
     return this;
   }
@@ -29,15 +34,15 @@ export class Account implements Serializable<Account> {
 
   /**
    * Converts a JSON representing an account to an Account object
-   * @param {Object} input JSON containing account information
+   * @param {Object = {}} _input JSON containing account information
    * @return {Account} account with the attributes from the JSON input
    */
-  deserialize(input) {
-    this._id = input._id;
-    this.email = input.email;
-    this.username = input.username;
-    this.firstName = input.firstName;
-    this.lastName = input.lastName;
+  deserialize(_input: Object = {}): Account {
+    this._id = _input['_id'];
+    this.email = _input['email'];
+    this.username = _input['username'];
+    this.firstName = _input['firstName'];
+    this.lastName = _input['lastName'];
 
     return this;
   }

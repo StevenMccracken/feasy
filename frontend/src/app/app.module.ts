@@ -10,10 +10,13 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppComponent } from './app.component';
 import { AuthGuard } from './router-guard/auth.guard';
 import { UserService } from './services/user.service';
+import { FeasyService } from './services/feasy.service';
 import { LoginComponent } from './login/login.component';
 import { SignupComponent } from './signup/signup.component';
 import { LayoutComponent } from './layout/layout.component';
 import { AssignmentService } from './services/assignment.service';
+import { CommonUtilsService } from './utils/common-utils.service';
+import { LocalStorageService } from './utils/local-storage.service';
 import { AppRoutingModule } from './app-routing/app-routing.module';
 
 // Configure client side Google API service
@@ -44,13 +47,16 @@ let gapiClientConfig: ClientConfig = {
     BrowserAnimationsModule,
     GoogleApiModule.forRoot({
       provide: NG_GAPI_CONFIG,
-      useValue: gapiClientConfig
+      useValue: gapiClientConfig,
     }),
   ],
   providers: [
     AuthGuard,
     UserService,
+    FeasyService,
     AssignmentService,
+    CommonUtilsService,
+    LocalStorageService,
   ],
   bootstrap: [AppComponent],
 })

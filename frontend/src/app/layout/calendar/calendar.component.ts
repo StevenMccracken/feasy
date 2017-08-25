@@ -18,10 +18,11 @@ import {
 } from 'angular-calendar';
 import { Component, ChangeDetectionStrategy, OnInit } from '@angular/core';
 
+import { COLORS } from '../../objects/colors';
 import { Assignment } from '../../objects/assignment';
 import { AssignmentService } from '../../services/assignment.service';
-import { COLORS } from '../../objects/colors';
-
+import { CommonUtilsService } from '../../utils/common-utils.service';
+import { LocalStorageService } from '../../utils/local-storage.service';
 
 // Used to access jQuery and Materialize script
 declare var $: any;
@@ -34,35 +35,36 @@ declare var Materialize: any;
   templateUrl: 'calendar.component.html',
 })
 export class CalendarComponent implements OnInit {
-  // assignment object used for the assignment form
-  assignment = new Assignment();
+  // Assignment object used for the assignment form
+  assignment: Assignment = new Assignment();
   jquery: any;
+
   // set the default calendar view to month
-  view = 'month';
+  view: string = 'month';
 
   // this stores the assignments for the current day picked
   currentDayArray: Assignment[];
 
   // this allows the calendar to tell which date you are on
-  viewDate = new Date();
+  viewDate: Date = new Date();
 
   // IMPORTANT! USE THIS TO STORE TARGET INTO A VARIABLE TODO: Clarify this comment
   e: any;
 
-  catagorySelect = false;
+  catagorySelect: boolean = false;
 
   // USE THIS HASHMAP TO STORE A REFERENCE FOR TASK -> EVENTS, & EVENTS -> TASK
-  eDescription = new Map<CalendarEvent, Assignment>();
-  aDescription = new Map<Assignment, CalendarEvent>();
+  eDescription: Map<CalendarEvent, Assignment> = new Map<CalendarEvent, Assignment>();
+  aDescription: Map<Assignment, CalendarEvent> = new Map<Assignment, CalendarEvent>();
 
   // array to store all the calendar events
   events: CalendarEvent[] = new Array<CalendarEvent>();
 
-  activeDayIsOpen = false;
-  onetime = false;
+  activeDayIsOpen: boolean = false;
+  onetime: boolean = false;
   timer: any;
 
-  //quicksettings
+  // quicksettings
   formDescription: boolean;
   formLabel: boolean;
 
@@ -74,41 +76,45 @@ export class CalendarComponent implements OnInit {
     event: CalendarEvent,
   };
 
-  actions: CalendarEventAction[] = [
-    {
-      label: '<i class="material-icons edit">create</i>',
-      onClick: ({ event }: { event: CalendarEvent }): void => {
-        this.handleEvent('Edited', event);
-        this.openModal('#createAssignments');
-      },
+  actions: CalendarEventAction[] = [{
+    label: '<i class="material-icons edit">create</i>',
+    onClick: ({ event }: { event: CalendarEvent }): void => {
+      this.handleEvent('Edited', event);
+      this.openModal('#createAssignments');
     },
-    {
-      label: '<i class="material-icons delete">delete_sweep</i>',
-      onClick: ({ event }: { event: CalendarEvent }): void => {
-        let assignment = this.eDescription.get(event);
-        this._assignmentService.delete(assignment._id)
-          .then(() => {
-            for (let i = 0; i < this.currentDayArray.length; i++) {
-              if (this.currentDayArray[i] == assignment) {
-                this.currentDayArray.splice(i, 1);
-                break;
-              }
+  },
+  {
+    label: '<i class="material-icons delete">delete_sweep</i>',
+    onClick: ({ event }: { event: CalendarEvent }): void => {
+      let assignment = this.eDescription.get(event);
+      this._assignmentService.delete(assignment._id)
+        .then(() => {
+          for (let i = 0; i < this.currentDayArray.length; i++) {
+            if (this.currentDayArray[i] == assignment) {
+              this.currentDayArray.splice(i, 1);
+              break;
             }
+          }
 
-            // Remove the event linked to the assignment
-            this.events = this.events.filter(iEvent => iEvent !== event);
-            this.handleEvent('Deleted', event);
-          })
-          .catch((deleteError: Response) => {
-            if (deleteError.status === 404) this.handle404Error(assignment);
-            else this.handleError(deleteError);
-          });
-      },
-    }
-  ];
+          // Remove the event linked to the assignment
+          this.events = this.events.filter(iEvent => iEvent !== event);
+          this.handleEvent('Deleted', event);
+        })
+        .catch((deleteError: Response) => {
+          if (deleteError.status === 404) this.handle404Error(assignment);
+          else this.handleError(deleteError);
+        });
+    },
+  }];
 
-  constructor(private _router: Router, private _assignmentService: AssignmentService) {}
+  constructor(
+    private _router: Router,
+    private _utils: CommonUtilsService,
+    private _storage: LocalStorageService,
+    private _assignmentService: AssignmentService
+  ) {}
 
+  // TODO: This isn't used right now
   public refreshCalendar = () => {
     this.refresh.next();
   };
@@ -116,19 +122,21 @@ export class CalendarComponent implements OnInit {
   ngOnInit() {
     console.log(Materialize);
     $('#viewEvent').modal({
-                        dismissible: true,
-                        ready: () => console.log('open modal'),
-                        complete: () => {
-                          console.log('this hit');
-                          this.initializeCalendar();
-                        }
-                    });
+      dismissible: true,
+      ready: () => console.log('open modal'),
+      complete: function() {
+        console.log('this hit');
+        this.initializeCalendar();
+      },
+    });
+
+    let storage: LocalStorageService = this._storage;
     $(document).ready(function() {
       $('#select').material_select();
       $('#select').on('change', function(e) {
-          let selected = e.currentTarget.selectedOptions[0].value;
-          localStorage.setItem('type', selected);
-          $('#select').prop('selectedIndex', 0); // Sets the first option as selected
+        let selected = e.currentTarget.selectedOptions[0].value;
+        storage.setItem('type', selected);
+        $('#select').prop('selectedIndex', 0); // Sets the first option as selected
       });
     });
 
@@ -144,32 +152,30 @@ export class CalendarComponent implements OnInit {
     this.initializeCalendar();
   }
 
-
-
   // STORES THE TARGET
-  setEvent(event: any): void {
-    this.e = $(event.target).hasClass('cal-cell-top') ? event.target : null;
+  setEvent(_event: any): void {
+    this.e = $(_event.target).hasClass('cal-cell-top') ? _event.target : null;
   }
 
   /**
    * Deletes an assignment by calling the API
    * and then removes it from local memory
-   * @param {Assignment} assignment the assignment to delete
-   * @param {number} index the position of the assignment in the current day array
+   * @param {Assignment} _assignment the assignment to delete
+   * @param {number} _index the position of the assignment in the current day array
    */
-  deleteEventAction(assignment: Assignment, index: number): void {
-    this._assignmentService.delete(assignment._id)
+  deleteEventAction(_assignment: Assignment, _index: number): void {
+    this._assignmentService.delete(_assignment._id)
       .then(() => {
         // Remove the assignment from the events
-        this.currentDayArray.splice(index, 1);
-        let event: CalendarEvent = this.aDescription.get(assignment);
+        this.currentDayArray.splice(_index, 1);
+        let event: CalendarEvent = this.aDescription.get(_assignment);
         this.events = this.events.filter(iEvent => iEvent !== event);
 
         // Update the UI
         this.refresh.next();
       })
       .catch((deleteError: Response) => {
-        if (deleteError.status === 404) this.handle404Error(assignment);
+        if (deleteError.status === 404) this.handle404Error(_assignment);
         else this.handleError(deleteError);
       });
   }
@@ -185,23 +191,24 @@ export class CalendarComponent implements OnInit {
   }
 
   /**
-   * Determines the color for a given date based on it's relation
-   * to the current date, usually an assignment's due date
-   * @param {Date} dueDate the date to determine the color for
+   * Determines the color for a given assignment's
+   * date based on it's relation to the current date
+   * @param {Assignment} _assignment the assignment to determine the color for
    * @return {any} JSON of the color attributes
    */
-  determineColor(assignment: Assignment): any {
+  determineColor(_assignment: Assignment): any {
     let color;
     let now = new Date();
-    let dueDate = assignment.dueDate;
+    let dueDate = _assignment.dueDate;
+
     /**
      * Gray: Events that were before the current date
      * Red: Events that are within 5 days of the current date
      * Yellow: Events that are more than 5 days away but less than 14 days from the current date
      * Blue: Events that are more than 14 days away from the current date
      */
-    if(assignment.completed) color = COLORS.GREEN;
-    else if(endOfDay(dueDate) < now) color = COLORS.GRAY;
+    if (_assignment.completed) color = COLORS.GREEN;
+    else if (endOfDay(dueDate) < now) color = COLORS.GRAY;
     else if (
       dueDate >= startOfDay(now) &&
       endOfDay(dueDate) < startOfDay(addDays(now, 5))
@@ -217,13 +224,13 @@ export class CalendarComponent implements OnInit {
 
   /**
    * Adds the given assignments to the calendar's events
-   * @param {Assignment[]} assignments the list of assignments to add to the calendar
+   * @param {Assignment[]} _assignments the list of assignments to add to the calendar
    */
-  populate(assignments: Assignment[]): void {
+  populate(_assignments: Assignment[]): void {
     this.events = [];
     let cEvents: CalendarEvent[] = [];
 
-    for (let assignment of assignments) {
+    for (let assignment of _assignments) {
       // Create a CalendarEvent for each assignment
       let event: CalendarEvent = {
         start: assignment.dueDate,
@@ -247,31 +254,37 @@ export class CalendarComponent implements OnInit {
     this.refresh.next();
   }
 
-  enableEdit(assignment: Assignment, index: number, type: string): void {
-    if(type === 'title'){
-      assignment.editModeTitle = !assignment.editModeTitle;
-      let id = `#titleEdit${index}`;
-      setTimeout(() => $(id).focus(), 1);
-    }
-    if(type === 'description'){
-      assignment.editModeDescription = !assignment.editModeDescription;
-      let id = `#descriptionEdit${index}`;
-      setTimeout(() => $(id).focus(), 1);
-    }
-    if(type === 'all'){
-      assignment.editModeTitle = true;
-      assignment.editModeDescription = true;
-      assignment.editModeDate = true;
-      let id = `#titleEdit${index}`;
-      setTimeout(() => $(id).focus(), 1);
-      let $input = $('#datetime'+index).pickadate();
-      let picker = $input.pickadate('picker');
-      picker.set('select', assignment.dueDate);
-    }
+  // TODO: Add formal documentation
+  enableEdit(_assignment: Assignment, _index: number, type: string): void {
+    let id;
+    switch (type) {
+      case 'title':
+        _assignment.editModeTitle = !_assignment.editModeTitle;
+        id = `#titleEdit${_index}`;
+        setTimeout(() => $(id).focus(), 1);
+        break;
+      case 'description':
+        _assignment.editModeDescription = !_assignment.editModeDescription;
+        id = `#descriptionEdit${_index}`;
+        setTimeout(() => $(id).focus(), 1);
+        break;
+      case 'all':
+        _assignment.editModeTitle = true;
+        _assignment.editModeDescription = true;
+        _assignment.editModeDate = true;
 
+        id = `#titleEdit${_index}`;
+        setTimeout(() => $(id).focus(), 1);
+
+        let $input = $(`#datetime${_index}`).pickadate();
+        let picker = $input.pickadate('picker');
+        picker.set('select', _assignment.dueDate);
+        break;
+      default:
+    }
   }
 
-
+  // TODO: Add formal documentation
   monthEventClick(event: any) {
     this.onetime = !this.onetime;
     if (this.onetime) {
@@ -298,12 +311,14 @@ export class CalendarComponent implements OnInit {
         a.editModeDescription = false;
         a.editModeTitle = false;
       }
+
       this.openView(event.day.date);
     }
   }
 
+  // TODO: Add formal documentation
   displayPopUp(): void {
-    if (this.e !== null && this.e !== undefined) {
+    if (this._utils.hasValue(this.e)) {
       if ($(this.e).is('#popup')) {
         $(this.e).children('.show').css('display', 'inline-block');
         let prev_e = this.e;
@@ -311,7 +326,7 @@ export class CalendarComponent implements OnInit {
       } else {
         $(this.e).attr('id', 'popup');
         let data = `<div id='popup' class='popuptext show'>`;
-        for(let a of  this.currentDayArray) data += `${a.title}<br>`;
+        for (let a of  this.currentDayArray) data += `${a.title}<br>`;
         data += '</div>';
 
         $(this.e).addClass('popup');
@@ -323,18 +338,25 @@ export class CalendarComponent implements OnInit {
     }
   }
 
-  openView(dueDate: Date): void {
+  // TODO: Add formal documentation
+  openView(_dueDate: Date): void {
     this.assignment = new Assignment();
     this.assignment.completed = false;
     this.assignment.type = '';
-    this.assignment.dueDate = dueDate;
-    if(localStorage['qsDescription'] != '' || localStorage['qsDescription'] != undefined)
-      this.formDescription = (localStorage['qsDescription'] === 'true') ? true: false;
-    if(localStorage['qsLabel'] != '' || localStorage['qsLabel'] != undefined)
-      this.formLabel = (localStorage['qsLabel'] === 'true') ? true: false;
+    this.assignment.dueDate = _dueDate;
+
+    if (this._storage.isValidItem('qsDescription')) {
+      this.formDescription = this._storage.getItem('qsDescription') === 'true';
+    }
+
+    if (this._storage.isValidItem('qsLabel')) {
+      this.formLabel = this._storage.getItem('qsLabel') === 'true';
+    }
+
     $('#viewEvent').modal('open');
   }
 
+  // TODO: Is this necessary?
   resetField(): void {
     console.log('done');
   }
@@ -362,101 +384,101 @@ export class CalendarComponent implements OnInit {
 
   /**
    * Updates an assignments description by calling the API
-   * @param {Assignment} assignment the updated assignment
+   * @param {Assignment} _assignment the updated assignment
    */
-  updateDescription(assignment: Assignment): void {
-    assignment.editModeDescription = false;
-    this._assignmentService.updateDescription(assignment._id, assignment.description)
+  updateDescription(_assignment: Assignment): void {
+    _assignment.editModeDescription = false;
+    this._assignmentService.updateDescription(_assignment._id, _assignment.description)
       .then()
       .catch((updateError: any) => {
         if (typeof updateError === 'string') this.handleUpdateError('description', updateError);
-        else if (updateError.status === 404) this.handle404Error(assignment);
+        else if (updateError.status === 404) this.handle404Error(_assignment);
         else this.handleError(updateError);
       });
   }
 
   /**
    * Update an assignment title by calling the API
-   * @param {Assignment} assignment the updated assignment
+   * @param {Assignment} _assignment the updated assignment
    */
-   updateTitle(assignment: Assignment): void {
-     assignment.editModeTitle = false;
-     this._assignmentService.updateTitle(assignment._id, assignment.title)
-       .then()
-       .catch((updateError: any) => {
-         if (typeof updateError === 'string') this.handleUpdateError('description', updateError);
-         else if (updateError.status === 404) this.handle404Error(assignment);
-         else this.handleError(updateError);
-       });
-   }
+  updateTitle(_assignment: Assignment): void {
+    _assignment.editModeTitle = false;
+    this._assignmentService.updateTitle(_assignment._id, _assignment.title)
+      .then()
+      .catch((updateError: any) => {
+        if (typeof updateError === 'string') this.handleUpdateError('description', updateError);
+        else if (updateError.status === 404) this.handle404Error(_assignment);
+        else this.handleError(updateError);
+      });
+  }
 
-   /**
-    * Update an assigment's title by calling the API
-    * @param {Assigment} assigment the update assigment
-    */
-    updateTask(assignment: Assignment, index: number): void {
-      let id = assignment._id;
-      assignment.editModeTitle = false;
-      assignment.editModeDescription = false;
-      assignment.editModeDate = false;
-      this._assignmentService.updateTitle(id, assignment.title)
+  /**
+   * Update an assignment's title by calling the API
+   * @param {Assigment} _assignment the update assignment
+   * @param {number} _index the index of the assignment in the assignments array // TODO: Verify this comment
+   */
+  updateTask(_assignment: Assignment, _index: number): void {
+    let id = _assignment._id;
+    _assignment.editModeTitle = false;
+    _assignment.editModeDescription = false;
+    _assignment.editModeDate = false;
+    this._assignmentService.updateTitle(id, _assignment.title)
+      .then(() => console.log('Updated title'))
+      .catch((updateError: any) => {
+        if (typeof updateError === 'string') this.handleUpdateError('description', updateError);
+        else if (updateError.status === 404) this.handle404Error(_assignment);
+        else this.handleError(updateError);
+      });
+
+    if ($(`#datetime${_index}`)[0].value !== '') {
+      let newDueDate = new Date($(`#datetime${_index}`)[0].value);
+      this._assignmentService.updateDueDate(id, newDueDate)
         .then(() => {
-          console.log('Updated title');
+          console.log('Updated Due Date');
+          if (_assignment.dueDate !== newDueDate) {
+            console.log('spliced');
+            _assignment.dueDate = newDueDate;
+            this.currentDayArray.splice(_index, 1);
+
+            // TODO: implement a better way to update events array.
+            this.initializeCalendar();
+          }
         })
         .catch((updateError: any) => {
           if (typeof updateError === 'string') this.handleUpdateError('description', updateError);
-          else if (updateError.status === 404) this.handle404Error(assignment);
+          else if (updateError.status === 404) this.handle404Error(_assignment);
           else this.handleError(updateError);
         });
-      if($("#datetime"+index)[0].value !== ""){
-        let newDueDate = new Date($("#datetime"+index)[0].value);
-        this._assignmentService.updateDueDate(id, newDueDate)
-          .then(() => {
-            console.log("Updated Due Date");
-            if(assignment.dueDate !== newDueDate){
-              console.log('spliced');
-              assignment.dueDate = newDueDate;
-              this.currentDayArray.splice(index, 1);
+      }
 
-              //TODO: implement a better way to update events array.
-              this.initializeCalendar();
-            }
-          })
-          .catch((updateError: any) => {
-            if (typeof updateError === 'string') this.handleUpdateError('description', updateError);
-            else if (updateError.status === 404) this.handle404Error(assignment);
-            else this.handleError(updateError);
-          });
-        }
-      this._assignmentService.updateDescription(id, assignment.title)
-        .then(() => console.log('Updated description'))
-        .catch((updateError: any) => {
-          if (typeof updateError === 'string') this.handleUpdateError('description', updateError);
-          else if (updateError.status === 404) this.handle404Error(assignment);
-          else this.handleError(updateError);
-        });
-    }
+    this._assignmentService.updateDescription(id, _assignment.title)
+      .then(() => console.log('Updated description'))
+      .catch((updateError: any) => {
+        if (typeof updateError === 'string') this.handleUpdateError('description', updateError);
+        else if (updateError.status === 404) this.handle404Error(_assignment);
+        else this.handleError(updateError);
+      });
+  }
 
   test(): void {
     this.catagorySelect = true;
     console.log(this.catagorySelect);
   }
 
-  dayEventClick(event: any): void {
-    this.assignment.dueDate = event.date;
+  dayEventClick(_event: any): void {
+    this.assignment.dueDate = _event.date;
     this.openModal('#createAssignments');
   }
 
-  resetAssignmentField(date: Date): void {
+  resetAssignmentField(_date: Date): void {
     this.assignment = new Assignment();
     this.assignment.type = '';
-    this.assignment.dueDate = date;
+    this.assignment.dueDate = _date;
   }
 
   addAssignment(): void {
     this.assignment.completed = false;
-    if(!this.formLabel)
-      this.assignment.type = "Misc";
+    if (!this.formLabel) this.assignment.type = 'Misc';
     this._assignmentService.create(this.assignment)
       .then((newAssignment: Assignment) => {
         this.assignment = newAssignment;
@@ -493,16 +515,18 @@ export class CalendarComponent implements OnInit {
     this.refresh.next();
   }
 
-  openModal(id: string): void {
-    $(id).modal('open');
+  openModal(_id: string): void {
+    $(_id).modal('open');
   }
 
-  getDescription(event: CalendarEvent): string {
-    return this.eDescription.get(event).description;
+  getDescription(_event: CalendarEvent): string {
+    return this.eDescription.get(_event).description;
   }
 
+  // TODO: Is this necessary?
   handleEvent(action: string, event: CalendarEvent): void {}
 
+  // TODO: Is this necessary?
   debug(): void {
     // console.log(event);
     // console.log(event.target);
@@ -533,69 +557,59 @@ export class CalendarComponent implements OnInit {
   ////////////////////////////////////////////////////////////////////
 
   /**
-   * Handles error that comes when a token has expired
-   * @param {Reponse} error error from service
+   * Handles error that are received from API calls
+   * @param {Reponse} _error the error from the API call
    */
-  private handleError(error: Response): void {
-    if (error.status == 401) {
+  private handleError(_error: Response): void {
+    if (_error.status == 401) {
       // Token is stale. Clear the user and token local storage, route them to login screen
-      localStorage.removeItem('token');
-      localStorage.removeItem('currentUser');
+      this._storage.deleteItem('token');
+      this._storage.deleteItem('currentUser');
 
       // Add the reason for re-routing to login
-      localStorage.setItem('expiredToken', 'true');
+      this._storage.setItem('expiredToken', 'true');
 
       // Route to the login page
       this._router.navigate(['/login']);
     } else {
       // API error, server could be down/crashed
-      console.error(error);
+      console.error(_error);
     }
   }
 
   /**
-   * Handles error that comes when an assigment does not exist or is not found
-   * @param {Assigment} assignment - object
+   * Handles error that comes when an assignment does not exist or is not found
+   * @param {Assigment} _assignment the assignment that was attempted to use with the API
    */
-  private handle404Error(assignment: Assignment): void {
+  private handle404Error(_assignment: Assignment): void {
     // Find the assignment in the current day array
     for (let i = 0; i < this.currentDayArray.length; i++) {
-      if (this.currentDayArray[i] == assignment) {
+      if (this.currentDayArray[i] == _assignment) {
         this.currentDayArray.splice(i, 1);
         break;
       }
     }
 
     // Remove the event linked to the assignment
-    let event: CalendarEvent = this.aDescription.get(assignment);
+    let event: CalendarEvent = this.aDescription.get(_assignment);
     this.events = this.events.filter(iEvent => iEvent !== event);
   }
 
   /**
-   * Handles error that comes during an update
-   * @param {string} attribute  - a part of the object that couldn't be updated
-   * @param {string} reason     - why the attribute couldn't be updated.
+   * Handles error that comes during an update API call
+   * @param {string} _attribute a part of the object that couldn't be updated
+   * @param {string} _reason why the attribute couldn't be updated.
    */
-  private handleUpdateError(attribute: string, reason: string): void {
-    switch (reason) {
+  private handleUpdateError(_attribute: string, _reason: string): void {
+    switch (_reason) {
       case 'invalid':
-        console.error('New %s was malformed', attribute);
+        console.error('New %s was malformed', _attribute);
         break;
       case 'unchanged':
-        console.error('New %s was unchanged', attribute);
+        console.error('New %s was unchanged', _attribute);
         break;
       default:
-        console.error('New %s was invalid in some way', attribute);
+        console.error('New %s was invalid in some way', _attribute);
     }
-  }
-
-  /**
-   * Determines if a specific local storage item contains any meaningful data
-   * @param {string} storageItemKey the key of the local storage item
-   * @return {boolean} whether or not the key contains a meaningful (non-empty) data value
-   */
-  isValidStorageItem(storageItemKey: string): boolean {
-    let storageItem = localStorage.getItem(storageItemKey);
-    return storageItem != null && storageItem != undefined && storageItem != '';
   }
 }

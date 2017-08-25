@@ -3,10 +3,10 @@
      <div class="col s12 center fontify"><h3>To Do Listed by Date</h3></div>
      <div id="date-view" class="col s12 center fontify"><h5>Today : {{date | date:"MMMM dd, yyyy"}}</h5></div>
      <div *ngIf="showlist">
-       <div id="uncompleted" *ngIf="assignmentsUncomplete.length === 0" class="col s12 wrapper" [dragula]="first">
+       <div id="uncompleted" *ngIf="incompleteAssignments.length === 0" class="col s12 wrapper" [dragula]="first">
          <div *ngIf="uncompleteEmpty"></div>
        </div>
-       <div *ngFor="let a of assignmentsUncomplete; let i = index;" id="unclompleted" class="col s12 wrapper" [dragula]="first">
+       <div *ngFor="let a of incompleteAssignments; let i = index;" id="unclompleted" class="col s12 wrapper" [dragula]="first">
          <div [id]="'unComplete-'+i" [attr.value]="i.toString()">
              <table class="eventDisplay">
                <tr class = "row">
@@ -89,10 +89,10 @@
   </div>
   <div class="col m5 todo-main completed-list">
     <div class="col s12 center fontify"><h3>Completed</h3></div>
-    <div id="completed" *ngIf="assignmentsComplete.length === 0" class="col s12 wrapper" [dragula]="first">
+    <div id="completed" *ngIf="completedAssignments.length === 0" class="col s12 wrapper" [dragula]="first">
       <div></div>
     </div>
-    <div *ngFor="let a of assignmentsComplete; let i = index;" id="completed" class="col s12 wrapper" [dragula]="second">
+    <div *ngFor="let a of completedAssignments; let i = index;" id="completed" class="col s12 wrapper" [dragula]="second">
       <div [id]="'Complete-'+i" [attr.value]="i.toString()">
           <table class="eventDisplay">
             <tr class = "row">
