@@ -43,7 +43,41 @@ td {
   color: #87b4f0;
   cursor: pointer;
 }
-
+tr{
+  cursor: pointer;
+}
 p {
   margin: 0px 0px 0px 0px;
+}
+.container{
+  width: 90% !important;
+}
+.quick-settings{
+  border-radius: 10px;
+  border: thin solid red;
+  margin-top: 30px;
+  text-align: center;
+}
+.head{
+  font-size: 20px;
+}
+.content{
+  margin-left: 5px;
+  margin-right: 5px;
+  margin-bottom: 10px;
+}
+.icon-menu{
+  display: inline-flex;
+}
+h6{
+  padding-left: 50px;
+}
+.upload-button{
+  margin-top: 30px;
+}
+.btn{
+  border-radius: 10px;
+}
+.hide{
+  display: none;
 }
