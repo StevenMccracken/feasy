@@ -19,9 +19,33 @@ if args.file:
 elif args.text:
 	print("reading string of text...")
 	text = args.text
-
+text.strip()
 print(text)
 
+date_regex = re.compile('([0-2]{1}[0-9]|[3][01]|[0-9]{1})-((?:Jan(?:uary)?|(?:Feb)|(?:Mar)|(?:Apr)|(?:May)|(?:Jun)|(?:Jul)|(?:Aug)|(?:Sep)|(?:Oct)|(?:Nov)|(?:Dec)))', flags=re.IGNORECASE)
+
+output = []
+result = date_regex.search(text, 0)
+while (result):
+	date = result.group()
+	print(date)
+	desc_start = result.span()[1]
+	new_result = date_regex.search(text, desc_start)
+	if (new_result): desc_end = new_result.span()[0]
+	else: 
+		print(desc_start)
+		break
+	description = text[desc_start:desc_end]
+	print(description)
+	output.append((date,description))
+	result = new_result
+print(output)
+	
+#print(result.span()[0])
+#re.search('[0-9]{1,2}:[0-9]{2} ?(AM|PM)?','time with optional am/pm', flags=re.IGNORECASE)
+#re.search('\b((?:Jan(?:uary)?|(?:Feb)|(?:Mar)|(?:Apr)|(?:May)|(?:Jun)|(?:Jul)|(?:Aug)|(?:Sep)|(?:Oct)|(?:Nov)|(?:Dec)))-([0-2]{1}[0-9]|[3][01]|[0-9]{1})','findtime', flags=re.IGNORECASE)
+
+'''
 def findTime():
 	temp = ''
 	for s in range(len(text)-4):
@@ -45,6 +69,4 @@ def findTime():
 					print("Time", temp, "Found at index", s)
 		temp = ''
 #findTime()
-
-# re.search('[0-9]{1,2}:[0-9]{2} ?(AM|PM)?','time with optional am/pm', flags=re.IGNORECASE)
-#re.search('\b((?:Jan(?:uary)?|(?:Feb)|(?:Mar)|(?:Apr)|(?:May)|(?:Jun)|(?:Jul)|(?:Aug)|(?:Sep)|(?:Oct)|(?:Nov)|(?:Dec)))-([0-2]{1}[0-9]|[3][01]|[0-9]{1})','findtime', flags=re.IGNORECASE)
+'''
