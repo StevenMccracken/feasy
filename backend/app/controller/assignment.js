@@ -18,6 +18,7 @@ let create = function(_assignmentInfo) {
 
   return new Promise((resolve, reject) => {
     let newAssignment = new ASSIGNMENT();
+
     newAssignment.title = _assignmentInfo.title.trim();
     newAssignment.userId = _assignmentInfo.userId.trim();
     newAssignment.dueDate = _assignmentInfo.dueDate;
@@ -28,6 +29,9 @@ let create = function(_assignmentInfo) {
     newAssignment.type = _assignmentInfo.type === undefined ? '' : _assignmentInfo.type.trim();
     if (_assignmentInfo.description === undefined) newAssignment.description = '';
     else newAssignment.description = _assignmentInfo.description.trim();
+
+    if(_assignmentInfo.googleAssignmentId !== undefined) newAssignment.googleAssignmentId = _assignmentInfo.googleAssignmentId.trim();
+    else newAssignment.googleAssignmentId='';
 
     newAssignment.save()
       .then(newAssignment => resolve(newAssignment)) // End then(newAssignment)

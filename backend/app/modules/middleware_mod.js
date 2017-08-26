@@ -353,6 +353,47 @@ let authenticateGoogle = function(_request, _response) {
 }; // End authenticateGoogle()
 
 /**
+ *
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+var authenticateGoogleCalendar = function(_request, _response) {
+  const SOURCE = 'authenticateGoogleCalendar()';
+  log(SOURCE, _request);
+
+  return new Promise((resolve, reject) => {
+    // Send the request to verify with Google's authentication API
+    AUTH.googleCalendar(_request, _response)
+      .then(client => resolve()) // End then(client)
+      .catch((verifyRequestError) => {
+        let errorJson = ERROR.authenticationError(SOURCE, _request, _response, verifyRequestError);
+        reject(errorJson);
+      }); // AUTH.googleCalendar()
+  }); // End return promise
+}; // End authenticateGoogleCalendar()
+
+/**
+ *
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+var googleCalendarCallback= function(_request, _response) {
+  const SOURCE = 'googleCalendarCallback()';
+  log(SOURCE, _request);
+
+  return new Promise((resolve, reject) => {
+    AUTH.googleCalendar(_request, _response)
+      .then(client => resolve()) // End then(client)
+      .catch((authError) => {
+        let errorJson = ERROR.authenticationError( SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.googleCalendar()
+  }); // End return promise
+}; // End googleCalendarCallback()
+
+/**
  * createUser - Adds a new user to the database and sends the client a web token
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
@@ -1839,6 +1880,8 @@ module.exports = {
   getGoogleAuthUrl: getGoogleAuthUrl,
   exchangeGoogleAuthCode: exchangeGoogleAuthCode,
   authenticateGoogle, authenticateGoogle,
+  authenticateGoogleCalendar: authenticateGoogleCalendar,
+  googleCalendarCallback: googleCalendarCallback,
   createUser: createUser,
   retrieveUser: retrieveUser,
   updateUserUsername: updateUserUsername,
