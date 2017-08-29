@@ -6,57 +6,13 @@ const FS = require('fs');
 const LOG = require('./log_mod');
 const Multer = require('multer');
 const PdfParser = require('pdf2json');
+const UTIL = require('./utility_mod');
 
 // Temporary file download configuration
 const UPLOAD_CONFIG = Multer({
   dest: './app/media/pdfs/',
   limits: { fileSize: '10000kb' },
 });
-
-// initialize pdf2json parser to grab pdf text content as raw
-const parser = new PdfParser(this, 1);
-
-/**
- * parsePdf - Parses a pdf file and returns the content, split by whitespace
- * @param {String} _filepath the path where the pdf file exists
- * @return {Promise<String[]>} array of pdf text content
- */
-let parsePdf = function(_filepath) {
-  const SOURCE = 'parsePdf()';
-  log(SOURCE);
-
-  return new Promise((resolve, reject) => {
-    // Load the pdf file and start the parse
-    parser.loadPDF(_filepath);
-    parser.on('pdfParser_dataError', parseError => reject(parseError));
-    parser.on('pdfParser_dataReady', (pdfData) => {
-      // Split the raw text into strings and store into an array
-      let textArray = parser.getRawTextContent().split(/\s+/);
-      resolve(textArray);
-    }); // End parser.on(pdfParser_dataReady)
-  }); // End return promise
-}; // End parsePdf()
-
-/**
- * removeTempFile - Removes a file from the local filesystem
- * @param {String} _filePath the path to the desired file
- */
-let removeTempFile = function(_filePath) {
-  const SOURCE = 'removeTempFile()';
-  log(`${SOURCE} ${_filePath}`);
-
-  FS.unlink(_filePath, (unlinkError) => {
-    if (unlinkError) {
-      log(`${SOURCE}: Failed removing temp file at ${_filePath} because ${unlinkError}`);
-    } else log(`${SOURCE}: Removed temp file at ${_filePath}`);
-  }); // End FS.unlink()
-}; // End removeTempFile()
-
-module.exports = {
-  parsePdf: parsePdf,
-  upload: UPLOAD_CONFIG,
-  removeTempFile: removeTempFile,
-};
 
 /**
  * log - Logs a message to the server console
@@ -66,3 +22,60 @@ module.exports = {
 function log(_message) {
   LOG.log('Media Module', _message);
 }
+
+// initialize pdf2json parser to grab pdf text content as raw
+const parser = new PdfParser(this, 1);
+
+/**
+ * parsePdf - Parses a pdf file and returns the content, split by whitespace
+ * @param {String} _filepath the path where the pdf file exists
+ * @return {Promise<String[]>} array of pdf text content
+ */
+const parsePdf = function parsePdf(_filepath) {
+  const SOURCE = 'parsePdf()';
+  log(SOURCE);
+
+  return new Promise((resolve, reject) => {
+    // Load the pdf file and start the parse
+    parser.loadPDF(_filepath);
+    parser.on('pdfParser_dataError', parseError => reject(parseError));
+    /* eslint-disable no-unused-vars */
+    parser.on('pdfParser_dataReady', (pdfData) => {
+      // Split the raw text into strings and store into an array
+      const text = parser.getRawTextContent();
+      const filename = UTIL.newUuid();
+      log(`Writing ${filename}`);
+      FS.writeFile(`./app/media/pdfs/${filename}.txt`, text, (error) => {
+        if (error) {
+          log(`Failed writing ${filename} because:`);
+          console.log(error);
+        } else log('Successfully wrote ', filename);
+      });
+
+      const textArray = text.split(/\s+/);
+      resolve(textArray);
+    }); // End parser.on(pdfParser_dataReady)
+    /* eslint-enable no-unused-vars */
+  }); // End return promise
+}; // End parsePdf()
+
+/**
+ * removeTempFile - Removes a file from the local filesystem
+ * @param {String} _filePath the path to the desired file
+ */
+const removeTempFile = function removeTempFile(_filePath) {
+  const SOURCE = 'removeTempFile()';
+  log(`${SOURCE} ${_filePath}`);
+
+  FS.unlink(_filePath, (unlinkError) => {
+    if (UTIL.hasValue(unlinkError)) {
+      log(`${SOURCE}: Failed removing temp file at ${_filePath} because ${unlinkError}`);
+    } else log(`${SOURCE}: Removed temp file at ${_filePath}`);
+  }); // End FS.unlink()
+}; // End removeTempFile()
+
+module.exports = {
+  parsePdf,
+  upload: UPLOAD_CONFIG,
+  removeTempFile,
+};

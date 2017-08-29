@@ -24,11 +24,11 @@ let gapiClientConfig: ClientConfig = {
   clientId: '442519493070-6g7gli3v0rr2cr8m7r122m677ce2i645.apps.googleusercontent.com',
   discoveryDocs: [],
   scope: [
-    'email',
+    'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/plus.me',
     'https://www.googleapis.com/auth/calendar'
   ].join(' '),
-  redirect_uri: 'https://api.feasy-app.com/auth/google/exchange',
+  redirect_uri: 'http://localhost:8080/auth/google/exchange',
 };
 
 @NgModule({

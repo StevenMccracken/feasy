@@ -2,20 +2,31 @@
  * router_mod - @module for HTTP request routing
  */
 
-const Uuid = require('uuid/v4');
+const UTIL = require('./utility_mod');
 const LOG = require('./log_mod');
 const MEDIA = require('./media_mod');
 const MIDDLEWARE = require('./middleware_mod');
 
+/**
+ * log - Logs a message to the server console
+ * @param {String} _message the log message
+ * @param {Object} _request the HTTP request
+ */
+function log(_message, _request) {
+  LOG.log('Router Module', _message, _request);
+}
+
 let router;
-let routing = function(_router) {
+const routing = function routing(_router) {
   router = _router;
 
   // Middleware to log metadata about incoming requests
   router.use((_request, _response, _next) => {
     // Add unique request ID to request and response headers
-    let uniqueRequestId = Uuid();
+    const uniqueRequestId = UTIL.newUuid();
+    /* eslint-disable no-param-reassign */
     _request.headers.requestId = uniqueRequestId;
+    /* eslint-enable no-param-reassign */
     _response.header('requestId', uniqueRequestId);
 
     log(`${_request.method} ${_request.url}`, _request);
@@ -162,7 +173,7 @@ let routing = function(_router) {
    */
   router.route('/users/:username/assignments').post((_request, _response) => {
     MIDDLEWARE.createAssignment(_request, _response)
-      .then(result => {
+      .then((result) => {
         _response.status(201);
         _response.json(result);
       })
@@ -186,6 +197,12 @@ let routing = function(_router) {
         if (_request.file !== undefined) MEDIA.removeTempFile(_request.file.path);
         _response.json(error);
       });
+  });
+
+  router.route('/users/:username/calendar/google').get((_request, _response) => {
+    MIDDLEWARE.syncGoogleCalendar(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
   });
 
   /**
@@ -247,8 +264,7 @@ let routing = function(_router) {
       MIDDLEWARE.updateAssignmentDescription(_request, _response)
         .then(result => _response.json(result))
         .catch(error => _response.json(error));
-    }
-  );
+    });
 
   /**
    * THE PUT route for updating an assignment's completed
@@ -256,9 +272,9 @@ let routing = function(_router) {
    * update. This route requires token authentication
    */
   router.route('/users/:username/assignments/:assignmentId/completed').put((_request, _response) => {
-      MIDDLEWARE.updateAssignmentCompleted(_request, _response)
-        .then(result => _response.json(result))
-        .catch(error => _response.json(error));
+    MIDDLEWARE.updateAssignmentCompleted(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
   });
 
   /**
@@ -283,14 +299,5 @@ let routing = function(_router) {
 
   return router;
 };
-
-/**
- * log - Logs a message to the server console
- * @param {String} _message the log message
- * @param {Object} _request the HTTP request
- */
-function log(_message, _request) {
-  LOG.log('Router Module', _message, _request);
-}
 
 module.exports = routing;

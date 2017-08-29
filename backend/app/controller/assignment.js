@@ -2,45 +2,99 @@
  * assignment - Database controller for the Assignment model
  */
 
-const LOG = require('../modules/log_mod.js');
+const LOG = require('../modules/log_mod');
+const UTIL = require('../modules/utility_mod');
 const ASSIGNMENT = require('../models/assignment.js');
 
-const UNIVERSAL_PROJECTION = '_id title class type description completed dueDate dateCreated';
+const UNIVERSAL_PROJECTION = '_id googleId title class type description completed dueDate dateCreated';
+
+/**
+ * log - Logs a message to the server console
+ * @param {String} _message the log message
+ */
+function log(_message) {
+  LOG.log('Assignment Controller', _message);
+}
 
 /**
  * create - Saves a new assignment for a user in the database
- * @param {Object} _assignmentInfo JSON containing the assignment attributes
+ * @param {Object} [_assignmentInfo={}] JSON containing the assignment attributes
  * @return {Promise<Assignment>} the Mongoose object
  */
-let create = function(_assignmentInfo) {
+const create = function create(_assignmentInfo = {}) {
   const SOURCE = 'create()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
+    /* eslint-disable prefer-const */
     let newAssignment = new ASSIGNMENT();
-    newAssignment.title = _assignmentInfo.title.trim();
-    newAssignment.userId = _assignmentInfo.userId.trim();
+    /* eslint-enable prefer-const */
+
+    newAssignment.title = _assignmentInfo.title;
+    newAssignment.userId = _assignmentInfo.userId;
     newAssignment.dueDate = _assignmentInfo.dueDate;
     newAssignment.completed = _assignmentInfo.completed;
 
     // Add optional properties
-    newAssignment.class = _assignmentInfo.class === undefined ? '' : _assignmentInfo.class.trim();
-    newAssignment.type = _assignmentInfo.type === undefined ? '' : _assignmentInfo.type.trim();
-    if (_assignmentInfo.description === undefined) newAssignment.description = '';
-    else newAssignment.description = _assignmentInfo.description.trim();
+    newAssignment.class = !UTIL.hasValue(_assignmentInfo.class) ? '' : _assignmentInfo.class;
+    newAssignment.type = !UTIL.hasValue(_assignmentInfo.type) ? '' : _assignmentInfo.type;
+    if (!UTIL.hasValue(_assignmentInfo.description)) newAssignment.description = '';
+    else newAssignment.description = _assignmentInfo.description;
+
+    if (!UTIL.hasValue(_assignmentInfo.googleId)) newAssignment.googleId = _assignmentInfo.googleId;
 
     newAssignment.save()
-      .then(newAssignment => resolve(newAssignment)) // End then(newAssignment)
+      .then(() => resolve(newAssignment)) // End then(newAssignment)
       .catch(saveAssignmentError => reject(saveAssignmentError)); // End newAssignment.save()
   }); // End return promise
 }; // End create()
+
+/**
+ * Converts a given Google event from the Google Calendar API to our Mongoose Assignment object
+ * @param {String} _userId the Mongoose user's ID for who the assignment will belong to
+ * @param {Object} _googleEvent the Google event from the Google Calendar API
+ * @return {Assignment} an in-memory Assignment object (not saved to the database yet)
+ * @throws an error if _googleEvent is not an actual event from the Google Calendar API
+ */
+const convertGoogleEvent = function convertGoogleEvent(_userId, _googleEvent) {
+  const SOURCE = 'convertGoogleEvent()';
+  log(SOURCE);
+
+  /**
+   * Redundant try/catch block because nothing else is done but
+   * throwing the same error. Written this way to emphasize that
+   * this method will throw an error if the _googleEvent parameter
+   * is not actually a Google Calendar event from the Google API
+   */
+  try {
+    /* eslint-disable prefer-const */
+    let newAssignment = new ASSIGNMENT();
+    /* eslint-enable prefer-const */
+
+    newAssignment.title = _googleEvent.summary;
+    newAssignment.userId = _userId;
+    newAssignment.dueDate = _googleEvent.end.dateTime;
+    newAssignment.completed = newAssignment.dueDate < new Date();
+    newAssignment.googleId = _googleEvent.id;
+
+    // Add optional attributes
+    if (UTIL.hasValue(_googleEvent.created)) newAssignment.dateCreated = _googleEvent.created;
+    if (UTIL.hasValue(_googleEvent.description)) {
+      newAssignment.description = _googleEvent.description;
+    }
+
+    return newAssignment;
+  } catch (createError) {
+    throw createError;
+  }
+};
 
 /**
  * getById - Retrieves an assignment by it's id
  * @param {ObjectId} _assignmentId the desired assignment's id
  * @return {Promise<Assignment>} the Mongoose object
  */
-let getById = function(_assignmentId) {
+const getById = function getById(_assignmentId) {
   const SOURCE = 'getById()';
   log(SOURCE);
 
@@ -53,10 +107,10 @@ let getById = function(_assignmentId) {
 
 /**
  * getAll - Retrieves all assignments created by a user
- * @param {Object} _userId the ObjectId of the user who created the assignments
+ * @param {ObjectId} _userId the ObjectId of the user who created the assignments
  * @return {Promise<Assignment[]>} the Mongoose object array
  */
-let getAll = function(_userId) {
+const getAll = function getAll(_userId) {
   const SOURCE = 'getAll()';
   log(SOURCE);
 
@@ -70,12 +124,12 @@ let getAll = function(_userId) {
 /**
  * getAllByAttribute - Retrieves all assignments based
  * on a desired attribute posted by a specific user
- * @param {Object} _userId the ObjectId of the user who created the assignments
+ * @param {ObjectId} _userId the ObjectId of the user who created the assignments
  * @param {String} _attribute the desired attribute of the assignment
  * @param {String} _value the value that the attribute should be equal to
  * @return {Promise<Assignment[]>} the Mongoose object array
  */
-let getAllByAttribute = function(_userId, _attribute, _value) {
+const getAllByAttribute = function getAllByAttribute(_userId, _attribute, _value) {
   const SOURCE = 'getAllByAttribute()';
   log(SOURCE);
 
@@ -93,7 +147,7 @@ let getAllByAttribute = function(_userId, _attribute, _value) {
  * @return {Promise<Assignment>} the Mongoose object
 
  */
-let getAttribute = function(_assignmentId, _attribute) {
+const getAttribute = function getAttribute(_assignmentId, _attribute) {
   const SOURCE = 'getAttribute()';
   log(SOURCE);
 
@@ -106,10 +160,10 @@ let getAttribute = function(_assignmentId, _attribute) {
 
 /**
  * update - Executes a database save on an assignment object to update any new attributes
- * @param {Object} _assignment the Mongoose object
+ * @param {Assignment} _assignment the Mongoose object
  * @return {Promise<Assignment>} the updated Mongoose object
  */
-let update = function(_assignment) {
+const update = function update(_assignment) {
   const SOURCE = 'update()';
   log(SOURCE);
 
@@ -122,31 +176,65 @@ let update = function(_assignment) {
 
 /**
  * updateAttribute - Updates a specific attribute of an assignment
- * @param {Object} _assignment the Mongoose object
+ * @param {Assignment} _assignment the Mongoose object
  * @param {String} _attribute the specific attribute of the assignment to update
  * @param {String|Date|Boolean} _newValue the updated value of the assignment attribute
  * @return {Promise<Assignment>} the updated Mongoose object
  */
-let updateAttribute = function(_assignment, _attribute, _newValue) {
+const updateAttribute = function updateAttribute(_assignment, _attribute, _newValue) {
   const SOURCE = 'updateAttribute()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
-    if (typeof _newValue === 'string') _assignment[_attribute] = _newValue.trim();
-    else _assignment[_attribute] = _newValue;
+    // Re-assign assignment to not affect the argument passed in
+    const assignment = _assignment;
+    assignment[_attribute] = _newValue;
 
-    _assignment.save()
+    assignment.save()
       .then(() => resolve(_assignment)) // End then()
       .catch(saveError => reject(saveError)); // End _assignment.save()
   }); // End return promise
 }; // End updateAttribute()
 
 /**
+ * save - Executes a database save on an in-memory Assignment object to add it to the database
+ * @param {Assignment} _assignment the in-memory Mongoose object
+ * @return {Promise<Assignment>} the same Mongoose object, saved to the database
+ */
+const save = function save(_assignment) {
+  const SOURCE = 'save()';
+  log(SOURCE);
+
+  return new Promise((resolve, reject) => {
+    _assignment.save()
+      .then(() => resolve(_assignment)) // End then()
+      .catch(saveError => reject(saveError)); // End _assignment.save()
+  }); // End return promise
+}; // End save()
+
+/**
+ * bulkSave - Executes a database save on in-memory
+ * Assignment objects to add them to the database in bulk
+ * @param {Assignment[]} _assignments the in-memory Mongoose objects
+ * @return {Promise<Assignment>} the same Mongoose object, saved to the database
+ */
+const bulkSave = function bulkSave(_assignments = []) {
+  const SOURCE = 'bulkSave()';
+  log(SOURCE);
+
+  return new Promise((resolve, reject) => {
+    ASSIGNMENT.collection.insert(_assignments)
+      .then(() => resolve(_assignments)) // End then()
+      .catch(saveError => reject(saveError)); // End ASSIGNMENT.collection.insert()
+  }); // End return promise
+}; // End bulkSave()
+
+/**
  * remove - Deletes an assignment from the assignment database
- * @param {Object} _assignment the Mongoose object
+ * @param {Assignment} _assignment the Mongoose object
  * @return {Promise} an empty promise
  */
-let remove = function(_assignment) {
+const remove = function remove(_assignment) {
   const SOURCE = 'remove()';
   log(SOURCE);
 
@@ -159,10 +247,10 @@ let remove = function(_assignment) {
 
 /**
  * removeAllByUser - Deletes all assignments created by a user
- * @param {Object} _userId the ObjectId of the desired user
+ * @param {Assignment} _userId the ObjectId of the desired user
  * @return {Promise} an empty promise
  */
-let removeAllByUser = function(_userId, _callback, _errorCallback) {
+const removeAllByUser = function removeAllByUser(_userId) {
   const SOURCE = 'removeAllByUser()';
   log(SOURCE);
 
@@ -174,21 +262,16 @@ let removeAllByUser = function(_userId, _callback, _errorCallback) {
 }; // End removeAllByUser()
 
 module.exports = {
-  create: create,
-  getById: getById,
-  getAll: getAll,
-  getAllByAttribute: getAllByAttribute,
-  getAttribute: getAttribute,
-  update: update,
-  updateAttribute: updateAttribute,
-  remove: remove,
-  removeAllByUser: removeAllByUser,
+  create,
+  convertGoogleEvent,
+  getById,
+  getAll,
+  getAllByAttribute,
+  getAttribute,
+  update,
+  updateAttribute,
+  save,
+  bulkSave,
+  remove,
+  removeAllByUser,
 };
-
-/**
- * log - Logs a message to the server console
- * @param {String} _message the log message
- */
-function log(_message) {
-  LOG.log('Assignment Controller', _message);
-}
