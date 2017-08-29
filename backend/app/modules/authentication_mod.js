@@ -5,14 +5,25 @@
 const LOG = require('./log_mod');
 const BCRYPT = require('bcryptjs');
 const JWT = require('jsonwebtoken');
-const ERROR = require('./error_mod');
-const JWT_CONFIG = require(`${process.cwd()}/config/jwt`);
-
-// Handles token storage and verification
 const PASSPORT = require('passport');
+const UTIL = require('./utility_mod');
+/* eslint-disable import/no-dynamic-require */
+const JWT_CONFIG = require(`${process.cwd()}/config/jwt`);
+/* eslint-enable import/no-dynamic-require */
+
+// Configure token storage and verification with passport library
 require('../../config/passport')(PASSPORT);
 
-const STANDARD_EXPIRATION_TIME = '24h';
+const STANDARD_TOKEN_EXPIRATION_TIME = '24h';
+
+/**
+ * log - Logs a message to the server console
+ * @param {String} _message the log message
+ * @param {Object} _request the HTTP request
+ */
+function log(_message, _request) {
+  LOG.log('Authentication Module', _message, _request);
+}
 
 /**
  * validatePasswords - Verifies a given password against a hashed password
@@ -20,7 +31,7 @@ const STANDARD_EXPIRATION_TIME = '24h';
  * @param {String} _hashedPassword a hashed password
  * @return {Promise<Boolean>} whether the passwords match or a Bcrypt error
  */
-let validatePasswords = function(_givenPassword, _actualPassword) {
+const validatePasswords = function validatePasswords(_givenPassword, _actualPassword) {
   const SOURCE = 'validatePasswords()';
   log(SOURCE);
 
@@ -38,7 +49,7 @@ let validatePasswords = function(_givenPassword, _actualPassword) {
  * @return {Promise<User>|Promise<Object>} the User
  * object referenced by the token or a JSON of errors
  */
-let verifyToken = function(_request, _response) {
+const verifyToken = function verifyToken(_request, _response) {
   const SOURCE = 'verifyToken()';
   log(SOURCE, _request);
 
@@ -47,11 +58,13 @@ let verifyToken = function(_request, _response) {
     PASSPORT.authenticate('jwt', { session: false }, (passportError, userInfo, tokenError) => {
       if (userInfo) resolve(userInfo);
       else {
-        let errorJson = {
+        /* eslint-disable object-shorthand */
+        const errorJson = {
           passportError: passportError,
-          tokenError: tokenError === undefined ? null : tokenError,
+          tokenError: !UTIL.hasValue(tokenError) ? null : tokenError,
           userInfoMissing: !userInfo,
         };
+        /* eslint-enable object-shorthand */
 
         reject(errorJson);
       }
@@ -60,55 +73,16 @@ let verifyToken = function(_request, _response) {
 }; // End verifyToken()
 
 /**
- *
- * @param {Object} _request the HTTP request
- * @param {Object} _response the HTTP response
- * @return {Promise<User>|Promise<Object>}
- * s
- */
-var googleCalendar = function(_request, _response) {
-  const SOURCE = 'googleCalendar()';
-  log(SOURCE, _request);
-
-  return new Promise((resolve, reject) => {
-    // Verify the client's token
-    PASSPORT.authenticate('googleCalendar', { session: false }, (passportError, googleInfo, tokenError) => {
-      if (googleInfo) resolve(googleInfo);
-      else {
-        let errorJson = {
-          passportError: passportError,
-          tokenError: tokenError === undefined ? null : tokenError,
-          userInfoMissing: !googleInfo,
-        };
-
-        reject(errorJson);
-      }
-    })(_request, _response);
-  });
-};
-
-/**
  * generateToken - Generates a JSON web token
  * @param {Object} _userInfo JSON containing user information
  * @return {String} a JSON web token
  */
-let generateToken = function(_userInfo) {
-  return JWT.sign(_userInfo, JWT_CONFIG.secret, { expiresIn: STANDARD_EXPIRATION_TIME });
+const generateToken = function generateToken(_userInfo) {
+  return JWT.sign(_userInfo, JWT_CONFIG.secret, { expiresIn: STANDARD_TOKEN_EXPIRATION_TIME });
 }; // End generateToken()
 
 module.exports = {
-  validatePasswords: validatePasswords,
-  verifyToken: verifyToken,
-  verifyGoogleRequest: verifyGoogleRequest,
-  googleCalendar:  googleCalendar,
-  generateToken: generateToken,
+  validatePasswords,
+  verifyToken,
+  generateToken,
 };
-
-/**
- * log - Logs a message to the server console
- * @param {String} _message the log message
- * @param {Object} _request the HTTP request
- */
-function log(_message, _request) {
-  LOG.log('Authentication Module', _message, _request);
-}
