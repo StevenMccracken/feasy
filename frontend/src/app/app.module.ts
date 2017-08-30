@@ -14,6 +14,7 @@ import { FeasyService } from './services/feasy.service';
 import { LoginComponent } from './login/login.component';
 import { SignupComponent } from './signup/signup.component';
 import { LayoutComponent } from './layout/layout.component';
+import { MessageService } from './services/message.service';
 import { AssignmentService } from './services/assignment.service';
 import { CommonUtilsService } from './utils/common-utils.service';
 import { LocalStorageService } from './utils/local-storage.service';
@@ -54,6 +55,7 @@ let gapiClientConfig: ClientConfig = {
     AuthGuard,
     UserService,
     FeasyService,
+    MessageService,
     AssignmentService,
     CommonUtilsService,
     LocalStorageService,

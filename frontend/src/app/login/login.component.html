@@ -5,22 +5,20 @@
       <div class="card error-message">
         <div class="card-content">
           {{ this.errorMessage }}
-
-
-
         </div>
       </div>
     </div>
     <div class="row">
-
       <div class="input-field col s12 m12 l12">
         <input placeholder="Username" id="username" type="text" name="username" class="validate" pattern="^\w+([\.-]?\w+)*$" [(ngModel)]="_username" required #username="ngModel">
       </div>
       <div class="input-field col s12 m12 l12">
         <input placeholder="Password" id="password" type="password" class="validate" name="password" [(ngModel)]="_password" required #password="ngModel">
       </div>
+    </div>
+    <div clas="row">
       <div class="input-field col s12 m12 l12">
-        <input placeholder="Alpha Code" id="token" type="text" class="validate" name="token" [(ngModel)]="_alphaCode" required #token="ngModel">
+        <input placeholder="Access code (for first time Google users only)" id="token" type="text" class="validate" pattern="^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$" name="token" [(ngModel)]="alphaCode" #token="ngModel">
       </div>
     </div>
     <div class="row">

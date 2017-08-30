@@ -1,6 +1,8 @@
 import { Subject } from 'rxjs/Subject';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
+import { Subscription } from 'rxjs/Subscription';
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import {
   startOfDay,
   endOfDay,
@@ -16,17 +18,17 @@ import {
   CalendarEventAction,
   CalendarEventTimesChangedEvent
 } from 'angular-calendar';
-import { Component, ChangeDetectionStrategy, OnInit, Input} from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, Input, OnDestroy } from '@angular/core';
 
 import { COLORS } from '../../objects/colors';
 import { Assignment } from '../../objects/assignment';
+import { LayoutComponent } from '../layout.component';
+import { MessageService } from '../../services/message.service';
+import { LoadLearnService } from '../../services/load-learn.service';
 import { AssignmentService } from '../../services/assignment.service';
 import { CommonUtilsService } from '../../utils/common-utils.service';
 import { LocalStorageService } from '../../utils/local-storage.service';
 
-import { LayoutComponent } from '../layout.component';
-
-import { LoadLearnService } from '../../services/load-learn.service';
 // Used to access jQuery and Materialize script
 declare var $: any;
 declare var Materialize: any;
@@ -112,12 +114,16 @@ export class CalendarComponent implements OnInit {
     },
   }];
 
+  message: any;
+  subscription: Subscription;
+
   constructor(
     private _router: Router,
     private _utils: CommonUtilsService,
+    private _loadLearn: LoadLearnService,
     private _storage: LocalStorageService,
-    private _assignmentService: AssignmentService,
-    private _loadLearn: LoadLearnService
+    private _messageService: MessageService,
+    private _assignmentService: AssignmentService
   ) {}
 
   // TODO: This isn't used right now
@@ -125,19 +131,19 @@ export class CalendarComponent implements OnInit {
     this.refresh.next();
   };
 
-  ngOnInit() {
+  ngOnDestroy() {
+    // unsubscribe to ensure no memory leaks
+    this.subscription.unsubscribe();
+  }
 
-    //this is not really the best way but it might work for now
-    setInterval( () => {
-      if(localStorage['changed'] === 'true'){
+  ngOnInit() {
+    this.subscription = this._messageService.getMessage()
+      .subscribe(message => {
+        console.log(message);
         let temp = this._loadLearn.getTaskArray();
         this.populateAfter(temp);
-        localStorage['changed'] = 'false';
         console.log('hello');
-      }
-      console.log(localStorage['changed']);
-
-    }, 200);
+      });
 
     $('#viewEvent').modal({
       dismissible: true,

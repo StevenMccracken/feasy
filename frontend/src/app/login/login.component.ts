@@ -15,8 +15,7 @@ import { LocalStorageService } from '../utils/local-storage.service';
 export class LoginComponent implements OnInit {
   _username: string;
   _password: string;
-  _alphaCode: string = '';
-
+  alphaCode: string;
   form: FormGroup;
   error: boolean;
   errorMessage: string;
@@ -94,84 +93,89 @@ export class LoginComponent implements OnInit {
       this.errorMessage = '';
     }
 
+    // Get the Google OAuth2.0 authentication URL for Feasy
+    this._userService.getAuthorizationUrl()
+      .then((authUrl: string) => {
+        // Update the Google sign-in button styling
+        this.googleSignInImageSource = this.googleSignInImageSourceDefault;
 
-    if(this._alphaCode !== ''){
-      // Get the Google OAuth2.0 authentication URL for Feasy
-      this._userService.getAuthorizationUrl()
-        .then((authUrl: string) => {
-          // Update the Google sign-in button styling
-          this.googleSignInImageSource = this.googleSignInImageSourceDefault;
-
-          // Open the authentication URL in a popup window
-          var popup = window.open(authUrl, 'Authenticate Google', 'width=600, height=600');
-          if (popup === null) {
-            this.error = true;
-            this.errorMessage = this.standardErrorMessage;
-            console.error('Opening Google OAuth2.0 window returned null');
-          } else {
-            // Automatically close the popup window after 1 minute
-            setTimeout(() => popup.close(), 60000);
-
-            /**
-             * Subscribe to an event for when the user finishes Google
-             * authentication in the popup. Popup variable is null inside the
-             * user service call closure, so this subscription is necessary
-             */
-            let googleAuthSource = new BehaviorSubject<boolean>(false); // Default value = false
-            let popupWindowStatus = googleAuthSource.asObservable();
-            popupWindowStatus.subscribe((finishedGoogleAuth) => {
-              if (finishedGoogleAuth) popup.close();
-            });
-
-            // Fetch the login credentials for the Google account the user selects
-            this._userService.authenticateGoogle()
-              .then((loginInfo: Object) => {
-                // Signal that Google authentication inside the popup window is done to close it
-                googleAuthSource.next(true);
-
-                // Check for the authentication info
-                if (loginInfo['token'] !== null && loginInfo['username'] !== null) {
-                  // Add the token and username data to local storage
-                  this._storage.setItem('token', loginInfo['token']);
-                  this._storage.setItem('currentUser', loginInfo['username']);
-
-                  // Route the user into the application
-                  this._router.navigate(['main']);
-                } else {
-                  // Returned token or username was null. Very strange
-                  this.error = true;
-                  this.errorMessage = this.standardErrorMessage;
-                  console.error('Couldn\'t log in user because token or username was null');
-                }
-              })
-              .catch((loginError: Response) => {
-                // Signal that Google authentication inside the popup window is done to close it
-                googleAuthSource.next(true);
-                switch (loginError.status) {
-                  default:
-                    // API error
-                    this.error = true;
-                    this.errorMessage = this.standardErrorMessage;
-                    console.error(loginError);
-                }
-              });
-          }
-        })
-        .catch((getAuthUrlError: Response) => {
-          // Update the Google sign-in button styling
-          this.googleSignInImageSource = this.googleSignInImageSourceDefault;
-
+        // Open the authentication URL in a popup window
+        var popup = window.open(authUrl, 'Authenticate Google', 'width=600, height=600');
+        if (popup === null) {
           this.error = true;
-          switch (getAuthUrlError.status) {
-            default:
-              // API error
-              this.errorMessage = this.standardErrorMessage;
-              console.error(getAuthUrlError);
-          }
-        });
-      }else{
-        alert('token required');
-      }
+          this.errorMessage = this.standardErrorMessage;
+          console.error('Opening Google OAuth2.0 window returned null');
+        } else {
+          // Automatically close the popup window after 1 minute
+          setTimeout(() => popup.close(), 60000);
+
+          /**
+           * Subscribe to an event for when the user finishes Google
+           * authentication in the popup. Popup variable is null inside the
+           * user service call closure, so this subscription is necessary
+           */
+          let googleAuthSource = new BehaviorSubject<boolean>(false); // Default value = false
+          let popupWindowStatus = googleAuthSource.asObservable();
+          popupWindowStatus.subscribe((finishedGoogleAuth) => {
+            if (finishedGoogleAuth) popup.close();
+          });
+
+          // Fetch the login credentials for the Google account the user selects
+          this._userService.authenticateGoogle(this.alphaCode)
+            .then((loginInfo: Object) => {
+              // Signal that Google authentication inside the popup window is done to close it
+              googleAuthSource.next(true);
+
+              // Check for the authentication info
+              if (loginInfo['token'] !== null && loginInfo['username'] !== null) {
+                // Add the token and username data to local storage
+                this._storage.setItem('token', loginInfo['token']);
+                this._storage.setItem('currentUser', loginInfo['username']);
+
+                // Route the user into the application
+                this._router.navigate(['main']);
+              } else {
+                // Returned token or username was null. Very strange
+                this.error = true;
+                this.errorMessage = this.standardErrorMessage;
+                console.error('Couldn\'t log in user because token or username was null');
+              }
+            })
+            .catch((loginError: Response) => {
+              // Signal that Google authentication inside the popup window is done to close it
+              googleAuthSource.next(true);
+
+              this.error = true;
+              switch (loginError.status) {
+                case 400:
+                  this.errorMessage = 'You need an access code to sign in with that Google account';
+                  break;
+                case 403:
+                  this.errorMessage = 'That access code has already been used';
+                  break;
+                case 404:
+                  this.errorMessage = 'That access code is invalid';
+                  break;
+                default:
+                  // API error
+                  this.errorMessage = this.standardErrorMessage;
+                  console.error(loginError);
+              }
+            });
+        }
+      })
+      .catch((getAuthUrlError: Response) => {
+        // Update the Google sign-in button styling
+        this.googleSignInImageSource = this.googleSignInImageSourceDefault;
+
+        this.error = true;
+        switch (getAuthUrlError.status) {
+          default:
+            // API error
+            this.errorMessage = this.standardErrorMessage;
+            console.error(getAuthUrlError);
+        }
+      });
   }
 
   /**
@@ -187,7 +191,7 @@ export class LoginComponent implements OnInit {
 
     // Username needs to be saved for closure created with service call to set local storage
     let username = this._username;
-    this._userService.validate(this._username, this._password, this._alphaCode)
+    this._userService.validate(this._username, this._password)
       .then((token) => {
         if (token !== null) {
           // Add the token and username data to local storage
