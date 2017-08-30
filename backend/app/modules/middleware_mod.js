@@ -8,6 +8,7 @@ const LOG = require('./log_mod');
 const ERROR = require('./error_mod');
 const MEDIA = require('./media_mod');
 const UTIL = require('./utility_mod');
+const CODES = require('../controller/code');
 const USERS = require('../controller/user');
 const AUTH = require('./authentication_mod');
 const VALIDATE = require('./validation_mod');
@@ -436,6 +437,7 @@ const createUser = function createUser(_request, _response) {
     if (!VALIDATE.isValidUsername(_request.body.username)) invalidParams.push('username');
     if (!VALIDATE.isValidPassword(_request.body.password)) invalidParams.push('password');
     if (!VALIDATE.isValidEmail(_request.body.email)) invalidParams.push('email');
+    if (!VALIDATE.isValidString(_request.body.alphaCode)) invalidParams.push('alphaCode');
 
     // First name and last name are optional parameters
     let hasValidFirstName = false;
@@ -461,33 +463,88 @@ const createUser = function createUser(_request, _response) {
 
       reject(errorJson);
     } else {
-      // Parameters are valid, so build user JSON with request body data
-      const userInfo = {
-        email: _request.body.email,
-        username: _request.body.username,
-        password: _request.body.password,
-      };
+      // Parameters are valid, so check if the alpha code has been used
+      CODES.getByUuid(_request.body.alphaCode)
+        .then((code) => {
+          if (!UTIL.hasValue(code)) {
+            // Invalid code
+            const errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.RESOURCE_DNE_ERROR,
+              'That alpha code does not exist',
+              `Client tried to use '${_request.body.alphaCode}' as an alpha code, but it does not exist`
+            );
 
-      if (hasValidFirstName) userInfo.firstName = _request.body.firstName;
-      if (hasValidLastName) userInfo.lastName = _request.body.lastName;
+            reject(errorJson);
+          } else if (code.used) {
+            // Stale code
+            const errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.RESOURCE_ERROR,
+              'That alpha code has already been used',
+              `Client tried to use '${_request.body.alphaCode}' as an alpha code, but it was already used`
+            );
 
-      USERS.create(userInfo)
-        .then((newUser) => {
-          // Generate a JWT for authenticating future requests
-          const token = AUTH.generateToken(newUser);
-          const successJson = {
-            success: {
-              message: 'Successfully created user',
-              token: `JWT ${token}`,
-            },
-          };
+            reject(errorJson);
+          } else {
+            // Valid code. Update the code to be used
+            CODES.updateAttribute(code, 'used', true)
+              /* eslint-disable no-unused-vars */
+              .then((updatedCode) => {
+              /* eslint-enable no-unused-vars */
+                // Alpha code has been used. Create the user. Build user JSON with request body data
+                const userInfo = {
+                  email: _request.body.email,
+                  username: _request.body.username,
+                  password: _request.body.password,
+                };
 
-          resolve(successJson);
-        }) // End then(newUser)
-        .catch((createUserError) => {
-          const errorJson = ERROR.userError(SOURCE, _request, _response, createUserError);
+                if (hasValidFirstName) userInfo.firstName = _request.body.firstName;
+                if (hasValidLastName) userInfo.lastName = _request.body.lastName;
+
+                USERS.create(userInfo)
+                  .then((newUser) => {
+                    // Generate a JWT for authenticating future requests
+                    const token = AUTH.generateToken(newUser);
+                    const successJson = {
+                      success: {
+                        message: 'Successfully created user',
+                        token: `JWT ${token}`,
+                      },
+                    };
+
+                    resolve(successJson);
+                  }) // End then(newUser)
+                  .catch((createUserError) => {
+                    const errorJson = ERROR.userError(SOURCE, _request, _response, createUserError);
+                    reject(errorJson);
+
+                    // Unregister the alpha code
+                    CODES.updateAttribute(code, 'used', false)
+                      .catch((updateCodeError) => {
+                        log(
+                          `Alpha code ${code.uuid} is registered but no account was created`,
+                          _request
+                        );
+
+                        ERROR.codeError(SOURCE, _request, _response, updateCodeError);
+                      }); // End CODES.updateAttribute()
+                  }); // End USERS.create()
+              }) // End then(updatedCode)
+              .catch((updateCodeError) => {
+                const errorJson = ERROR.codeError(SOURCE, _request, _response, updateCodeError);
+                reject(errorJson);
+              }); // End CODES.updateAttribute()
+          }
+        }) // End then(code)
+        .catch((getCodeError) => {
+          const errorJson = ERROR.codeError(SOURCE, _request, _response, getCodeError);
           reject(errorJson);
-        }); // End USERS.create()
+        }); // End CODES.getByUuid()
     }
   }); // End return promise
 }; // End createUser()

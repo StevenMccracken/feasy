@@ -419,9 +419,36 @@ const googleApiError = function googleApiError(_source, _request, _response, _er
   return errorJson;
 }; // End googleApiError()
 
+/**
+ * codeError - Determines the correct error JSON for
+ * a mongoose error associated with the Code schema
+ * @param {String} _source the function where the error occurred
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {Object} _error the Code error
+ * @return {Object} a formalized error JSON
+ */
+const codeError = function codeError(_source, _request, _response, _error) {
+  let errorJson;
+  switch (_error.name) {
+    default:
+      errorJson = error(
+        _source,
+        _request,
+        _response,
+        ERROR_CODE.API_ERROR,
+        null,
+        _error
+      );
+  } // End switch (_error)
+
+  return errorJson;
+}; // End codeError()
+
 module.exports = {
   error,
   CODE: ERROR_CODE,
+  codeError,
   userError,
   bcryptError,
   multerError,
