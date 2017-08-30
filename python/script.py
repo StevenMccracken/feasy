@@ -19,7 +19,7 @@ elif args.text:
 	print("reading string of text...")
 	text = args.text
 text.strip()
-print(text)
+#print(text)
 
 date_regex = re.compile('([0-2]{1}[0-9]|[3][01]|[0-9]{1})-((?:Jan(?:uary)?|(?:Feb)|(?:Mar)|(?:Apr)|(?:May)|(?:Jun)|(?:Jul)|(?:Aug)|(?:Sep)|(?:Oct)|(?:Nov)|(?:Dec)))', flags=re.IGNORECASE)
 
@@ -27,7 +27,7 @@ output = []
 result = date_regex.search(text, 0)
 while (result):
 	date = result.group()
-	print(date)
+	#print(date)
 	desc_start = result.span()[1]
 	new_result = date_regex.search(text, desc_start)
 	if (new_result): desc_end = new_result.span()[0]
@@ -38,7 +38,7 @@ while (result):
 	#print(description)
 	output.append((date,description))
 	result = new_result
-print(output)
+#print(output)
 	
 #print(result.span()[0])
 #re.search('[0-9]{1,2}:[0-9]{2} ?(AM|PM)?','time with optional am/pm', flags=re.IGNORECASE)
