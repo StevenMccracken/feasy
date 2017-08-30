@@ -43,14 +43,14 @@ const parsePdf = function parsePdf(_filepath) {
     parser.on('pdfParser_dataReady', (pdfData) => {
       // Split the raw text into strings and store into an array
       const text = parser.getRawTextContent();
-      const filename = UTIL.newUuid();
-      log(`Writing ${filename}`);
-      FS.writeFile(`./app/media/pdfs/${filename}.txt`, text, (error) => {
-        if (error) {
-          log(`Failed writing ${filename} because:`);
-          console.log(error);
-        } else log('Successfully wrote ', filename);
-      });
+      // const filename = UTIL.newUuid();
+      // log(`Writing ${filename}`);
+      // FS.writeFile(`./app/media/pdfs/${filename}.txt`, text, (error) => {
+      //   if (error) {
+      //     log(`Failed writing ${filename} because:`);
+      //     console.log(error);
+      //   } else log('Successfully wrote ', filename);
+      // });
 
       const textArray = text.split(/\s+/);
       resolve(textArray);

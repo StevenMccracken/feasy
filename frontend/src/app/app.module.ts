@@ -29,7 +29,7 @@ let gapiClientConfig: ClientConfig = {
     'https://www.googleapis.com/auth/plus.me',
     'https://www.googleapis.com/auth/calendar'
   ].join(' '),
-  redirect_uri: 'http://localhost:8080/auth/google/exchange',
+  redirect_uri: 'https://api.feasy-app.com/auth/google/exchange',
 };
 
 @NgModule({
