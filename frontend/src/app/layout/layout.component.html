@@ -1,11 +1,13 @@
 <div class="main">
-  <nav>
-    <div class="nav-wrapper primary">
-      <a href="#" data-activates="slide-out" class="btn-flat circle" id="button-slide"><i class="material-icons white-text">menu</i></a>
-      <a routerLink='/main/calendar' class="btn-flat circle" ><i class="material-icons white-text">event_note</i></a>
-      <a routerLink='/main/calendar' class="logo brand-logo center">Feasy</a>
-    </div>
-  </nav>
+  <div  class="navbar-fixed">
+    <nav>
+      <div class="nav-wrapper primary">
+        <a href="#" data-activates="slide-out" class="btn-flat circle" id="button-slide"><i class="material-icons white-text">menu</i></a>
+        <a routerLink='/main/calendar' class="btn-flat circle" ><i class="material-icons white-text">event_note</i></a>
+        <a routerLink='/main/calendar' class="logo brand-logo center">Feasy</a>
+      </div>
+    </nav>
+  </div>
   <ul id="slide-out" class="side-nav right">
     <li>
       <div class="user-view">
@@ -110,13 +112,36 @@
       </div>
     </div>
 
-    <div class="container center upload-button">
+    <div class="container center upload-button" (click)="openLoadLearn()">
       <label class="waves-effect waves-light btn blue">
-         Load & Learn<input type="file" style="display: none;">
+         Quick Add
       </label>
     </div>
-
-
   </ul>
+
+  <div id="loadLearn" class="modal modal-fixed-footer">
+    <div class="modal-content">
+      <table>
+        <thead>
+          <tr>
+            <td><h4>Due Date</h4></td>
+            <td><h4>Task Name</h4></td>
+          </tr>
+        </thead>
+        <br><br><br>
+        <tbody *ngFor="let a of taskArray; let i = index" style="margin-top: 100px;">
+            <tr>
+              <td class="tableContent center"><input class="form-control dueDate" type="date" [(ngModel)]="taskArray[i].dueDate"></td>
+              <td class="tableContent center"><input class="form-control taskName" type="text" [(ngModel)]="taskArray[i].title"></td>
+              <td class="material-icons" style="padding-right: 20px;" *ngIf="i == taskArray.length - 1"(click)="addMore()">control_point</td>
+              <td class="material-icons" (click)="deleteCurrent(i)">delete_sweep</td>
+            </tr>
+          </tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <a class="modal-action modal-close waves-effect waves-green btn-flat" (click)="addAllTask()">Import to Calendar</a>
+    </div>
+  </div>
   <router-outlet></router-outlet>
 </div>

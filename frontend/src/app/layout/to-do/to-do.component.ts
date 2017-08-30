@@ -35,10 +35,14 @@ export class ToDoComponent implements OnInit {
     private _assignmentService: AssignmentService
   ) {
     _dragulaService.drop
-      .subscribe(value => this.onDrop(value));
+      .subscribe(value => this.onDrop(value, _dragulaService));
   }
 
   ngOnInit() {
+    this.todoInitializer();
+  }
+
+  todoInitializer(): void{
     this.assignment.dueDate = new Date();
     this.completedAssignments = [], this.incompleteAssignments = [];
     this._assignmentService.getAll()
@@ -49,10 +53,12 @@ export class ToDoComponent implements OnInit {
             else this.incompleteAssignments.push(assignment);
           }
 
-          this.completeEmpty = this.completedAssignments.length === 0;
+          this.completeEmpty = (this.completedAssignments.length === 0);
           this.completeCounter = this.completedAssignments.length;
+
           this.uncompleteEmpty = (this.incompleteAssignments.length === 0);
           this.uncompleteCounter = this.incompleteAssignments.length;
+
           this.sortAssignments();
           this.showlist = true;
         } else this.doneSorting = true;
@@ -66,28 +72,36 @@ export class ToDoComponent implements OnInit {
       });
   }
 
-  private onDrop(args) {
+  private onDrop(args, _dragulaService) {
     console.log(args);
     let info = args[1].id.split('-');
-    let arr = info[0] === 'unComplete' ? this.incompleteAssignments : this.completedAssignments;
+    let arr = (info[0] === 'unComplete') ? this.incompleteAssignments : this.completedAssignments;
+
 
     let index = parseInt(info[1]);
     let assignment = arr[index];
     let complete = args[2].id === 'completed';
-
+    console.log(assignment);
     console.log('Updating assignment %s completed to %s', assignment._id, complete);
-    this._assignmentService.updateCompleted(assignment._id, complete)
-      .then(() => {
-        this.uncompleteCounter = complete ? this.uncompleteCounter - 1 : this.uncompleteCounter + 1;
-        this.completeCounter = complete ? this.uncompleteCounter + 1 : this.completeCounter - 1;
+    if(complete != assignment.completed){
+      console.log(complete);
+      console.log(assignment.completed);
+      this._assignmentService.updateCompleted(assignment._id, complete)
+        .then(() => {
+          this.uncompleteCounter = complete ? this.uncompleteCounter - 1 : this.uncompleteCounter + 1;
+          this.completeCounter   = complete ? this.uncompleteCounter + 1 : this.completeCounter - 1;
 
-        console.log('Completed counter: %d', this.completeCounter);
-        console.log('Incomplete counter: %d', this.uncompleteCounter);
+          console.log('Completed counter: %d', this.completeCounter);
+          console.log('Incomplete counter: %d', this.uncompleteCounter);
 
-        this.uncompleteEmpty = this.uncompleteCounter === 0;
-        this.completeEmpty = this.completeCounter === 0;
-      })
-      .catch((error: any) => console.log(error));
+          this.uncompleteEmpty = this.uncompleteCounter === 0;
+          this.completeEmpty = this.completeCounter === 0;
+        })
+        .catch((error: any) => {
+          console.log(error);
+          //this._dragulaService.find('')
+        });
+    }
   }
 
   initializeform(): void {
@@ -120,6 +134,7 @@ export class ToDoComponent implements OnInit {
     this._assignmentService.create(this.assignment)
       .then((newAssignment: Assignment) => {
         this.updateArray(newAssignment);
+        this.assignment = new Assignment();
       })
       .catch((createError: any) => {
         if (Array.isArray(createError)) {
@@ -158,18 +173,29 @@ export class ToDoComponent implements OnInit {
 
   deleteEventAction(assignment: Assignment): void {
     let index = this.completedAssignments.indexOf(assignment);
-    let incomplete = index >= 0;
+    let incomplete = index < 0;
+    console.log(assignment);
     this._assignmentService.delete(assignment._id)
       .then(() => {
-        if (incomplete) this.completedAssignments.splice(index, 1);
-        else this.incompleteAssignments.splice(index, 1);
+          this.spliceArray(assignment, incomplete);
+          console.log(assignment);
+          console.log(incomplete);
       })
       .catch((deleteError: Response) => {
         if (deleteError.status === 404) {
-          if (incomplete) this.completedAssignments.splice(index, 1);
-          else this.incompleteAssignments.splice(index, 1);
+          alert('something wrong :(');
         } else this.handleError(deleteError);
       });
+  }
+
+  spliceArray(assignment: Assignment, incomplete: boolean): void{
+    if(incomplete){
+      let index = this.incompleteAssignments.indexOf(assignment);
+      this.incompleteAssignments.splice(index, 1);
+    }else{
+      let index = this.completedAssignments.indexOf(assignment);
+      this.completedAssignments.splice(index, 1)
+    }
   }
 
   enableEdit(assignment: Assignment, index: number, type: string): void {
@@ -264,6 +290,14 @@ export class ToDoComponent implements OnInit {
           else this.handleError(updateError);
         });
     }
+
+    this._assignmentService.updateType(id, assignment.type)
+      .then(() => console.log('Update Type'))
+      .catch((updateError: any) => {
+        if (typeof updateError === 'string') this.handleUpdateError('description', updateError);
+        else if (updateError.status === 404) this.handle404Error(assignment);
+        else this.handleError(updateError);
+      });
 
     this._assignmentService.updateDescription(id, assignment.title)
       .then(() => console.log('Updated description'))

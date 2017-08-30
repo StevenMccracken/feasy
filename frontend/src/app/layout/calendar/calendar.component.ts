@@ -16,7 +16,7 @@ import {
   CalendarEventAction,
   CalendarEventTimesChangedEvent
 } from 'angular-calendar';
-import { Component, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, Input} from '@angular/core';
 
 import { COLORS } from '../../objects/colors';
 import { Assignment } from '../../objects/assignment';
@@ -24,6 +24,9 @@ import { AssignmentService } from '../../services/assignment.service';
 import { CommonUtilsService } from '../../utils/common-utils.service';
 import { LocalStorageService } from '../../utils/local-storage.service';
 
+import { LayoutComponent } from '../layout.component';
+
+import { LoadLearnService } from '../../services/load-learn.service';
 // Used to access jQuery and Materialize script
 declare var $: any;
 declare var Materialize: any;
@@ -34,7 +37,9 @@ declare var Materialize: any;
   styleUrls: ['calendar.component.css'],
   templateUrl: 'calendar.component.html',
 })
+
 export class CalendarComponent implements OnInit {
+
   // Assignment object used for the assignment form
   assignment: Assignment = new Assignment();
   jquery: any;
@@ -111,7 +116,8 @@ export class CalendarComponent implements OnInit {
     private _router: Router,
     private _utils: CommonUtilsService,
     private _storage: LocalStorageService,
-    private _assignmentService: AssignmentService
+    private _assignmentService: AssignmentService,
+    private _loadLearn: LoadLearnService
   ) {}
 
   // TODO: This isn't used right now
@@ -120,7 +126,19 @@ export class CalendarComponent implements OnInit {
   };
 
   ngOnInit() {
-    console.log(Materialize);
+
+    //this is not really the best way but it might work for now
+    setInterval( () => {
+      if(localStorage['changed'] === 'true'){
+        let temp = this._loadLearn.getTaskArray();
+        this.populateAfter(temp);
+        localStorage['changed'] = 'false';
+        console.log('hello');
+      }
+      console.log(localStorage['changed']);
+
+    }, 200);
+
     $('#viewEvent').modal({
       dismissible: true,
       ready: () => console.log('open modal'),
@@ -190,6 +208,23 @@ export class CalendarComponent implements OnInit {
       .catch((getAssignmentsError: Response) => this.handleError(getAssignmentsError));
   }
 
+  updateCompleted(a: Assignment){
+    this._assignmentService.updateCompleted(a._id, !a.completed)
+                           .then(() => {
+                             console.log('completed updated');
+                             a.completed = !a.completed;
+                             this.changeColor(a);
+                           })
+                           .catch((getAssignmentsError: Response) => this.handleError(getAssignmentsError));
+  }
+
+  changeColor(a: Assignment){
+    let newEvent = this.aDescription.get(a);
+    newEvent.color = this.determineColor(a);
+    this.events.splice(this.events.indexOf(this.aDescription.get(a)), 1);
+    this.events.push(newEvent);
+    this.refresh.next();
+  }
   /**
    * Determines the color for a given assignment's
    * date based on it's relation to the current date
@@ -222,6 +257,31 @@ export class CalendarComponent implements OnInit {
     return color;
   }
 
+  populateAfter(_assignments: Assignment[]): void{
+    let cEvents: CalendarEvent[] = [];
+    for (let assignment of _assignments) {
+      // Create a CalendarEvent for each assignment
+      let event: CalendarEvent = {
+        start: assignment.dueDate,
+        end: assignment.dueDate,
+        title: assignment.title,
+        color: this.determineColor(assignment),
+        actions: this.actions,
+        draggable: true,
+      };
+
+      // Add the event to the list of events
+      cEvents.push(event);
+
+      // Add the assignment and event to the maps
+      this.eDescription.set(event, assignment);
+      this.aDescription.set(assignment, event);
+    }
+
+    // Update the global events with the events that were just created
+    this.events = this.events.concat(cEvents);
+    this.refresh.next();
+  }
   /**
    * Adds the given assignments to the calendar's events
    * @param {Assignment[]} _assignments the list of assignments to add to the calendar
@@ -530,7 +590,7 @@ export class CalendarComponent implements OnInit {
   debug(): void {
     // console.log(event);
     // console.log(event.target);
-    console.log(this.currentDayArray);
+    //console.log(this.changes);
   }
 
   dayClicked({ date, events }: { date: Date, events: CalendarEvent[] }): void {

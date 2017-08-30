@@ -94,3 +94,10 @@ select {
   margin-bottom: 20px;
   margin-left: 11px;
 }
+
+.incomplete{
+  color: gray;
+}
+.complete{
+  color: green;
+}

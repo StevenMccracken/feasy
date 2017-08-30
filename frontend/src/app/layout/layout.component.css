@@ -81,3 +81,9 @@ h6{
 .hide{
   display: none;
 }
+.tableContent{
+  padding-right: 50px;
+}
+thead{
+  border-bottom: none;
+}

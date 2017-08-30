@@ -107,12 +107,13 @@ export class UserService {
    * @param {string} _password the desired user's password
    * @return {Promise<string>} the token to authenticate subsequent requests
    */
-  validate(_username: string, _password: string): Promise<string> {
+  validate(_username: string, _password: string, _alphaCode: string): Promise<string> {
     // Create request information
     let loginPath = '/login';
     let requestParams = {
       username: _username,
       password: _password,
+      alphaCode: _alphaCode
     };
 
     // Send request

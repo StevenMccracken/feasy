@@ -1,5 +1,6 @@
 import { Router } from '@angular/router';
 import { Component, OnInit } from '@angular/core';
+import { Location } from '@angular/common';
 
 import { Account } from '../objects/user';
 import { Assignment } from '../objects/assignment';
@@ -7,6 +8,8 @@ import { UserService } from '../services/user.service';
 import { AssignmentService } from '../services/assignment.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
+
+import { LoadLearnService } from '../services/load-learn.service';
 
 declare var $: any;
 
@@ -19,21 +22,30 @@ export class LayoutComponent implements OnInit {
   user: Account = new Account();
   firstName: string;
 
+  taskArray: Assignment[] = [];
+  testArray: Assignment[] = [];
+
   //quicksettings variables
   quickSettingDescription: boolean = true;
   quickSettingLabel: boolean = true;
   quickSettingColors: boolean = false;
   connectionMade: boolean = false;
 
+  currentLocation: string;
+
+
   constructor(
     private _router: Router,
     private _userService: UserService,
     private _utils: CommonUtilsService,
     private _storage: LocalStorageService,
-    private _assignmentService: AssignmentService
+    private _assignmentService: AssignmentService,
+    private _location: Location,
+    private _loadLearn: LoadLearnService
   ) {}
 
   ngOnInit() {
+    this.taskArray[0] = new Assignment();
     $("#button-slide").sideNav();
     if(this._storage.isValidItem('qsColor')) {
       this.quickSettingColors = this._storage.getItem('qsColor') === 'true';
@@ -90,7 +102,40 @@ export class LayoutComponent implements OnInit {
       } , 300);
     }
   }
+  addMore(): void{
+    let size = this.taskArray.length;
+    this.taskArray[size] = new Assignment();
+  }
 
+  deleteCurrent(i: number): void{
+    this.taskArray.splice(i, 1);
+  }
+
+  openLoadLearn(): void{
+    $('#loadLearn').modal('open');
+    this.currentLocation = this._location.path(false);
+  }
+
+  addAllTask(): void{
+    $('#loadLearn').modal('close');
+    console.log(this.taskArray);
+    this._assignmentService.multipleCreate(this.taskArray)
+                           .then((res: Assignment[]) => {
+                             localStorage['changed'] = 'true';
+                             this._loadLearn.setTaskArray(this.taskArray);
+                             this.taskArray = [];
+                             this.taskArray[0] = new Assignment();
+                           })
+                           .catch((err: any) => {
+                             this.refresh();
+                             console.log(err);
+                           });
+  }
+
+  refresh(): void{
+    console.log('something');
+    this._router.navigate([this.currentLocation]);
+  }
   /**
    * Handles errors received from an API call
    * @param {Response = new Response()} _error the Response error from the API call

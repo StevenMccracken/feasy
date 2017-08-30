@@ -15,12 +15,15 @@
       <div class="input-field col s12 m12 l12">
         <input placeholder="Password" id="password" type="password" class="validate" name="password" [(ngModel)]="_password" required #password="ngModel">
       </div>
+      <div class="input-field col s12 m12 l12">
+        <input placeholder="Alpha Token" id="token" type="text" class="validate" name="token" [(ngModel)]="_alphaToken" required #token="ngModel">
+      </div>
     </div>
     <div class="row">
-      <button type="reset" class="waves-effect waves-light btn col s5 offset-m5 m3" [class.disabled]="!loginForm.form.valid" (click)="validate()">Login</button>
+      <button type="reset" class="waves-effect waves-light btn col s5 offset-m5 m3" [class.disabled]="!loginForm.form.valid && _token === ''" (click)="validate()">Login</button>
       <button type="button" id="signup" class="waves-effect waves-light btn col s5 offset-s2 m3 offset-m1" routerLink="/signup">Signup</button>
     </div>
   </form>
 
-  <img id="googleSignIn" (click)="googleSignIn()" (mouseover)='googleSignInHover()' (mouseout)="googleSignInUnhover()" [src]="googleSignInImageSource" alt="Sign in with Google" />
+  <img id="googleSignIn" (click)="googleSignIn()" (mouseover)='googleSignInHover()' (mouseout)="googleSignInUnhover()" [src]="googleSignInImageSource" alt="Sign in with Google"/>
 </div>
