@@ -1,7 +1,6 @@
 #Python 3
 import argparse #docs https://docs.python.org/3/library/argparse.html
 import re #https://docs.python.org/3/library/re.html regex
-#import dateutil.parser #docs https://dateutil.readthedocs.io/ (doesnt seem like this lib will work out)
 
 #allows arguments: python script.py file [-h] [-file FILE] [-text TEXT] [-v]
 parser = argparse.ArgumentParser(prog='Project Alpha', description='uses text and parses information')
@@ -14,7 +13,7 @@ print(args)
 if args.file:
 	print("reading from a text file...")
 	print(args.file)
-	text_file = open(args.file,'r') #open file in read-only mode
+	text_file = open(args.file,'r',encoding="utf-8",errors='replace') #open file in read-only mode
 	text = text_file.read()
 elif args.text:
 	print("reading string of text...")
@@ -33,10 +32,10 @@ while (result):
 	new_result = date_regex.search(text, desc_start)
 	if (new_result): desc_end = new_result.span()[0]
 	else: 
-		print(desc_start)
+		print('End of Search')
 		break
 	description = text[desc_start:desc_end]
-	print(description)
+	#print(description)
 	output.append((date,description))
 	result = new_result
 print(output)
