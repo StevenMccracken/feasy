@@ -126,6 +126,26 @@ export class UserService {
   }
 
   /**
+   * Sends an existing token from local storage to the /login/refresh api route to refresh the token
+   * @return {Promise<string>} the token to authenticate subsequent requests
+   */
+  refreshAuthToken(): Promise<string> {
+    // Create request information
+    let token: string = this._storage.getItem('token');
+    let refreshTokenPath = '/login/refresh';
+    let headersOptions = { 'Authorization': token };
+
+    // Send request
+    return this._feasyApi.get(refreshTokenPath, headersOptions)
+      .then((successResponse: Response) => {
+        let responseBody = successResponse.json();
+        let token: string = responseBody && responseBody.success && responseBody.success.token;
+        return Promise.resolve(this._utils.hasValue(token) ? token : null);
+      })
+      .catch((errorResponse: Response) => Promise.reject(errorResponse));
+  }
+
+  /**
    * Retrieves the Feasy-specific Google OAuth2.0 URL for authenticating offline access
    * @return {Promise<string>} the authentication URL that contains the HTML content to authenticate
    */
