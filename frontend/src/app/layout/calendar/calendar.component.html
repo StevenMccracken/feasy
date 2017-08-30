@@ -17,6 +17,19 @@
             </a>
         </div>
       </div>
+      <div class="row col s12">
+        <div class="col s12 center">
+            <a class="btn-floating btn-large waves-effect waves-light red left" mwlCalendarPreviousView [view]="view" [(viewDate)]="viewDate">
+              <i class="material-icons">arrow_back</i>
+            </a>
+            <div class="btn red" mwlCalendarToday [(viewDate)]="viewDate">
+              Today
+            </div>
+            <a class="btn-floating btn-large waves-effect waves-light red right" mwlCalendarNextView [view]="view" [(viewDate)]="viewDate">
+              <i class="material-icons">arrow_forward</i>
+            </a>
+        </div>
+      </div>
 
       <!-- open for descussion later -->
       <!-- <div class="col s4">

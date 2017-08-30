@@ -376,7 +376,11 @@ export class CalendarComponent implements OnInit {
     }
   }
 
-  // TODO: Add formal documentation
+  /**
+   * This is used to display the popup shown on the calendar. The first click
+   * is used to show a list of events for the day clicked. The second click will
+   * show a list of events in a view that allows users to edit or add events
+   */
   displayPopUp(): void {
     if (this._utils.hasValue(this.e)) {
       if ($(this.e).is('#popup')) {

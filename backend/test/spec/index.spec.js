@@ -2,17 +2,17 @@ const FS = require('fs');
 const LOG = require('../log_mod');
 const UuidV4 = require('uuid/v4');
 const REQUEST = require('request');
-const FormData = require('form-data');
 const SERVER = require('../../server');
 
 // Server will check for TEST env variable and adjust the port according to the environment
 let baseUrl = 'http://localhost:8080';
 if (process.env.TEST) baseUrl = 'http://localhost:3000';
 
+/* eslint-disable no-undef */
 describe('Start server', () => {
-  let start = Date.now();
+  const start = Date.now();
 
-  let baseApiRoute = 'Base API route';
+  const baseApiRoute = 'Base API route';
   describe(baseApiRoute, () => {
     it('gets the welcome message and returns status code 200', (done) => {
       REQUEST.get(baseUrl, (error, response, body) => {
@@ -24,12 +24,15 @@ describe('Start server', () => {
   }); // End base API route
 
   // Test user information
-  let user1Name = 'grunttest_' + UuidV4(), user2Name = 'grunttest_' + UuidV4();
-  let user1Password = 'password', user2Password = 'password';
-  let user1Token, user2Token;
+  let user1Name = `grunttest_${UuidV4()}`;
+  const user2Name = `grunttest_${UuidV4()}`;
+  let user1Password = 'password';
+  const user2Password = 'password';
+  let user1Token;
+  let user2Token;
 
   // Create the first test user
-  let createUser1 = 'Create user 1';
+  const createUser1 = 'Create user 1';
   describe(createUser1, () => {
     let requestParams;
     beforeEach(() => {
@@ -49,7 +52,7 @@ describe('Start server', () => {
         LOG(createUser1, body);
 
         // Parse JSON response for the token
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
         expect(data.success.token).toBeDefined();
         user1Token = data.success.token;
@@ -59,7 +62,7 @@ describe('Start server', () => {
   }); // End create user 1
 
   // Create the second test user
-  let createUser2 = 'Create user 2';
+  const createUser2 = 'Create user 2';
   describe(createUser2, () => {
     let requestParams;
     beforeEach(() => {
@@ -79,7 +82,7 @@ describe('Start server', () => {
         LOG(createUser2, body);
 
         // Parse JSON response for the token
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
         expect(data.success.token).toBeDefined();
         user2Token = data.success.token;
@@ -89,7 +92,7 @@ describe('Start server', () => {
   }); // End create user 2
 
   // Send login credentials to get a token
-  let login = 'Login';
+  const login = 'Login';
   describe(login, () => {
     let requestParams;
     beforeEach(() => {
@@ -108,7 +111,7 @@ describe('Start server', () => {
         LOG(login, body);
 
         // Parse JSON response for the token
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
         expect(data.success.token).toBeDefined();
         done();
@@ -116,8 +119,33 @@ describe('Start server', () => {
     });
   }); // End login
 
+  // Send valid token to get a new token
+  const refreshToken = 'refreshToken';
+  describe(refreshToken, () => {
+    let requestParams;
+    beforeEach(() => {
+      requestParams = {
+        url: `${baseUrl}/login/refresh`,
+        headers: { Authorization: user1Token },
+      };
+    });
+
+    it('generates a refreshed token and returns status code 200', (done) => {
+      REQUEST.get(requestParams, (error, response, body) => {
+        expect(response.statusCode).toBe(200);
+        LOG(login, body);
+
+        // Parse JSON response for the refreshed token
+        const data = JSON.parse(body);
+        expect(data.success).toBeDefined();
+        expect(data.success.token).toBeDefined();
+        done();
+      });
+    });
+  }); // End refreshToken
+
   // Get the Google OAuth URL
-  let googleOAuthUrl = 'Google OAuth URL';
+  const googleOAuthUrl = 'Google OAuth URL';
   describe(googleOAuthUrl, () => {
     let requestParams;
     beforeEach(() => {
@@ -130,7 +158,7 @@ describe('Start server', () => {
         LOG(googleOAuthUrl, body);
 
         // Parse JSON response for the URL
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
         expect(data.success.authUrl).toBeDefined();
         done();
@@ -139,7 +167,7 @@ describe('Start server', () => {
   }); // End googleOAuthUrl
 
   // Get user 1's information
-  let getUser1Info = 'Get user 1\'s information';
+  const getUser1Info = 'Get user 1\'s information';
   describe(getUser1Info, () => {
     let requestParams;
     beforeEach(() => {
@@ -159,9 +187,9 @@ describe('Start server', () => {
   }); // End get user 1 information
 
   // Update user 1's username
-  let updateUser1Username = 'Update user 1\'s username';
+  const updateUser1Username = 'Update user 1\'s username';
   describe(updateUser1Username, () => {
-    let newUser1Name = `${user1Name}_updated`;
+    const newUser1Name = `${user1Name}_updated`;
     let requestParams;
     beforeEach(() => {
       requestParams = {
@@ -177,7 +205,7 @@ describe('Start server', () => {
         LOG(updateUser1Username, body);
 
         // Parse JSON response for the token
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
         expect(data.success.token).toBeDefined();
         user1Name = newUser1Name;
@@ -188,9 +216,9 @@ describe('Start server', () => {
   }); // End update user 1's username
 
   // Update user 1's password
-  let updateUser1Password = 'Update user 1\'s password';
+  const updateUser1Password = 'Update user 1\'s password';
   describe(updateUser1Password, () => {
-    let newUser1Password = `${user1Password}_updated`;
+    const newUser1Password = `${user1Password}_updated`;
     let requestParams;
     beforeEach(() => {
       requestParams = {
@@ -207,7 +235,7 @@ describe('Start server', () => {
       REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(updateUser1Password, body);
@@ -218,7 +246,7 @@ describe('Start server', () => {
   }); // End update user 1's password
 
   // Update user 1's email
-  let updateUser1Email = 'Update user 1\'s email';
+  const updateUser1Email = 'Update user 1\'s email';
   describe(updateUser1Email, () => {
     let requestParams;
     beforeEach(() => {
@@ -233,7 +261,7 @@ describe('Start server', () => {
       REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(updateUser1Email, body);
@@ -243,7 +271,7 @@ describe('Start server', () => {
   }); // End update user 1's email
 
   // Update user 1's first name
-  let updateUser1FirstName = 'Update user 1\'s first name';
+  const updateUser1FirstName = 'Update user 1\'s first name';
   describe(updateUser1FirstName, () => {
     let requestParams;
     beforeEach(() => {
@@ -258,7 +286,7 @@ describe('Start server', () => {
       REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(updateUser1FirstName, body);
@@ -268,7 +296,7 @@ describe('Start server', () => {
   }); // End update user 1's first name
 
   // Update user 1's last name
-  let updateUser1LastName = 'Update user 1\'s last name';
+  const updateUser1LastName = 'Update user 1\'s last name';
   describe(updateUser1LastName, () => {
     let requestParams;
     beforeEach(() => {
@@ -283,7 +311,7 @@ describe('Start server', () => {
       REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(updateUser1LastName, body);
@@ -293,8 +321,9 @@ describe('Start server', () => {
   }); // End update user 1's last name
 
   // Create assignment 1
-  let createAssignment1 = 'Create assignment 1';
-  let assignment1Id, nowUnixSeconds = Math.floor(Date.now() / 1000);
+  const createAssignment1 = 'Create assignment 1';
+  const nowUnixSeconds = Math.floor(Date.now() / 1000);
+  let assignment1Id;
   describe(createAssignment1, () => {
     let requestParams;
     beforeEach(() => {
@@ -314,7 +343,7 @@ describe('Start server', () => {
         LOG(createAssignment1, body);
 
         // Parse JSON response for the assignment id
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data._id).toBeDefined();
         assignment1Id = data._id;
         done();
@@ -323,7 +352,7 @@ describe('Start server', () => {
   }); // End create assignment 1
 
   // Upload pdf
-  let uploadPdf = 'Upload pdf';
+  const uploadPdf = 'Upload pdf';
   describe(uploadPdf, () => {
     let requestParams;
     beforeEach(() => {
@@ -335,16 +364,20 @@ describe('Start server', () => {
     });
 
     it('uploads a pdf and returns status code 200', (done) => {
-      REQUEST.post(requestParams, (error, response, body) => {
+      REQUEST.post(requestParams, (error, response) => {
         expect(response.statusCode).toBe(200);
-        LOG(createAssignment2);
+        LOG(uploadPdf);
         done();
       });
     });
   }); // End upload pdf
 
   // Create assignment 2
-  let createAssignment2 = 'Create assignment 2', assignment2Id;
+  const createAssignment2 = 'Create assignment 2';
+  /* eslint-disable no-unused-vars */
+  let assignment2Id;
+  /* eslint-enable no-unused-vars */
+
   describe(createAssignment2, () => {
     let requestParams;
     beforeEach(() => {
@@ -368,7 +401,7 @@ describe('Start server', () => {
         LOG(createAssignment2, body);
 
         // Parse JSON response for the assignment id
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data._id).toBeDefined();
         assignment2Id = data._id;
         done();
@@ -377,7 +410,7 @@ describe('Start server', () => {
   }); // End create assignment 2
 
   // Get user 1's assignments
-  let getUser1Assignments = 'Get user 1\'s assignments';
+  const getUser1Assignments = 'Get user 1\'s assignments';
   describe(getUser1Assignments, () => {
     let requestParams;
     beforeEach(() => {
@@ -392,7 +425,7 @@ describe('Start server', () => {
         expect(response.statusCode).toBe(200);
 
         // Parse JSON response for the assignments
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         LOG(getUser1Assignments, `Count = ${Object.keys(data).length}`);
         done();
       });
@@ -400,7 +433,7 @@ describe('Start server', () => {
   }); // End get user 1's assignments
 
   // Get assignment 1
-  let getAssignment1 = 'Get assignment 1';
+  const getAssignment1 = 'Get assignment 1';
   describe(getAssignment1, () => {
     let requestParams;
     beforeEach(() => {
@@ -420,7 +453,7 @@ describe('Start server', () => {
   }); // End get assignment 1
 
   // Update assignment 1's title
-  let updateAssignment1Title = 'Update assignment 1\'s title';
+  const updateAssignment1Title = 'Update assignment 1\'s title';
   describe(updateAssignment1Title, () => {
     let requestParams;
     beforeEach(() => {
@@ -435,7 +468,7 @@ describe('Start server', () => {
       REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(updateAssignment1Title, body);
@@ -445,7 +478,7 @@ describe('Start server', () => {
   }); // End update assignment 1's title
 
   // Update assignment 1's class
-  let updateAssignment1Class = 'Update assignment 1\'s class';
+  const updateAssignment1Class = 'Update assignment 1\'s class';
   describe(updateAssignment1Class, () => {
     let requestParams;
     beforeEach(() => {
@@ -460,7 +493,7 @@ describe('Start server', () => {
       REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(updateAssignment1Class, body);
@@ -470,7 +503,7 @@ describe('Start server', () => {
   }); // End update assignment 1's class
 
   // Update assignment 1's type
-  let updateAssignment1Type = 'Update assignment 1\'s type';
+  const updateAssignment1Type = 'Update assignment 1\'s type';
   describe(updateAssignment1Type, () => {
     let requestParams;
     beforeEach(() => {
@@ -485,7 +518,7 @@ describe('Start server', () => {
       REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(updateAssignment1Type, body);
@@ -495,7 +528,7 @@ describe('Start server', () => {
   }); // End update assignment 1's type
 
   // Update assignment 1's description
-  let updateAssignment1Description = 'Update assignment 1\'s description';
+  const updateAssignment1Description = 'Update assignment 1\'s description';
   describe(updateAssignment1Description, () => {
     let requestParams;
     beforeEach(() => {
@@ -510,7 +543,7 @@ describe('Start server', () => {
       REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(updateAssignment1Description, body);
@@ -520,7 +553,7 @@ describe('Start server', () => {
   }); // End update assignment 1's description
 
   // Update assignment 1's completed
-  let updateAssignment1Completed = 'Update assignment 1\'s completed';
+  const updateAssignment1Completed = 'Update assignment 1\'s completed';
   describe(updateAssignment1Completed, () => {
     let requestParams;
     beforeEach(() => {
@@ -535,7 +568,7 @@ describe('Start server', () => {
       REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(updateAssignment1Completed, body);
@@ -545,7 +578,7 @@ describe('Start server', () => {
   }); // End update assignment 1's completed
 
   // Update assignment 1's due date
-  let updateAssignment1DueDate = 'Update assignment 1\'s due date';
+  const updateAssignment1DueDate = 'Update assignment 1\'s due date';
   describe(updateAssignment1DueDate, () => {
     let requestParams;
     beforeEach(() => {
@@ -560,7 +593,7 @@ describe('Start server', () => {
       REQUEST.put(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(updateAssignment1DueDate, body);
@@ -570,7 +603,7 @@ describe('Start server', () => {
   }); // End update assignment 1's due date
 
   // Delete assignment 1
-  let deleteAssignment1 = 'Delete assignment 1';
+  const deleteAssignment1 = 'Delete assignment 1';
   describe(deleteAssignment1, () => {
     let requestParams;
     beforeEach(() => {
@@ -584,7 +617,7 @@ describe('Start server', () => {
       REQUEST.delete(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(deleteAssignment1, body);
@@ -594,7 +627,7 @@ describe('Start server', () => {
   }); // End delete assignment 1
 
   // Delete user 1
-  let deleteUser1 = 'Delete user 1';
+  const deleteUser1 = 'Delete user 1';
   describe(deleteUser1, () => {
     let requestParams;
     beforeEach(() => {
@@ -608,7 +641,7 @@ describe('Start server', () => {
       REQUEST.delete(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(deleteUser1, body);
@@ -618,7 +651,7 @@ describe('Start server', () => {
   }); // End delete user 1
 
   // Delete user 2
-  let deleteUser2 = 'Delete user 2';
+  const deleteUser2 = 'Delete user 2';
   describe(deleteUser2, () => {
     let requestParams;
     beforeEach(() => {
@@ -632,7 +665,7 @@ describe('Start server', () => {
       REQUEST.delete(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
 
-        let data = JSON.parse(body);
+        const data = JSON.parse(body);
         expect(data.success).toBeDefined();
 
         LOG(deleteUser2, body);
@@ -642,7 +675,7 @@ describe('Start server', () => {
   }); // End delete user 2
 
   // Close the server
-  let closeServer = 'Close server';
+  const closeServer = 'Close server';
   describe(closeServer, () => {
     it('shuts down the test server', (done) => {
       SERVER.closeServer();

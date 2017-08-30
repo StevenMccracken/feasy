@@ -113,7 +113,6 @@ export class LayoutComponent implements OnInit {
 
   openLoadLearn(): void{
     $('#loadLearn').modal('open');
-    this.currentLocation = this._location.path(false);
   }
 
   addAllTask(): void{
@@ -127,14 +126,8 @@ export class LayoutComponent implements OnInit {
                              this.taskArray[0] = new Assignment();
                            })
                            .catch((err: any) => {
-                             this.refresh();
                              console.log(err);
                            });
-  }
-
-  refresh(): void{
-    console.log('something');
-    this._router.navigate([this.currentLocation]);
   }
   /**
    * Handles errors received from an API call
