@@ -50,9 +50,9 @@ const ERROR_CODE = {
  * @param {Object} _error the standardized error JSON
  * @param {String} _customErrorMessage a custom error message for the client
  * @param {String} _serverMessage a custom error message for the server log
- * @returns {Object} a formal error JSON for the client
+ * @return {Object} a formal error JSON for the client
  */
-var error = function(_source, _request, _response, _error, _customErrorMessage, _serverMessage) {
+let error = function(_source, _request, _response, _error, _customErrorMessage, _serverMessage) {
   // Set an HTTP status code for the error type
   _response.status(_error.status);
 
@@ -75,17 +75,17 @@ var error = function(_source, _request, _response, _error, _customErrorMessage, 
 
   log(JSON.stringify(serverLog), _request);
   return clientJson;
-};
+}; // End error()
 
 /**
- * determineBcryptError - Determines the correct error JSON for a given bcrypt error
+ * bcryptError - Determines the correct error JSON for a given bcrypt error
  * @param {String} _source the function where the error occurred
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {String} _error the bcrypt error string
- * @returns {Object} a formalized error JSON
+ * @return {Object} a formalized error JSON
  */
-var determineBcryptError = function(_source, _request, _response, _error) {
+let bcryptError = function(_source, _request, _response, _error) {
   let errorJson;
   switch (_error) {
     case 'Not a valid BCrypt hash.':
@@ -108,21 +108,56 @@ var determineBcryptError = function(_source, _request, _response, _error) {
         null,
         _error
       );
-  }
+  } // End switch (_error)
 
   return errorJson;
-};
+}; // End bcryptError()
 
 /**
- * determineUserError - Determines the correct error JSON
- * for a mongoose error associated with the User schema
+ * multerError - Builds a client error repsonse based on a given multer error
+ * @param {String} _source the function where the error occurred
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {Object} _error JSON containing the specific multer error
+ * @return {Object} a formalized error JSON
+ */
+let multerError = function(_source, _request, _response, _error) {
+  let errorJson;
+  switch (_error.code) {
+    case 'LIMIT_UNEXPECTED_FILE':
+      errorJson = error(
+        _source,
+        _request,
+        _response,
+        ERROR_CODE.INVALID_REQUEST_ERROR,
+        'Invalid parameters: pdf',
+        `Client attempted to upload a file with the field '${_error.field}'`
+      );
+
+      break;
+    default:
+      errorJson = error(
+        _source,
+        _request,
+        _response,
+        ERROR_CODE.API_ERROR,
+        null,
+        `Unknown multer error: ${_error}`
+      );
+  } // End switch (_error.code)
+
+  return errorJson;
+}; // End multerError()
+
+/**
+ * userError - Determines the correct error JSON for a mongoose error associated with the User schema
  * @param {String} _source the function where the error occurred
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {Object} _error the mongoose error object
- * @returns {Object} a formalized error JSON
+ * @return {Object} a formalized error JSON
  */
-var determineUserError = function(_source, _request, _response, _error) {
+let userError = function(_source, _request, _response, _error) {
   let errorJson;
   switch (_error.name) {
     case 'CastError':
@@ -163,21 +198,21 @@ var determineUserError = function(_source, _request, _response, _error) {
         null,
         `${_error.name} (${_error.code}): ${_error.message}`
       );
-  }
+  } // End switch (_error.name)
 
   return errorJson;
-};
+}; // End userError()
 
 /**
- * determineAssignmentError - Determines the correct error JSON
- * for a mongoose error associated with the Assignment schema
+ * assignmentError - Determines the correct error JSON for
+ * a mongoose error associated with the Assignment schema
  * @param {String} _source the function where the error occurred
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {Object} _error the mongoose error object
- * @returns {Object} a formalized error JSON
+ * @return {Object} a formalized error JSON
  */
-var determineAssignmentError = function(_source, _request, _response, _error) {
+let assignmentError = function(_source, _request, _response, _error) {
   let errorJson;
   switch (_error.name) {
     case 'CastError':
@@ -222,67 +257,24 @@ var determineAssignmentError = function(_source, _request, _response, _error) {
         null,
         `${_error.name} (${_error.code}): ${_error.message}`
       );
-  }
+  } // End switch (_error.name)
 
   return errorJson;
-};
+}; // End assignmentError()
 
 /**
- * determineAuthenticationError - Builds a client
- * error repsonse based on a given authentication error
- * @param {String} _source the function where the error occurred
- * @param {Object} _request the HTTP request
- * @param {Object} _response the HTTP response
- * @param {String} _passportError error string from passport jwt package
- * @param {Error} _tokenError an error object from jsonwebtoken package
- * @param {Boolean} _userInfoMissing a boolean indicating whether a user was found for a given token
- * @returns {Object} a formalized error JSON
- */
-var determineAuthenticationError = function(
-  _source,
-  _request,
-  _response,
-  _passportError,
-  _tokenError,
-  _userInfoMissing
-) {
-  var serverLog;
-  let clientErrorMessage = null;
-
-  if (_passportError !== null) serverLog = _passportError;
-  else if (_tokenError !== null) {
-    // The token in the request body is invalid
-    serverLog = _tokenError.message;
-    clientErrorMessage = determineJwtError(_tokenError.message);
-  } else if (_userInfoMissing) serverLog = 'User for this token cannot be found';
-  else serverLog = 'Unknown error';
-
-  let errorJson = error(
-    _source,
-    _request,
-    _response,
-    ERROR_CODE.AUTHENTICATION_ERROR,
-    clientErrorMessage,
-    serverLog
-  );
-
-  return errorJson;
-};
-
-/**
- * determineAuthenticationError2 - Builds a client
- * error repsonse based on a given authentication error
+ * authenticationError - Builds a client error repsonse based on a given authentication error
  * @param {String} _source the function where the error occurred
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @param {Object} _error JSON containing specific authentication errors
- * @returns {Object} a formalized error JSON
+ * @return {Object} a formalized error JSON
  */
-var determineAuthenticationError2 = function(_source, _request, _response, _error) {
-  var serverLog;
+let authenticationError = function(_source, _request, _response, _error) {
+  let serverLog;
   let clientErrorMessage = null;
 
-  if (_error.passportError !== null) serverLog = _passportError;
+  if (_error.passportError !== null) serverLog = _error.passportError;
   else if (_error.tokenError !== null) {
     // The token in the request body is invalid
     serverLog = _error.tokenError.message;
@@ -302,22 +294,48 @@ var determineAuthenticationError2 = function(_source, _request, _response, _erro
   );
 
   return errorJson;
-};
+}; // End authenticationError()
+
+/**
+ * googleApiError - Determines the correct error JSON for a Google API error
+ * @param {String} _source the function where the error occurred
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {Object} _error the Google API error
+ * @return {Object} a formalized error JSON
+ */
+let googleApiError = function(_source, _request, _response, _error) {
+  let errorJson;
+  switch (_error) {
+    default:
+      errorJson = error(
+        _source,
+        _request,
+        _response,
+        ERROR_CODE.API_ERROR,
+        null,
+        _error
+      );
+  }  // End switch (_error)
+
+  return errorJson;
+}; // End googleApiError()
 
 module.exports = {
   error: error,
   CODE: ERROR_CODE,
-  determineUserError: determineUserError,
-  determineBcryptError: determineBcryptError,
-  determineAssignmentError: determineAssignmentError,
-  determineAuthenticationError: determineAuthenticationError,
-  determineAuthenticationError2: determineAuthenticationError2,
+  userError: userError,
+  bcryptError: bcryptError,
+  multerError: multerError,
+  googleApiError: googleApiError,
+  assignmentError: assignmentError,
+  authenticationError: authenticationError,
 };
 
 /**
  * determineJwtError - Determines the specific type of error generated from JWT events
  * @param {String} errorMessage the JWT error message
- * @returns {String} a more clearly worded error message
+ * @return {String} a more clearly worded error message
  */
 function determineJwtError(errorMessage) {
   /**
@@ -355,10 +373,10 @@ function determineJwtError(errorMessage) {
       break;
     default:
       reason = 'Unknown web token error';
-  }
+  } // End switch (errorMessage)
 
   return reason;
-}
+} // End determineJwtError()
 
 /**
  * log - Logs a message to the server console

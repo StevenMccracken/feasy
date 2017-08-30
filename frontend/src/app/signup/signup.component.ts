@@ -4,18 +4,20 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { User } from '../objects/user';
 import { UserService } from '../services/user.service';
+import { LocalStorageService } from '../utils/local-storage.service';
 
 @Component({
   selector: 'app-signup',
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.css'],
 })
-export class SignupComponent implements OnInit {
-  user = new User();
+export class SignupComponent {
+  // TODO: Do we need all of these class variables?
+  user: User = new User();
   passwordValidator: string;
-  error = false;
+  error: boolean = false;
   errorMessage: string;
-  private standardErrorMessage = 'Something bad happened. Please try signing up again';
+  private standardErrorMessage: string = 'Something bad happened. Please try signing up again';
   private varToWordMap: Object = {
     username: 'username',
     password: 'password',
@@ -24,22 +26,31 @@ export class SignupComponent implements OnInit {
     lastName: 'last name',
   };
 
-  constructor(private _userService: UserService, private _router: Router) {}
+  constructor(
+    private _router: Router,
+    private _userService: UserService,
+    private _storage: LocalStorageService
+  ) {}
 
-  ngOnInit() {}
+  /**
+   * Calls the user service to create a new user through the API.
+   * Updates the local storage with the corresponding authentication
+   * credentials. Routes the user to the main page on successful sign-up
+   */
+  signupUser(): void {
+    if (this.error) {
+      this.error = false;
+      this.errorMessage = '';
+    }
 
-  add(): void {
     if (!this.user) return;
 
     this._userService.create(this.user)
       .then((token: string) => {
-        if (token != null) {
-          // Clear any error messages
-          if (this.errorMessage != '') this.errorMessage = '';
-
-          // Add username and token to browser local storage
-          localStorage.setItem('currentUser', this.user.username);
-          localStorage.setItem('token', token);
+        if (token !== null) {
+          // Add token and username info to browser local storage
+          this._storage.setItem('token', token);
+          this._storage.setItem('currentUser', this.user.username);
 
           // Route the user into the app
           this._router.navigate(['/main']);
@@ -52,9 +63,6 @@ export class SignupComponent implements OnInit {
       })
       .catch((createUserError) => {
         this.error = true;
-
-        // Clear any previous error message
-        if (this.errorMessage != '') this.errorMessage = '';
 
         // Update the HTML to display an error message
         if (typeof createUserError === 'string') {

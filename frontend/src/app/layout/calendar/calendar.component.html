@@ -2,7 +2,24 @@
   <div class="row text-center">
     <div class="col s12">
       <div class="col s12 cal-title">
+<<<<<<< HEAD
         <h3 class="calendar-title"> {{ viewDate | calendarDate:(view + 'ViewTitle'):'en' }}</h3>
+=======
+        <h3 class="calendar-title" (click)="debug()"> {{ viewDate | calendarDate:(view + 'ViewTitle'):'en' }}</h3>
+      </div>
+      <div class="row col s12">
+        <div class="col s12 center">
+            <a class="btn-floating btn-large waves-effect waves-light red left" mwlCalendarPreviousView [view]="view" [(viewDate)]="viewDate">
+              <i class="material-icons">arrow_back</i>
+            </a>
+            <div class="btn red" mwlCalendarToday [(viewDate)]="viewDate">
+              Today
+            </div>
+            <a class="btn-floating btn-large waves-effect waves-light red right" mwlCalendarNextView [view]="view" [(viewDate)]="viewDate">
+              <i class="material-icons">arrow_forward</i>
+            </a>
+        </div>
+>>>>>>> 61b03f9efd0ccd8a259d8831442946d5b8b2ccd2
       </div>
       <div class="row col s12">
         <div class="col s12 center">
@@ -42,62 +59,6 @@
     </div>
   </div>
 
-  <div class="modal modal-fixed-footer row" id="createAssignments">
-    <div class="modal-content">
-      <form class="col s12" #assignmentForm="ngForm">
-        <div class="row">
-          <h4 class="col s11 collection-head">Whats New?</h4>
-          <i class="material-icons modal-close right" (click)="resetAssignmentField()">clear</i>
-        </div>
-
-        <div class="row">
-          <div class="input-field col s12">
-            <input placeholder="Assignment Name" id="title" type="text" name="title" [(ngModel)]="assignment.title" required #title="ngModel">
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col s12">
-            <div class="input-field col s6">
-              <input name="completed1" type="radio" value="true" id="completed" [(ngModel)]="assignment.completed" required #completed="ngModel"/>
-              <label for="completed">Completed</label>
-            </div>
-            <div class="input-field col s6">
-              <input name="completed1" type="radio" value="false" id="uncompleted" [(ngModel)]="assignment.completed" />
-              <label for="uncompleted" selected>Not Completed</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="input-field col s12" id="type-row">
-            <select id="type" name="type">
-              <option value="" disabled selected>What type of assignment will this be?</option>
-              <option value="Homework">Homework</option>
-              <option value="Quiz">Quiz</option>
-              <option value="Exam">Exam</option>
-              <option value="Project">Project</option>
-            </select>
-            <label for="type-assignment">Assignment Type</label>
-          </div>
-        </div>
-        <div class="row">
-          <div class="input-field col s12">
-            <textarea id="description" name="description" class="materialize-textarea" [(ngModel)]="assignment.description" #description="ngModel"></textarea>
-            <label for="description">Description</label>
-          </div>
-        </div>
-
-
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button type="submit" class="modal-close btn-flat" [class.disabled]="!assignmentForm.form.valid"
-        (click)="addAssignment();">
-          Add
-        </button>
-    </div>
- </div>
 
  <div class="modal modal-fixed-footer row" id="viewEvent">
    <div class="modal-content row" id="mainForm">
@@ -106,31 +67,40 @@
            <tr class = "row">
              <td class="col s12 m4" align='center'>
                <div class="collection-head">
-                 <h5>{{ a.title }}</h5>
+                 <div *ngIf="!a.editModeTitle" (mousedown)="enableEdit(a, i, 'title')"><h5>{{ a.title }}</h5></div>
+                 <div [style.display]="(a.editModeTitle)?'inline':'none'"><input [id]="'titleEdit'+i" name="titleEdit" type="text" [(ngModel)]="a.title" (blur)="updateTitle(a)"></div>
                </div>
              </td>
-             <td class="col s12 m2" align='center'>
+             <td class="col s12 m2" align='center' *ngIf="formLabel">
                <div class="chip">{{ a.type }}</div>
              </td>
              <td class="col s2 m1" align='center'>
-               <p class="material-icons action" (mousedown)="enableEdit(a, i)">create</p>
+               <p class="material-icons action" (mousedown)="enableEdit(a, i, 'all')">create</p>
              </td>
              <td class="col s2 m1" align='center'>
                <p class="material-icons action" (mousedown)="this.deleteEventAction(a, i)">delete_sweep</p>
              </td>
            </tr>
-           <tr class="row">
-             <div *ngIf="!a.editMode" class="col s12" (mousedown)="enableEdit(a, i)">
+           <tr class="row" [style.display]="(a.editModeDate) ? 'inline': 'none'" >
+             <div class="col s8">
+               <input placeholder="Due Date" [id]="'datetime'+i" class="datepicker" type="text" name="datetime" required>
+             </div>
+           </tr>
+           <tr class="row" *ngIf="formDescription">
+             <div *ngIf="!a.editModeDescription" class="col s12" (mousedown)="enableEdit(a, i, 'description')">
               <pre>{{ a.description }}</pre>
              </div>
-             <div [style.display] = "(a.editMode) ? 'inline' : 'none'">
+             <div [style.display] = "(a.editModeDescription) ? 'inline' : 'none'">
                <div class="row">
                  <div class="input-field col s12">
                    <textarea [id]="'descriptionEdit'+i" name="descriptionEdit" class="materialize-textarea col s12" (blur)="updateDescription(a)" [(ngModel)]="a.description" placeholder="Edit event description..."></textarea>
                  </div>
                </div>
              </div>
-           </tr>
+            </tr>
+            <tr class="row" [style.display]="(a.editModeDate) ? 'inline': 'none'">
+              <button class="btn btn-flat update-todo blue" (click)="updateTask(a, i)">Update</button>
+            </tr>
          </table>
      </div>
      <div class="col s12">
@@ -140,10 +110,10 @@
                <input placeholder="Task Name" id="title" type="text" name="title" [(ngModel)]="assignment.title" required #title="ngModel">
              </div>
            </div>
-           <div class="row row-add">
+           <div class="row row-add" *ngIf="formLabel">
              <div class="label_assignment col s12">Assignment Type</div>
              <div class="input-field col s12" id="type-row">
-               <select id="type" class="browser-default" name="type" [(ngModel)]="assignment.type" #type="ngModel" required>
+               <select id="type" class="browser-default" name="type" [(ngModel)]="assignment.type" #type="ngModel">
                  <option value="" disabled selected>What type of assignment will this be?</option>
                  <option value="Homework">Homework</option>
                  <option value="Quiz">Quiz</option>
@@ -153,7 +123,7 @@
              </div>
            </div>
            <div class="row row-add">
-             <div class="input-field col s12">
+             <div class="input-field col s12" *ngIf="formDescription">
                <textarea id="description" name="description" class="materialize-textarea" [(ngModel)]="assignment.description" #description="ngModel"></textarea>
                <label for="description">Description</label>
              </div>

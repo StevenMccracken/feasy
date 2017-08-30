@@ -2,7 +2,8 @@
   <nav>
     <div class="nav-wrapper primary">
       <a href="#" data-activates="slide-out" class="btn-flat circle" id="button-slide"><i class="material-icons white-text">menu</i></a>
-      <a routerLink='layout' class="logo brand-logo center">Feazy</a>
+      <a routerLink='/main/calendar' class="btn-flat circle" ><i class="material-icons white-text">event_note</i></a>
+      <a routerLink='/main/calendar' class="logo brand-logo center">Feasy</a>
     </div>
   </nav>
   <ul id="slide-out" class="side-nav right">
@@ -24,7 +25,7 @@
       <a (click)="closeNav('/main/calendar')">
         <table>
           <tr>
-            <td>
+            <td class="icon-menu">
               <p class="material-icons">event_note</p>
             </td>
             <td>
@@ -38,7 +39,7 @@
       <a routerLink="/main/todo" (click)="closeNav('handled')">
         <table>
           <tr>
-            <td>
+            <td class="icon-menu">
               <p class="material-icons">library_books</p>
             </td>
             <td>
@@ -49,19 +50,83 @@
       </a>
     </li>
     <li>
-      <a (click)="closeNav('handled')">
+      <a (click)="debug()">
         <table>
           <tr>
-            <td>
-              <p class="material-icons">equalizer</p>
+            <td class="icon-menu">
+              <p class="material-icons">help</p>
             </td>
             <td>
-              <h6>Health Bar</h6>
+              <h6>Help/Facts</h6>
             </td>
           </tr>
         </table>
       </a>
     </li>
+
+
+    <div class="container">
+      <div class="quick-settings">
+        <div class="head fontify">Quick Settings</div>
+        <div class="content">
+          <div class="switch">
+            <table>
+              <tr>
+                <td class="fontify">Colors</td>
+                <td>
+                  <label>
+                    Off
+                    <input type="checkbox" [(ngModel)]="quickSettingColors" value="true" (click)="toggleSettings('color')">
+                    <span class="lever"></span>
+                    On
+                  </label>
+                </td>
+              </tr>
+              <tr>
+                <td class="fontify">Task Label</td>
+                <td>
+                  <label>
+                    Off
+                    <input type="checkbox" [(ngModel)]="quickSettingLabel" value="true" (click)="toggleSettings('label')">
+                    <span class="lever"></span>
+                    On
+                  </label>
+                </td>
+              </tr>
+              <tr>
+                <td class="fontify">Task Description</td>
+                <td>
+                  <label>
+                    Off
+                    <input type="checkbox" [(ngModel)]="quickSettingDescription" value="true" (click)="toggleSettings('description')">
+                    <span class="lever"></span>
+                    On
+                  </label>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container center upload-button" (click)="openLoadLearn()">
+      <label class="waves-effect waves-light btn blue">
+         Load & Learn
+      </label>
+    </div>
+
+    <div class="modal modal-fixed-footer">
+    <div class="modal-content">
+      <h4>Modal Header</h4>
+      <p>A bunch of text</p>
+    </div>
+    <div class="modal-footer">
+      <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat ">Agree</a>
+    </div>
+  </div>
+
+
   </ul>
   <router-outlet></router-outlet>
 </div>
