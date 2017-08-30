@@ -4,6 +4,7 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { UserService } from '../services/user.service';
+import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
 
 @Component({
@@ -27,13 +28,28 @@ export class LoginComponent implements OnInit {
   constructor(
     private _router: Router,
     private _userService: UserService,
+    private _utils: CommonUtilsService,
     private _storage: LocalStorageService
 ) {}
 
   ngOnInit() {
     if (this._storage.isValidItem('currentUser') && this._storage.isValidItem('token')) {
       console.log('Got %s from browser local storage', this._storage.getItem('currentUser'));
-      this._router.navigate(['main']);
+
+      this._userService.refreshAuthToken()
+        .then((token: string) => {
+          if (this._utils.hasValue(token)) this._storage.setItem('token', token);
+          else console.error('Token was empty while trying to refresh token');
+
+          this._router.navigate(['main']);
+        })
+        .catch((refreshTokenError: Response) => {
+          console.error('Service request to refresh token failed');
+          console.error(refreshTokenError);
+
+          this._router.navigate(['main']);
+        });
+
     } else if (
       this._storage.isValidItem('expiredToken') &&
       this._storage.getItem('expiredToken') === 'true'
