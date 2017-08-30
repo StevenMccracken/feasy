@@ -1,8 +1,8 @@
 <div class="row">
-   <div *ngIf="doneSorting" class="col m5 offset-m1 todo-main">
+   <div class="col m5 offset-m1 todo-main">
      <div class="col s12 center fontify"><h3>To Do Listed by Date</h3></div>
      <div id="date-view" class="col s12 center fontify"><h5>Today : {{date | date:"MMMM dd, yyyy"}}</h5></div>
-     <div *ngIf="showlist">
+     <div *ngIf="showlist && doneSorting">
        <div id="uncompleted" *ngIf="incompleteAssignments.length === 0" class="col s12 wrapper" [dragula]="first">
          <div *ngIf="uncompleteEmpty"></div>
        </div>
@@ -27,6 +27,20 @@
                  </td>
                  <td *ngIf="!a.editModeDate" class="col s2 m1" align='center' style='display:table'>
                    <p class="action fontify">{{a.dueDate | date:'MMMM dd'}}</p>
+                 </td>
+               </tr>
+               <tr class="row" *ngIf="getTypeLabel()" [style.display]="(a.editModeDate) ? 'inline': 'none'">
+                 <td>
+                   <div class="label_assignment col s12">Assignment Type</div>
+                   <div class="input-field col s12" id="type-row">
+                     <select id="type" class="browser-default" name="type" [(ngModel)]="a.type" #type="ngModel">
+                       <option value="" disabled selected>What type of assignment will this be?</option>
+                       <option value="Homework">Homework</option>
+                       <option value="Quiz">Quiz</option>
+                       <option value="Exam">Exam</option>
+                       <option value="Project">Project</option>
+                     </select>
+                   </div>
                  </td>
                </tr>
                <tr class="row" [style.display]="(a.editModeDate) ? 'inline': 'none'">
@@ -87,9 +101,11 @@
          </form>
      </div>
   </div>
+
+
   <div class="col m5 todo-main completed-list">
     <div class="col s12 center fontify"><h3>Completed</h3></div>
-    <div id="completed" *ngIf="completedAssignments.length === 0" class="col s12 wrapper" [dragula]="first">
+    <div id="completed" *ngIf="completedAssignments.length === 0" class="col s12 wrapper" [dragula]="second">
       <div></div>
     </div>
     <div *ngFor="let a of completedAssignments; let i = index;" id="completed" class="col s12 wrapper" [dragula]="second">

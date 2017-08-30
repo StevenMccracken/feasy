@@ -43,41 +43,58 @@ td {
   color: #87b4f0;
   cursor: pointer;
 }
-tr{
+
+tr {
   cursor: pointer;
 }
+
 p {
   margin: 0px 0px 0px 0px;
 }
-.container{
+
+.container {
   width: 90% !important;
 }
-.quick-settings{
+
+.quick-settings {
   border-radius: 10px;
   border: thin solid red;
   margin-top: 30px;
   text-align: center;
 }
-.head{
+
+.head {
   font-size: 20px;
 }
-.content{
+
+.content {
   margin-left: 5px;
   margin-right: 5px;
   margin-bottom: 10px;
 }
-.icon-menu{
+
+.icon-menu {
   display: inline-flex;
 }
-h6{
+
+h6 {
   padding-left: 50px;
 }
-.upload-button{
+
+.upload-button {
   margin-top: 30px;
 }
-.btn{
+
+.btn {
   border-radius: 10px;
 }
-.hide{
+
+.hide {
   display: none;
+}
+.tableContent{
+  padding-right: 50px;
+}
+thead{
+  border-bottom: none;
 }

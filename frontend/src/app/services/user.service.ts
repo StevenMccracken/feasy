@@ -25,14 +25,16 @@ export class UserService {
   /**
    * Sends a request to create a new user
    * @param {User = new User()} _user the user object
+   * @param {string} _alphaCode the special access alpha code
    * @return {Promise<string>} the authentication token for the newly created user
    */
-  create(_user: User = new User()): Promise<string> {
+  create(_user: User = new User(), _alphaCode: string = ''): Promise<string> {
     let createUserPath = '/users';
     let requestParams = {
       username: _user.username,
       password: _user.password,
       email: _user.email,
+      alphaCode: _alphaCode,
     };
 
     // Add optional parameters
@@ -74,6 +76,7 @@ export class UserService {
           if (errorMessage !== undefined) {
             if (errorMessage.indexOf('username') !== -1) duplicateParameter = 'username';
             else if (errorMessage.indexOf('email') !== -1) duplicateParameter = 'email';
+            else if (errorMessage.indexOf('alpha') !== -1) duplicateParameter = 'alpha';
           }
 
           return Promise.reject(duplicateParameter);
@@ -126,6 +129,26 @@ export class UserService {
   }
 
   /**
+   * Sends an existing token from local storage to the /login/refresh api route to refresh the token
+   * @return {Promise<string>} the token to authenticate subsequent requests
+   */
+  refreshAuthToken(): Promise<string> {
+    // Create request information
+    let token: string = this._storage.getItem('token');
+    let refreshTokenPath = '/login/refresh';
+    let headersOptions = { 'Authorization': token };
+
+    // Send request
+    return this._feasyApi.get(refreshTokenPath, headersOptions)
+      .then((successResponse: Response) => {
+        let responseBody = successResponse.json();
+        let token: string = responseBody && responseBody.success && responseBody.success.token;
+        return Promise.resolve(this._utils.hasValue(token) ? token : null);
+      })
+      .catch((errorResponse: Response) => Promise.reject(errorResponse));
+  }
+
+  /**
    * Retrieves the Feasy-specific Google OAuth2.0 URL for authenticating offline access
    * @return {Promise<string>} the authentication URL that contains the HTML content to authenticate
    */
@@ -149,9 +172,9 @@ export class UserService {
    * if the Feasy-specific OAuth2.0 URL is accessed first
    * @return {Promise<Object>} the JSON containing the user's username and a JWT
    */
-  authenticateGoogle(): Promise<Object> {
+  authenticateGoogle(_alphaCode: string = ''): Promise<Object> {
     // Create request information
-    let authenticatePath = '/auth/google/await';
+    let authenticatePath = `/auth/google/await?alphaCode=${_alphaCode}`;
 
     // Send request
     return this._feasyApi.get(authenticatePath)

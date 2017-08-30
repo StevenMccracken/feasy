@@ -63,6 +63,11 @@
              <td class="col s2 m1" align='center'>
                <p class="material-icons action" (mousedown)="this.deleteEventAction(a, i)">delete_sweep</p>
              </td>
+             <td class="col s2 m1" align='center' [ngClass]="(a.completed) ? 'complete': 'incomplete'">
+               <p class="material-icons action" (click)="updateCompleted(a)">check_circle</p>
+               <div *ngIf="a.completed">completed</div>
+               <div *ngIf="!a.completed">incomplete</div>
+             </td>
            </tr>
            <tr class="row" [style.display]="(a.editModeDate) ? 'inline': 'none'" >
              <div class="col s8">

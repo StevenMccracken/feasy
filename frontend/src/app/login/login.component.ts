@@ -4,6 +4,7 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { UserService } from '../services/user.service';
+import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
 
 @Component({
@@ -14,6 +15,7 @@ import { LocalStorageService } from '../utils/local-storage.service';
 export class LoginComponent implements OnInit {
   _username: string;
   _password: string;
+  alphaCode: string;
   form: FormGroup;
   error: boolean;
   errorMessage: string;
@@ -27,13 +29,28 @@ export class LoginComponent implements OnInit {
   constructor(
     private _router: Router,
     private _userService: UserService,
+    private _utils: CommonUtilsService,
     private _storage: LocalStorageService
 ) {}
 
   ngOnInit() {
     if (this._storage.isValidItem('currentUser') && this._storage.isValidItem('token')) {
       console.log('Got %s from browser local storage', this._storage.getItem('currentUser'));
-      this._router.navigate(['main']);
+
+      this._userService.refreshAuthToken()
+        .then((token: string) => {
+          if (this._utils.hasValue(token)) this._storage.setItem('token', token);
+          else console.error('Token was empty while trying to refresh token');
+
+          this._router.navigate(['main']);
+        })
+        .catch((refreshTokenError: Response) => {
+          console.error('Service request to refresh token failed');
+          console.error(refreshTokenError);
+
+          this._router.navigate(['main']);
+        });
+
     } else if (
       this._storage.isValidItem('expiredToken') &&
       this._storage.getItem('expiredToken') === 'true'
@@ -104,7 +121,7 @@ export class LoginComponent implements OnInit {
           });
 
           // Fetch the login credentials for the Google account the user selects
-          this._userService.authenticateGoogle()
+          this._userService.authenticateGoogle(this.alphaCode)
             .then((loginInfo: Object) => {
               // Signal that Google authentication inside the popup window is done to close it
               googleAuthSource.next(true);
@@ -127,10 +144,20 @@ export class LoginComponent implements OnInit {
             .catch((loginError: Response) => {
               // Signal that Google authentication inside the popup window is done to close it
               googleAuthSource.next(true);
+
+              this.error = true;
               switch (loginError.status) {
+                case 400:
+                  this.errorMessage = 'You need an access code to sign in with that Google account';
+                  break;
+                case 403:
+                  this.errorMessage = 'That access code has already been used';
+                  break;
+                case 404:
+                  this.errorMessage = 'That access code is invalid';
+                  break;
                 default:
                   // API error
-                  this.error = true;
                   this.errorMessage = this.standardErrorMessage;
                   console.error(loginError);
               }

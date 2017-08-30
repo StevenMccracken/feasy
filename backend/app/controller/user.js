@@ -2,28 +2,37 @@
  * user - Database controller for the User model
  */
 
-const Uuid = require('uuid/v4');
-let USER = require('../models/user.js');
+const USER = require('../models/user.js');
 const LOG = require('../modules/log_mod.js');
+const UTIL = require('../modules/utility_mod');
+
+/**
+ * log - Logs a message to the server console
+ * @param {String} _message the log message
+ */
+function log(_message) {
+  LOG.log('User Controller', _message);
+}
 
 /**
  * create - Saves a new user in the database
  * @param {Object} _userInfo JSON containing the user attributes
  * @return {Promise<User>} the Mongoose object
  */
-let create = function(_userInfo) {
+const create = function create(_userInfo) {
   const SOURCE = 'create()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
-    let newUser = new USER();
-    newUser.email = _userInfo.email.trim();
-    newUser.username = _userInfo.username.trim();
-    newUser.password = _userInfo.password.trim();
+    const newUser = new USER();
+
+    newUser.email = _userInfo.email;
+    newUser.username = _userInfo.username;
+    newUser.password = _userInfo.password;
 
     // Add optional properties
-    newUser.firstName = _userInfo.firstName === undefined ? '' : _userInfo.firstName.trim();
-    newUser.lastName = _userInfo.lastName === undefined ? '' : _userInfo.lastName.trim();
+    newUser.firstName = UTIL.hasValue(_userInfo.firstName) ? _userInfo.firstName : '';
+    newUser.lastName = UTIL.hasValue(_userInfo.lastName) ? _userInfo.lastName : '';
 
     newUser.save()
       .then(() => resolve(newUser)) // End then()
@@ -36,23 +45,25 @@ let create = function(_userInfo) {
  * @param {Object} _userInfo JSON containing the google user attributes
  * @return {Promise<User>} the Mongoose object
  */
-let createGoogle = function(_userInfo) {
+const createGoogle = function createGoogle(_userInfo) {
   const SOURCE = 'createGoogle()';
   log(SOURCE);
 
-  let newUser = new USER();
-  newUser.email = _userInfo.email.trim();
-  newUser.username = _userInfo.username.trim();
-  newUser.googleId = _userInfo.googleId.trim();
+  const newUser = new USER();
+
+  newUser.email = _userInfo.email;
+  newUser.username = _userInfo.username;
+  newUser.googleId = _userInfo.googleId;
   newUser.refreshToken = _userInfo.refreshToken;
+  newUser.accessTokenExpiryDate = _userInfo.accessTokenExpiryDate;
 
   // There is no password for a Google user, so randomly generate it
-  newUser.password = Uuid();
+  newUser.password = UTIL.newUuid();
 
   // Add optional properties
-  newUser.firstName = _userInfo.firstName === undefined ? '' : _userInfo.firstName.trim();
-  newUser.lastName = _userInfo.lastName === undefined ? '' : _userInfo.lastName.trim();
-  if (_userInfo.accessToken !== undefined) newUser.accessToken = _userInfo.accessToken.trim();
+  newUser.firstName = UTIL.hasValue(_userInfo.firstName) ? _userInfo.firstName : '';
+  newUser.lastName = UTIL.hasValue(_userInfo.lastName) ? _userInfo.lastName : '';
+  if (UTIL.hasValue(_userInfo.accessToken)) newUser.accessToken = _userInfo.accessToken;
 
   return new Promise((resolve, reject) => {
     newUser.save()
@@ -62,13 +73,14 @@ let createGoogle = function(_userInfo) {
 }; // End createGoogle()
 
 /**
- * getAllByAttribute - Retrieves users from the database based on a specific attribute of those users
+ * getAllByAttribute - Retrieves users from the
+ * database based on a specific attribute of those users
  * @param {String|ObjectId} _attribute the attribute to select the users on
  * @param {String|Date} _value the value that the specific attribute should equal
  * @param {String} _projection the space-separated attributes to retrieve
  * @return {Promise<User[]>} the Mongoose object array
  */
-let getAllByAttribute = function(_attribute, _value, _projection) {
+const getAllByAttribute = function getAllByAttribute(_attribute, _value, _projection) {
   const SOURCE = 'getAllByAttribute()';
   log(SOURCE);
 
@@ -86,14 +98,14 @@ let getAllByAttribute = function(_attribute, _value, _projection) {
  * the password with the user information from the database
  * @return {Promise<User>} the Mongoose object
  */
-let getByUsername = function(_username, _includePassword) {
+const getByUsername = function getByUsername(_username, _includePassword) {
   const SOURCE = 'getByUsername()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
     let projection;
-    if (_includePassword) projection = '_id username password email firstName lastName';
-    else projection = '_id username email firstName lastName';
+    if (_includePassword) projection = '_id googleId username password email firstName lastName';
+    else projection = '_id googleId username email firstName lastName';
 
     USER.findOne({ username: _username }, projection)
       .then(userInfo => resolve(userInfo)) // End then(userInfo)
@@ -106,12 +118,12 @@ let getByUsername = function(_username, _includePassword) {
  * @param {String} _googleId the google ID of the user
  * @return {Promise<User>} the Mongoose object
  */
-let getByGoogleId = function(_googleId) {
+const getByGoogleId = function getByGoogleId(_googleId) {
   const SOURCE = 'getByGoogleId()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
-    let projection = '_id googleId username email firstName lastName';
+    const projection = '_id googleId username email firstName lastName accessToken refreshToken accessTokenExpiryDate';
     USER.findOne({ googleId: _googleId }, projection)
       .then(userInfo => resolve(userInfo)) // End then(userInfo)
       .catch(findError => reject(findError)); // End USER.findOne()
@@ -122,9 +134,9 @@ let getByGoogleId = function(_googleId) {
  * getAttribute - Retrieves a specific attribute of a user
  * @param {String} _username the username of the user
  * @param {String} _attribute the name of the desired attribute
- * @return {Promise<Any>} the user attribute
+ * @return {Promise<any>} the user attribute
  */
-let getAttribute = function(_username, _attribute) {
+const getAttribute = function getAttribute(_username, _attribute) {
   const SOURCE = 'getAttribute()';
   log(SOURCE);
 
@@ -140,7 +152,7 @@ let getAttribute = function(_username, _attribute) {
  * @param {Object} _user the Mongoose object
  * @return {Promise<User>} the updated Mongoose object
  */
-let update = function(_user) {
+const update = function update(_user) {
   const SOURCE = 'update()';
   log(SOURCE);
 
@@ -157,13 +169,14 @@ let update = function(_user) {
  * @param {String|Date} _newValue the updated value of the user attribute
  * @return {Promise<User>} the updated Mongoose object
  */
-let updateAttribute = function(_user, _attribute, _newValue) {
+const updateAttribute = function updateAttribute(_user, _attribute, _newValue) {
   const SOURCE = 'updateAttribute()';
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
-    if (typeof _newValue === 'string') _user[_attribute] = _newValue.trim();
-    else _user[_attribute] = _newValue;
+    // Re-assign user to not affect the argument passed in
+    const user = _user;
+    user[_attribute] = _newValue;
 
     _user.save()
       .then(() => resolve(_user)) // End then()
@@ -176,7 +189,7 @@ let updateAttribute = function(_user, _attribute, _newValue) {
  * @param {Object} _user JSON of the user attributes
  * @return {Promise} an empty promise
  */
-let remove = function(_user) {
+const remove = function remove(_user) {
   const SOURCE = 'remove()';
   log(SOURCE);
 
@@ -192,7 +205,7 @@ let remove = function(_user) {
  * @param {String} _username the username of the user to delete
  * @return {Promise} an empty promise
  */
-let removeByUsername = function(_username) {
+const removeByUsername = function removeByUsername(_username) {
   const SOURCE = 'removeByUsername()';
   log(SOURCE);
 
@@ -208,34 +221,23 @@ let removeByUsername = function(_username) {
  * @param {Object} _user Mongoose object
  * @return {Boolean} whether or not _user is a Google user
  */
-let isTypeGoogle = function(_user) {
+const isTypeGoogle = function isTypeGoogle(_user) {
   const SOURCE = 'isTypeGoogle()';
   log(SOURCE);
 
-  return _user !== undefined &&
-    _user !== null &&
-    _user.googleId !== undefined &&
-    _user.googleId !== null;
+  return UTIL.hasValue(_user) && UTIL.hasValue(_user.googleId) && _user.googleId !== '';
 }; // End isTypeGoogle()
 
 module.exports = {
-  create: create,
-  createGoogle: createGoogle,
-  getAllByAttribute: getAllByAttribute,
-  getAttribute: getAttribute,
-  getByUsername: getByUsername,
-  getByGoogleId: getByGoogleId,
-  update: update,
-  updateAttribute: updateAttribute,
-  remove: remove,
-  removeByUsername: removeByUsername,
-  isTypeGoogle: isTypeGoogle,
+  create,
+  createGoogle,
+  getAllByAttribute,
+  getAttribute,
+  getByUsername,
+  getByGoogleId,
+  update,
+  updateAttribute,
+  remove,
+  removeByUsername,
+  isTypeGoogle,
 };
-
-/**
- * log - Logs a message to the server console
- * @param {String} _message the log message
- */
-function log(_message) {
-  LOG.log('User Controller', _message);
-}
