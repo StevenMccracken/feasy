@@ -50,6 +50,17 @@ const routing = function routing(_router) {
   });
 
   /**
+   * The GET route for refreshing an existing JSON web
+   * token. Sends an error JSON or a new JSON web token for
+   * authentication. This route requires token authentication
+   */
+  router.route('/login/refresh').get((_request, _response) => {
+    MIDDLEWARE.refreshAuthToken(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
+
+  /**
    * The GET route for retrieving an OAuth Google authentication
    * URL. Initiates the process of granting Feasy offline
    * access. This route does not require token authentication

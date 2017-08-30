@@ -119,6 +119,31 @@ describe('Start server', () => {
     });
   }); // End login
 
+  // Send valid token to get a new token
+  const refreshToken = 'refreshToken';
+  describe(refreshToken, () => {
+    let requestParams;
+    beforeEach(() => {
+      requestParams = {
+        url: `${baseUrl}/login/refresh`,
+        headers: { Authorization: user1Token },
+      };
+    });
+
+    it('generates a refreshed token and returns status code 200', (done) => {
+      REQUEST.get(requestParams, (error, response, body) => {
+        expect(response.statusCode).toBe(200);
+        LOG(login, body);
+
+        // Parse JSON response for the refreshed token
+        const data = JSON.parse(body);
+        expect(data.success).toBeDefined();
+        expect(data.success.token).toBeDefined();
+        done();
+      });
+    });
+  }); // End refreshToken
+
   // Get the Google OAuth URL
   const googleOAuthUrl = 'Google OAuth URL';
   describe(googleOAuthUrl, () => {

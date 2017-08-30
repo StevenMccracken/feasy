@@ -14,7 +14,7 @@ const JWT_CONFIG = require(`${process.cwd()}/config/jwt`);
 // Configure token storage and verification with passport library
 require('../../config/passport')(PASSPORT);
 
-const STANDARD_TOKEN_EXPIRATION_TIME = '24h';
+const STANDARD_TOKEN_EXPIRATION_TIME = '7d';
 
 /**
  * log - Logs a message to the server console

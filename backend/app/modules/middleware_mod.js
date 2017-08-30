@@ -117,6 +117,39 @@ const authenticate = function authenticate(_request, _response) {
   }); // End return promise
 }; // End authenticate()
 
+/**
+ * refreshAuthToken - Refreshes an existing, valid JSON web
+ * token by validating the existing JWT and creating a new one
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+const refreshAuthToken = function refreshAuthToken(_request, _response) {
+  const SOURCE = 'refreshAuthToken()';
+  log(SOURCE, _request);
+
+  return new Promise((resolve, reject) => {
+    // Verify client's web token first
+    AUTH.verifyToken(_request, _response)
+      .then((client) => {
+        // Token is valid. Generate a new token
+        const token = AUTH.generateToken(client);
+        const successJson = {
+          success: {
+            message: 'Successfully refreshed token',
+            token: `JWT ${token}`,
+          },
+        };
+
+        resolve(successJson);
+      }) // End then(client)
+      .catch((authError) => {
+        const errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.verifyToken()
+  }); // End return promise
+}; // End refreshAuthToken()
+
 /* eslint-disable no-unused-vars */
 /**
  * getGoogleAuthUrl - Returns the Google OAuth URL to initiate Google profile authentication
@@ -2066,6 +2099,7 @@ const deleteAssignment = function deleteAssignment(_request, _response) {
 
 module.exports = {
   authenticate,
+  refreshAuthToken,
   getGoogleAuthUrl,
   exchangeGoogleAuthCode,
   authenticateGoogle,
