@@ -316,7 +316,16 @@ export class CalendarComponent implements OnInit {
     }
   }
 
+<<<<<<< HEAD
+  /**
+    This is used to display the popup shown on the calendar
+    The first click is used to show a list of events for the day clicked
+    The second click will show a list of events in a view that allows
+    users to edit or add events.
+  */
+=======
   // TODO: Add formal documentation
+>>>>>>> 61b03f9efd0ccd8a259d8831442946d5b8b2ccd2
   displayPopUp(): void {
     if (this._utils.hasValue(this.e)) {
       if ($(this.e).is('#popup')) {
@@ -547,6 +556,24 @@ export class CalendarComponent implements OnInit {
     }
   }
 
+<<<<<<< HEAD
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Error Handler
+//
+// Helper functions that checks if there are any errors with the call back
+// from the service
+//
+/////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Handles the error where a user's token has expeired
+   * @param {Response} error response taken from the service.
+   */
+  private handleError(error: Response): void {
+    if (error.status == 401) {
+=======
   ////////////////////////////////////////////////////////////////////
   //
   // Error Handler
@@ -562,6 +589,7 @@ export class CalendarComponent implements OnInit {
    */
   private handleError(_error: Response): void {
     if (_error.status == 401) {
+>>>>>>> 61b03f9efd0ccd8a259d8831442946d5b8b2ccd2
       // Token is stale. Clear the user and token local storage, route them to login screen
       this._storage.deleteItem('token');
       this._storage.deleteItem('currentUser');
@@ -578,10 +606,17 @@ export class CalendarComponent implements OnInit {
   }
 
   /**
+<<<<<<< HEAD
+   * Handles the error where a an assignment is non-existant
+   * @param {Assignment} assignment (assignment object)
+   */
+  private handle404Error(assignment: Assignment): void {
+=======
    * Handles error that comes when an assignment does not exist or is not found
    * @param {Assigment} _assignment the assignment that was attempted to use with the API
    */
   private handle404Error(_assignment: Assignment): void {
+>>>>>>> 61b03f9efd0ccd8a259d8831442946d5b8b2ccd2
     // Find the assignment in the current day array
     for (let i = 0; i < this.currentDayArray.length; i++) {
       if (this.currentDayArray[i] == _assignment) {
@@ -596,12 +631,21 @@ export class CalendarComponent implements OnInit {
   }
 
   /**
+<<<<<<< HEAD
+   * Handles an error if there are any problems in updating the
+   * the user's data.
+   * @param {Assignment} assignment (assignment object)
+   */
+  private handleUpdateError(attribute: string, reason: string): void {
+    switch (reason) {
+=======
    * Handles error that comes during an update API call
    * @param {string} _attribute a part of the object that couldn't be updated
    * @param {string} _reason why the attribute couldn't be updated.
    */
   private handleUpdateError(_attribute: string, _reason: string): void {
     switch (_reason) {
+>>>>>>> 61b03f9efd0ccd8a259d8831442946d5b8b2ccd2
       case 'invalid':
         console.error('New %s was malformed', _attribute);
         break;

@@ -91,6 +91,9 @@ export class LayoutComponent implements OnInit {
     }
   }
 
+  openLoadLearn(): void{
+    $('.modal').modal('open');
+  }
   /**
    * Handles errors received from an API call
    * @param {Response = new Response()} _error the Response error from the API call
