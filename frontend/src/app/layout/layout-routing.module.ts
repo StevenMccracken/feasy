@@ -9,22 +9,29 @@ import { CalendarComponent } from './calendar/calendar.component';
 
 const layoutRoutes: Routes = [{
   path: '',
-  component: LayoutComponent,
   canActivate: [AuthGuard],
+  component: LayoutComponent,
   canActivateChild: [AuthGuard],
   children: [{
-      path: '',
-      children: [
-        { path: 'todo', component: ToDoComponent },
-        { path: '', component: CalendarComponent },
-        { path: 'calendar', component: CalendarComponent },
-      ],
-    },
-  ],
+    path: '',
+    children: [{
+        path: 'todo',
+        component: ToDoComponent,
+      },
+      {
+        path: '',
+        component: CalendarComponent,
+      },
+      {
+        path: 'calendar',
+        component: CalendarComponent,
+      },
+    ],
+  }],
 }];
 
 @NgModule({
   imports: [RouterModule.forChild(layoutRoutes)],
   exports: [RouterModule],
 })
-export class CondorraRoutingModule {}
+export class LayoutRoutingModule {}
