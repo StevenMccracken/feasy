@@ -1,9 +1,13 @@
 import { Router } from '@angular/router';
+import { Location } from '@angular/common';
+import { Subscription } from 'rxjs/Subscription';
 import { Component, OnInit } from '@angular/core';
 
 import { Account } from '../objects/user';
 import { Assignment } from '../objects/assignment';
 import { UserService } from '../services/user.service';
+import { MessageService } from '../services/message.service';
+import { LoadLearnService } from '../services/load-learn.service';
 import { AssignmentService } from '../services/assignment.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
@@ -19,21 +23,41 @@ export class LayoutComponent implements OnInit {
   user: Account = new Account();
   firstName: string;
 
+  taskArray: Assignment[] = [];
+  testArray: Assignment[] = [];
+
   //quicksettings variables
   quickSettingDescription: boolean = true;
   quickSettingLabel: boolean = true;
   quickSettingColors: boolean = false;
   connectionMade: boolean = false;
 
+  currentLocation: string;
+
+
   constructor(
     private _router: Router,
+    private _location: Location,
     private _userService: UserService,
     private _utils: CommonUtilsService,
+    private _loadLearn: LoadLearnService,
     private _storage: LocalStorageService,
+    private _messageService: MessageService,
     private _assignmentService: AssignmentService
   ) {}
 
+  sendMessage(): void {
+    // send message to subscribers via observable subject
+    this._messageService.sendMessage('changed');
+  }
+
+  clearMessage(): void {
+    // clear message
+    this._messageService.clearMessage();
+  }
+
   ngOnInit() {
+    this.taskArray[0] = new Assignment();
     $("#button-slide").sideNav();
     if(this._storage.isValidItem('qsColor')) {
       this.quickSettingColors = this._storage.getItem('qsColor') === 'true';
@@ -90,7 +114,34 @@ export class LayoutComponent implements OnInit {
       } , 300);
     }
   }
+  addMore(): void{
+    let size = this.taskArray.length;
+    this.taskArray[size] = new Assignment();
+  }
 
+  deleteCurrent(i: number): void{
+    this.taskArray.splice(i, 1);
+  }
+
+  openLoadLearn(): void{
+    $('#loadLearn').modal('open');
+  }
+
+  addAllTask(): void{
+    $('#loadLearn').modal('close');
+    console.log(this.taskArray);
+    this._assignmentService.multipleCreate(this.taskArray)
+                           .then((res: Assignment[]) => {
+                             this.clearMessage();
+                             this.sendMessage();
+                             this._loadLearn.setTaskArray(this.taskArray);
+                             this.taskArray = [];
+                             this.taskArray[0] = new Assignment();
+                           })
+                           .catch((err: any) => {
+                             console.log(err);
+                           });
+  }
   /**
    * Handles errors received from an API call
    * @param {Response = new Response()} _error the Response error from the API call

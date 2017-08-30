@@ -10,6 +10,8 @@ import { ToDoComponent } from './to-do/to-do.component';
 import { LayoutRoutingModule } from './layout-routing.module';
 import { CalendarComponent } from './calendar/calendar.component';
 
+import { LoadLearnService } from '../services/load-learn.service';
+
 @NgModule({
   imports: [
     FormsModule,
@@ -25,6 +27,7 @@ import { CalendarComponent } from './calendar/calendar.component';
   ],
   providers: [
     AuthGuard,
+    LoadLearnService,
     DragulaService,
   ],
 })

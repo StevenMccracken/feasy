@@ -1,10 +1,10 @@
-module.exports = function(grunt) {
-  grunt.initConfig({
-    pkg: grunt.file.readJSON('package.json'),
+module.exports = function grunt(_grunt) {
+  _grunt.initConfig({
+    pkg: _grunt.file.readJSON('package.json'),
     jasmine_node: {
       options: {
         forceExit: true,
-        match:'.',
+        match: '.',
         matchall: false,
         extensions: 'js',
         specNameMatcher: 'spec',
@@ -13,7 +13,7 @@ module.exports = function(grunt) {
     },
     shell: {
       mongo: {
-        command: "sh startMongoIfNotRunning.sh",
+        command: 'sh startMongoIfNotRunning.sh',
         options: {
           async: true,
           stderr: true,
@@ -24,10 +24,10 @@ module.exports = function(grunt) {
   });
 
   // Load npm libraries to initialize database and API tests
-  grunt.loadNpmTasks('grunt-shell-spawn');
-  grunt.loadNpmTasks('grunt-jasmine-node');
+  _grunt.loadNpmTasks('grunt-shell-spawn');
+  _grunt.loadNpmTasks('grunt-jasmine-node');
 
   // Start mongod process and then start the server
-  grunt.registerTask('startMongo', 'shell');
-  grunt.registerTask('testAPI', 'jasmine_node');
+  _grunt.registerTask('startMongo', 'shell');
+  _grunt.registerTask('testAPI', 'jasmine_node');
 };

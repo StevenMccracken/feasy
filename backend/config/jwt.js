@@ -2,9 +2,9 @@
  * jwt - JSON web token secret configuration
  */
 
-const Uuid = require('uuid/v4');
+const UTIL = require('../app/modules/utility_mod');
 
 // secret is a UUID string for the seed of the web token authentication
 module.exports = {
-  secret: Uuid(),
+  secret: UTIL.newUuid(),
 };

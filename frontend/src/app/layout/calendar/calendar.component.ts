@@ -1,6 +1,8 @@
 import { Subject } from 'rxjs/Subject';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
+import { Subscription } from 'rxjs/Subscription';
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import {
   startOfDay,
   endOfDay,
@@ -16,10 +18,13 @@ import {
   CalendarEventAction,
   CalendarEventTimesChangedEvent
 } from 'angular-calendar';
-import { Component, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, Input, OnDestroy } from '@angular/core';
 
 import { COLORS } from '../../objects/colors';
 import { Assignment } from '../../objects/assignment';
+import { LayoutComponent } from '../layout.component';
+import { MessageService } from '../../services/message.service';
+import { LoadLearnService } from '../../services/load-learn.service';
 import { AssignmentService } from '../../services/assignment.service';
 import { CommonUtilsService } from '../../utils/common-utils.service';
 import { LocalStorageService } from '../../utils/local-storage.service';
@@ -34,7 +39,9 @@ declare var Materialize: any;
   styleUrls: ['calendar.component.css'],
   templateUrl: 'calendar.component.html',
 })
+
 export class CalendarComponent implements OnInit {
+
   // Assignment object used for the assignment form
   assignment: Assignment = new Assignment();
   jquery: any;
@@ -107,10 +114,15 @@ export class CalendarComponent implements OnInit {
     },
   }];
 
+  message: any;
+  subscription: Subscription;
+
   constructor(
     private _router: Router,
     private _utils: CommonUtilsService,
+    private _loadLearn: LoadLearnService,
     private _storage: LocalStorageService,
+    private _messageService: MessageService,
     private _assignmentService: AssignmentService
   ) {}
 
@@ -119,8 +131,20 @@ export class CalendarComponent implements OnInit {
     this.refresh.next();
   };
 
+  ngOnDestroy() {
+    // unsubscribe to ensure no memory leaks
+    this.subscription.unsubscribe();
+  }
+
   ngOnInit() {
-    console.log(Materialize);
+    this.subscription = this._messageService.getMessage()
+      .subscribe(message => {
+        console.log(message);
+        let temp = this._loadLearn.getTaskArray();
+        this.populateAfter(temp);
+        console.log('hello');
+      });
+
     $('#viewEvent').modal({
       dismissible: true,
       ready: () => console.log('open modal'),
@@ -190,6 +214,23 @@ export class CalendarComponent implements OnInit {
       .catch((getAssignmentsError: Response) => this.handleError(getAssignmentsError));
   }
 
+  updateCompleted(a: Assignment){
+    this._assignmentService.updateCompleted(a._id, !a.completed)
+                           .then(() => {
+                             console.log('completed updated');
+                             a.completed = !a.completed;
+                             this.changeColor(a);
+                           })
+                           .catch((getAssignmentsError: Response) => this.handleError(getAssignmentsError));
+  }
+
+  changeColor(a: Assignment){
+    let newEvent = this.aDescription.get(a);
+    newEvent.color = this.determineColor(a);
+    this.events.splice(this.events.indexOf(this.aDescription.get(a)), 1);
+    this.events.push(newEvent);
+    this.refresh.next();
+  }
   /**
    * Determines the color for a given assignment's
    * date based on it's relation to the current date
@@ -222,6 +263,31 @@ export class CalendarComponent implements OnInit {
     return color;
   }
 
+  populateAfter(_assignments: Assignment[]): void{
+    let cEvents: CalendarEvent[] = [];
+    for (let assignment of _assignments) {
+      // Create a CalendarEvent for each assignment
+      let event: CalendarEvent = {
+        start: assignment.dueDate,
+        end: assignment.dueDate,
+        title: assignment.title,
+        color: this.determineColor(assignment),
+        actions: this.actions,
+        draggable: true,
+      };
+
+      // Add the event to the list of events
+      cEvents.push(event);
+
+      // Add the assignment and event to the maps
+      this.eDescription.set(event, assignment);
+      this.aDescription.set(assignment, event);
+    }
+
+    // Update the global events with the events that were just created
+    this.events = this.events.concat(cEvents);
+    this.refresh.next();
+  }
   /**
    * Adds the given assignments to the calendar's events
    * @param {Assignment[]} _assignments the list of assignments to add to the calendar
@@ -316,7 +382,11 @@ export class CalendarComponent implements OnInit {
     }
   }
 
-  // TODO: Add formal documentation
+  /**
+   * This is used to display the popup shown on the calendar. The first click
+   * is used to show a list of events for the day clicked. The second click will
+   * show a list of events in a view that allows users to edit or add events
+   */
   displayPopUp(): void {
     if (this._utils.hasValue(this.e)) {
       if ($(this.e).is('#popup')) {
@@ -530,7 +600,7 @@ export class CalendarComponent implements OnInit {
   debug(): void {
     // console.log(event);
     // console.log(event.target);
-    console.log(this.currentDayArray);
+    //console.log(this.changes);
   }
 
   dayClicked({ date, events }: { date: Date, events: CalendarEvent[] }): void {

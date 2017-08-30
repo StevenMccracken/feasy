@@ -21,11 +21,40 @@ export class AssignmentService {
   ) {}
 
   /**
+   * Sends a request to create MULTIPLE new assignment
+   * @param {Assignment[]} _assignments the assignment object array
+   * @return {Promise<Assignment>} the assignment object with extra information from the API
+   */
+  multipleCreate(_assignments: Assignment[]): Promise<Assignment[]>{
+    let array: Assignment[] = [];
+    console.log(_assignments);
+    for(let assignment of _assignments){
+      let temp = new Date();
+      try{
+        temp = new Date(assignment.dueDate.toString() + "T00:00:00");
+      }catch(err){
+        console.log(err);
+        temp = new Date();
+      }
+      assignment.dueDate = new Date(temp);
+      this.create(assignment)
+          .then((res: Assignment) => {
+            array.push(res);
+          })
+          .catch((err: any) => {
+            console.log(err);
+          })
+    }
+    return Promise.resolve(array);
+  }
+  /**
    * Sends a request to create a new assignment
    * @param {Assignment = new Assignment()} _assignment the assignment object
    * @return {Promise<Assignment>} the assignment object with extra information from the API
    */
   create(_assignment: Assignment = new Assignment()): Promise<Assignment> {
+
+    console.log(_assignment);
     // Create request information
     let token: string = this._storage.getItem('token');
     let username: string = this._storage.getItem('currentUser');

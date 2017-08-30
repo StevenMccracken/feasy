@@ -22,6 +22,7 @@ node_modules/
 npm-debug.log
 testem.log
 /typings
+npm-debug.log.*
 
 # e2e
 /e2e/*.js
