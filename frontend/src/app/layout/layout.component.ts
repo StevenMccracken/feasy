@@ -1,15 +1,16 @@
 import { Router } from '@angular/router';
-import { Component, OnInit } from '@angular/core';
 import { Location } from '@angular/common';
+import { Subscription } from 'rxjs/Subscription';
+import { Component, OnInit } from '@angular/core';
 
 import { Account } from '../objects/user';
 import { Assignment } from '../objects/assignment';
 import { UserService } from '../services/user.service';
+import { MessageService } from '../services/message.service';
+import { LoadLearnService } from '../services/load-learn.service';
 import { AssignmentService } from '../services/assignment.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
-
-import { LoadLearnService } from '../services/load-learn.service';
 
 declare var $: any;
 
@@ -36,13 +37,24 @@ export class LayoutComponent implements OnInit {
 
   constructor(
     private _router: Router,
+    private _location: Location,
     private _userService: UserService,
     private _utils: CommonUtilsService,
+    private _loadLearn: LoadLearnService,
     private _storage: LocalStorageService,
-    private _assignmentService: AssignmentService,
-    private _location: Location,
-    private _loadLearn: LoadLearnService
+    private _messageService: MessageService,
+    private _assignmentService: AssignmentService
   ) {}
+
+  sendMessage(): void {
+    // send message to subscribers via observable subject
+    this._messageService.sendMessage('changed');
+  }
+
+  clearMessage(): void {
+    // clear message
+    this._messageService.clearMessage();
+  }
 
   ngOnInit() {
     this.taskArray[0] = new Assignment();
@@ -120,7 +132,8 @@ export class LayoutComponent implements OnInit {
     console.log(this.taskArray);
     this._assignmentService.multipleCreate(this.taskArray)
                            .then((res: Assignment[]) => {
-                             localStorage['changed'] = 'true';
+                             this.clearMessage();
+                             this.sendMessage();
                              this._loadLearn.setTaskArray(this.taskArray);
                              this.taskArray = [];
                              this.taskArray[0] = new Assignment();

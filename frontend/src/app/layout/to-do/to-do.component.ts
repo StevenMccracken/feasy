@@ -75,7 +75,7 @@ export class ToDoComponent implements OnInit {
   private onDrop(args, _dragulaService) {
     console.log(args);
     let info = args[1].id.split('-');
-    let arr = (info[0] === 'unComplete') ? this.incompleteAssignments : this.completedAssignments;
+    let arr = info[0] === 'unComplete' ? this.incompleteAssignments : this.completedAssignments;
 
 
     let index = parseInt(info[1]);

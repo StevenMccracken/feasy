@@ -14,6 +14,7 @@ import { LocalStorageService } from '../utils/local-storage.service';
 export class SignupComponent {
   // TODO: Do we need all of these class variables?
   user: User = new User();
+  alphaCode: string = '';
   passwordValidator: string;
   error: boolean = false;
   errorMessage: string;
@@ -45,7 +46,7 @@ export class SignupComponent {
 
     if (!this.user) return;
 
-    this._userService.create(this.user)
+    this._userService.create(this.user, this.alphaCode)
       .then((token: string) => {
         if (token !== null) {
           // Add token and username info to browser local storage
@@ -67,8 +68,10 @@ export class SignupComponent {
         // Update the HTML to display an error message
         if (typeof createUserError === 'string') {
           // Another user exists with one of these attributes from the form
-          if (createUserError == 'username' || createUserError == 'email') {
+          if (createUserError === 'username' || createUserError === 'email') {
             this.errorMessage = `That ${this.varToWordMap[createUserError]} is already taken`;
+          } else if (createUserError === 'alpha') {
+            this.errorMessage = 'That access code has already been used';
           } else {
             // Unknown error message content for the login error
             this.errorMessage = this.standardErrorMessage;
@@ -88,6 +91,8 @@ export class SignupComponent {
 
             this.errorMessage += `and ${this.varToWordMap[createUserError[createUserError.length - 1]]}`;
           }
+        } else if (createUserError.status === 404) {
+          this.errorMessage = 'That access code is invalid';
         } else {
           // An unexpected error occurred (other than bad request or resource error)
           this.errorMessage = this.standardErrorMessage;
