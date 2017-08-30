@@ -1,5 +1,5 @@
 interface Serializable<T> {
-  deserialize(input: Object): T;
+  deserialize(_input: Object): T;
 }
 
 export class Assignment implements Serializable<Assignment> {
@@ -22,18 +22,18 @@ export class Assignment implements Serializable<Assignment> {
 
   /**
    * Converts a JSON representing an assignment to an Assignment object
-   * @param {Object} input JSON containing assignment information
+   * @param {Object = {}} _input JSON containing assignment information
    * @return {Assignment} assignment with the attributes from the JSON input
    */
-  deserialize(input) {
-    this._id = input._id;
-    this.title = input.title;
-    this.dueDate = new Date(input.dueDate);
-    this.completed = input.completed;
-    this.class = input.class;
-    this.dateCreated = new Date(input.dateCreated);
-    this.type = input.type;
-    this.description = input.description;
+  deserialize(_input: Object = {}): Assignment {
+    this._id = _input['_id'];
+    this.title = _input['title'];
+    this.dueDate = new Date(_input['dueDate']);
+    this.completed = _input['completed'];
+    this.class = _input['class'];
+    this.dateCreated = new Date(_input['dateCreated']);
+    this.type = _input['type'];
+    this.description = _input['description'];
     this.editModeDescription = false;
     this.editModeTitle = false;
 

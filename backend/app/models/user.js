@@ -7,18 +7,21 @@ const MONGOOSE = require('mongoose');
 
 MONGOOSE.Promise = require('bluebird');
 
-let UserSchema = MONGOOSE.Schema({
+const UserSchema = MONGOOSE.Schema({
   email: {
+    trim: true,
     type: String,
     required: true,
     index: { unique: true },
   },
   username: {
+    trim: true,
     type: String,
     required: true,
-    index: { unique: true }
+    index: { unique: true },
   },
   password: {
+    trim: true,
     type: String,
     required: true,
   },
@@ -26,17 +29,33 @@ let UserSchema = MONGOOSE.Schema({
     type: Date,
     default: Date.now,
   },
-  googleId: { type: String },
-  firstName: { type: String },
-  lastName: { type: String },
-  accessToken: { type: String },
-  refreshToken: { type: String },
+  googleId: {
+    trim: true,
+    type: String,
+  },
+  firstName: {
+    trim: true,
+    type: String,
+  },
+  lastName: {
+    trim: true,
+    type: String,
+  },
+  accessToken: {
+    trim: true,
+    type: String,
+  },
+  refreshToken: {
+    trim: true,
+    type: String,
+  },
+  accessTokenExpiryDate: { type: Number },
 });
 
 // Executes right before user is saved in the database
-UserSchema.pre('save', function(done) {
+UserSchema.pre('save', function done(_done) {
   // Don't do anything if the password is not changed
-  if (!this.isModified('password')) done();
+  if (!this.isModified('password')) _done();
   else {
     // Password has changed, so hash the new password
     BCRYPT.genSalt(5)
@@ -44,11 +63,11 @@ UserSchema.pre('save', function(done) {
         BCRYPT.hash(this.password, salt)
           .then((hashedPassword) => {
             this.password = hashedPassword;
-            done();
+            _done();
           }) // End then(hashedPassword)
-          .catch(hashError => done(hashError)); // End BCRYPT.hash()
+          .catch(hashError => _done(hashError)); // End BCRYPT.hash()
       }) // End then(salt)
-      .catch((genSaltError) => done(genSaltError)); // End BCRYPT.genSalt()
+      .catch(genSaltError => _done(genSaltError)); // End BCRYPT.genSalt()
   }
 }); // End UserSchema.pre(save)
 

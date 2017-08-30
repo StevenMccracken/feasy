@@ -4,18 +4,21 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { User } from '../objects/user';
 import { UserService } from '../services/user.service';
+import { LocalStorageService } from '../utils/local-storage.service';
 
 @Component({
   selector: 'app-signup',
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.css'],
 })
-export class SignupComponent implements OnInit {
-  user = new User();
+export class SignupComponent {
+  // TODO: Do we need all of these class variables?
+  user: User = new User();
+  alphaCode: string = '';
   passwordValidator: string;
-  error = false;
+  error: boolean = false;
   errorMessage: string;
-  private standardErrorMessage = 'Something bad happened. Please try signing up again';
+  private standardErrorMessage: string = 'Something bad happened. Please try signing up again';
   private varToWordMap: Object = {
     username: 'username',
     password: 'password',
@@ -24,9 +27,11 @@ export class SignupComponent implements OnInit {
     lastName: 'last name',
   };
 
-  constructor(private _router: Router, private _userService: UserService) {}
-
-  ngOnInit() {}
+  constructor(
+    private _router: Router,
+    private _userService: UserService,
+    private _storage: LocalStorageService
+  ) {}
 
   /**
    * Calls the user service to create a new user through the API.
@@ -34,17 +39,19 @@ export class SignupComponent implements OnInit {
    * credentials. Routes the user to the main page on successful sign-up
    */
   signupUser(): void {
+    if (this.error) {
+      this.error = false;
+      this.errorMessage = '';
+    }
+
     if (!this.user) return;
 
-    this._userService.create(this.user)
+    this._userService.create(this.user, this.alphaCode)
       .then((token: string) => {
-        if (token != null) {
-          // Clear any error messages
-          if (this.errorMessage != '') this.errorMessage = '';
-
-          // Add username and token to browser local storage
-          localStorage.setItem('currentUser', this.user.username);
-          localStorage.setItem('token', token);
+        if (token !== null) {
+          // Add token and username info to browser local storage
+          this._storage.setItem('token', token);
+          this._storage.setItem('currentUser', this.user.username);
 
           // Route the user into the app
           this._router.navigate(['/main']);
@@ -58,14 +65,13 @@ export class SignupComponent implements OnInit {
       .catch((createUserError) => {
         this.error = true;
 
-        // Clear any previous error message
-        if (this.errorMessage != '') this.errorMessage = '';
-
         // Update the HTML to display an error message
         if (typeof createUserError === 'string') {
           // Another user exists with one of these attributes from the form
-          if (createUserError == 'username' || createUserError == 'email') {
+          if (createUserError === 'username' || createUserError === 'email') {
             this.errorMessage = `That ${this.varToWordMap[createUserError]} is already taken`;
+          } else if (createUserError === 'alpha') {
+            this.errorMessage = 'That access code has already been used';
           } else {
             // Unknown error message content for the login error
             this.errorMessage = this.standardErrorMessage;
@@ -85,6 +91,8 @@ export class SignupComponent implements OnInit {
 
             this.errorMessage += `and ${this.varToWordMap[createUserError[createUserError.length - 1]]}`;
           }
+        } else if (createUserError.status === 404) {
+          this.errorMessage = 'That access code is invalid';
         } else {
           // An unexpected error occurred (other than bad request or resource error)
           this.errorMessage = this.standardErrorMessage;

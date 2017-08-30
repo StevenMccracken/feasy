@@ -2,55 +2,56 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/toPromise';
 import { Router } from '@angular/router';
+import { Response } from '@angular/http';
 import { Injectable, NgZone } from '@angular/core';
 import { GoogleAuthService } from 'ng-gapi/lib/GoogleAuthService';
-import { Headers, Http, RequestOptions, Response } from '@angular/http';
 
 import { User } from '../objects/user';
 import { Account } from '../objects/user';
+import { FeasyService } from './feasy.service';
+import { CommonUtilsService } from '../utils/common-utils.service';
+import { LocalStorageService } from '../utils/local-storage.service';
 
 @Injectable()
 export class UserService {
-  private token: string;
-  private baseUrl = 'https://api.feasy-app.com';
-  private contentType_UrlEncoded = 'application/x-www-form-urlencoded';
-  private standardHeaders = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
-
   constructor(
-    private _http: Http,
     private _router: Router,
+    private _feasyApi: FeasyService,
+    private _utils: CommonUtilsService,
+    private _storage: LocalStorageService,
     private _googleAuthService: GoogleAuthService
   ) {}
 
   /**
-   *  Sends a request to create a new user
-   * @param {User} user the user object
+   * Sends a request to create a new user
+   * @param {User = new User()} _user the user object
+   * @param {string} _alphaCode the special access alpha code
    * @return {Promise<string>} the authentication token for the newly created user
    */
-  create(user: User): Promise<string> {
-    // Create request information
-    let createUserUrl = `${this.baseUrl}/users`;
-
-    // Add required parameters
-    let requestParams = `username=${user.username}&password=${user.password}&email=${user.email}`;
-
-    // Add optional parameters
-    if (user.firstName !== undefined && user.firstName !== '') {
-      requestParams += `&firstName=${user.firstName}`
+  create(_user: User = new User(), _alphaCode: string = ''): Promise<string> {
+    let createUserPath = '/users';
+    let requestParams = {
+      username: _user.username,
+      password: _user.password,
+      email: _user.email,
+      alphaCode: _alphaCode,
     };
 
-    if (user.lastName !== undefined && user.lastName !== '') {
-      requestParams += `&lastName=${user.lastName}`;
+    // Add optional parameters
+    if (this._utils.hasValue(_user.firstName) && _user.firstName !== '') {
+      requestParams['firstName'] = _user.firstName;
     }
 
-    // Send request
-    return this._http.post(createUserUrl, requestParams, { headers: this.standardHeaders })
-      .toPromise()
+    if (this._utils.hasValue(_user.lastName) && _user.lastName !== '') {
+      requestParams['lastName'] = _user.lastName;
+    }
+
+    return this._feasyApi.post(createUserPath, requestParams)
       .then((successResponse: Response) => {
         // Extract the token from the response body
         let responseBody = successResponse.json();
         let token: string = responseBody && responseBody.success && responseBody.success.token;
-        return Promise.resolve(token === undefined ? null : token);
+        return Promise.resolve(this._utils.hasValue(token) ? token : null);
       })
       .catch((errorResponse: Response) => {
         let responseBody = errorResponse.json();
@@ -75,6 +76,7 @@ export class UserService {
           if (errorMessage !== undefined) {
             if (errorMessage.indexOf('username') !== -1) duplicateParameter = 'username';
             else if (errorMessage.indexOf('email') !== -1) duplicateParameter = 'email';
+            else if (errorMessage.indexOf('alpha') !== -1) duplicateParameter = 'alpha';
           }
 
           return Promise.reject(duplicateParameter);
@@ -84,22 +86,17 @@ export class UserService {
 
   /**
    * Sends a request to get a user's profile
-   * @param {string} username the desired user's username
+   * @param {string} _username the desired user's username
    * @return {Promise<Account>} the user account information for the desired user
    */
-  get(username: string): Promise<Account> {
+  get(_username: string): Promise<Account> {
     // Create request information
-    let token: string = localStorage.getItem('token');
-
-    let getUserUrl = `${this.baseUrl}/users/${username}`;
-    let headers = new Headers({
-      Authorization: token,
-      'Content-Type': this.contentType_UrlEncoded,
-    });
+    let token: string = this._storage.getItem('token');
+    let getUserPath = `/users/${_username}`;
+    let headersOptions = { 'Authorization': token };
 
     // Send request
-    return this._http.get(getUserUrl, { headers: headers })
-      .toPromise()
+    return this._feasyApi.get(getUserPath, headersOptions)
       .then((successResponse: Response) => {
         let responseBody = successResponse.json();
         return Promise.resolve(new Account().deserialize(responseBody));
@@ -109,24 +106,44 @@ export class UserService {
 
   /**
    * Sends a username and password to the /login API route to retrieve a token
-   * @param {string} username the desired user's username
-   * @param {string} password the desired user's password
+   * @param {string} _username the desired user's username
+   * @param {string} _password the desired user's password
    * @return {Promise<string>} the token to authenticate subsequent requests
    */
-  validate(username: string, password: string): Promise<string> {
+  validate(_username: string, _password: string): Promise<string> {
     // Create request information
-    let loginUrl = `${this.baseUrl}/login`;
-
-    // Add required parameters
-    let requestParams = `username=${username}&password=${password}`;
+    let loginPath = '/login';
+    let requestParams = {
+      username: _username,
+      password: _password,
+    };
 
     // Send request
-    return this._http.post(loginUrl, requestParams, { headers: this.standardHeaders })
-      .toPromise()
+    return this._feasyApi.post(loginPath, requestParams)
       .then((successResponse: Response) => {
         let responseBody = successResponse.json();
         let token: string = responseBody && responseBody.success && responseBody.success.token;
         return Promise.resolve(token === undefined ? null : token);
+      })
+      .catch((errorResponse: Response) => Promise.reject(errorResponse));
+  }
+
+  /**
+   * Sends an existing token from local storage to the /login/refresh api route to refresh the token
+   * @return {Promise<string>} the token to authenticate subsequent requests
+   */
+  refreshAuthToken(): Promise<string> {
+    // Create request information
+    let token: string = this._storage.getItem('token');
+    let refreshTokenPath = '/login/refresh';
+    let headersOptions = { 'Authorization': token };
+
+    // Send request
+    return this._feasyApi.get(refreshTokenPath, headersOptions)
+      .then((successResponse: Response) => {
+        let responseBody = successResponse.json();
+        let token: string = responseBody && responseBody.success && responseBody.success.token;
+        return Promise.resolve(this._utils.hasValue(token) ? token : null);
       })
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
   }
@@ -137,11 +154,10 @@ export class UserService {
    */
   getAuthorizationUrl(): Promise<string> {
     // Create request information
-    let getAuthUrl = `${this.baseUrl}/auth/googleUrl`;
+    let getAuthPath = '/auth/googleUrl';
 
     // Send request
-    return this._http.get(getAuthUrl, { headers: this.standardHeaders })
-      .toPromise()
+    return this._feasyApi.get(getAuthPath)
       .then((successResponse: Response) => {
         let responseBody = successResponse.json();
         let authUrl: string = responseBody && responseBody.success && responseBody.success.authUrl;
@@ -156,13 +172,12 @@ export class UserService {
    * if the Feasy-specific OAuth2.0 URL is accessed first
    * @return {Promise<Object>} the JSON containing the user's username and a JWT
    */
-  authenticateGoogle(): Promise<Object> {
+  authenticateGoogle(_alphaCode: string = ''): Promise<Object> {
     // Create request information
-    let authenticateUrl = `${this.baseUrl}/auth/google/await`;
+    let authenticatePath = `/auth/google/await?alphaCode=${_alphaCode}`;
 
     // Send request
-    return this._http.get(authenticateUrl, { headers: this.standardHeaders })
-      .toPromise()
+    return this._feasyApi.get(authenticatePath)
       .then((successResponse: Response) => {
         let responseBody = successResponse.json();
         let token: string = responseBody && responseBody.success && responseBody.success.token;

@@ -4,6 +4,8 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { UserService } from '../services/user.service';
+import { CommonUtilsService } from '../utils/common-utils.service';
+import { LocalStorageService } from '../utils/local-storage.service';
 
 @Component({
   selector: 'app-login',
@@ -13,28 +15,48 @@ import { UserService } from '../services/user.service';
 export class LoginComponent implements OnInit {
   _username: string;
   _password: string;
+  alphaCode: string;
   form: FormGroup;
   error: boolean;
   errorMessage: string;
   googleSignInImageSource: string;
 
-  private googleSignInImageSourceDefault = '../../assets/btn_google_signin_light_normal_web@2x.png';
-  private googleSignInImageSourceHovered = '../../assets/btn_google_signin_light_focus_web@2x.png';
-  private googleSignInImageSourcePressed = '../../assets/btn_google_signin_light_pressed_web@2x.png';
-  private standardErrorMessage = 'Something bad happened. Please try signing in again';
+  private googleSignInImageSourceDefault: string = '../../assets/btn_google_signin_light_normal_web@2x.png';
+  private googleSignInImageSourceHovered: string = '../../assets/btn_google_signin_light_focus_web@2x.png';
+  private googleSignInImageSourcePressed: string = '../../assets/btn_google_signin_light_pressed_web@2x.png';
+  private standardErrorMessage: string = 'Something bad happened. Please try signing in again';
 
-  constructor(private _router: Router, private _userService: UserService) {}
+  constructor(
+    private _router: Router,
+    private _userService: UserService,
+    private _utils: CommonUtilsService,
+    private _storage: LocalStorageService
+) {}
 
   ngOnInit() {
-    if (this.isValidStorageItem('currentUser') && this.isValidStorageItem('token')) {
-      console.log('Got %s from browser local storage', localStorage.getItem('currentUser'));
-      this._router.navigate(['main']);
+    if (this._storage.isValidItem('currentUser') && this._storage.isValidItem('token')) {
+      console.log('Got %s from browser local storage', this._storage.getItem('currentUser'));
+
+      this._userService.refreshAuthToken()
+        .then((token: string) => {
+          if (this._utils.hasValue(token)) this._storage.setItem('token', token);
+          else console.error('Token was empty while trying to refresh token');
+
+          this._router.navigate(['main']);
+        })
+        .catch((refreshTokenError: Response) => {
+          console.error('Service request to refresh token failed');
+          console.error(refreshTokenError);
+
+          this._router.navigate(['main']);
+        });
+
     } else if (
-      this.isValidStorageItem('expiredToken') &&
-      localStorage.getItem('expiredToken') === 'true'
+      this._storage.isValidItem('expiredToken') &&
+      this._storage.getItem('expiredToken') === 'true'
     ) {
       // Remove the expiredToken local storage item now
-      localStorage.removeItem('expiredToken');
+      this._storage.deleteItem('expiredToken');
 
       // Update the login screen error
       this.error = true;
@@ -44,7 +66,6 @@ export class LoginComponent implements OnInit {
       this.error = false;
       this.errorMessage = '';
       this.googleSignInImageSource = this.googleSignInImageSourceDefault;
-
     }
   }
 
@@ -67,7 +88,7 @@ export class LoginComponent implements OnInit {
     this.googleSignInImageSource = this.googleSignInImageSourcePressed;
 
     // Reset any previous error message
-    if (this.errorMessage !== undefined && this.errorMessage !== '') {
+    if (this.error) {
       this.error = false;
       this.errorMessage = '';
     }
@@ -85,8 +106,8 @@ export class LoginComponent implements OnInit {
           this.errorMessage = this.standardErrorMessage;
           console.error('Opening Google OAuth2.0 window returned null');
         } else {
-          // Automatically close the popup window after 25 seconds
-          setTimeout(() => popup.close(), 25000);
+          // Automatically close the popup window after 1 minute
+          setTimeout(() => popup.close(), 60000);
 
           /**
            * Subscribe to an event for when the user finishes Google
@@ -100,7 +121,7 @@ export class LoginComponent implements OnInit {
           });
 
           // Fetch the login credentials for the Google account the user selects
-          this._userService.authenticateGoogle()
+          this._userService.authenticateGoogle(this.alphaCode)
             .then((loginInfo: Object) => {
               // Signal that Google authentication inside the popup window is done to close it
               googleAuthSource.next(true);
@@ -108,8 +129,8 @@ export class LoginComponent implements OnInit {
               // Check for the authentication info
               if (loginInfo['token'] !== null && loginInfo['username'] !== null) {
                 // Add the token and username data to local storage
-                localStorage.setItem('token', loginInfo['token']);
-                localStorage.setItem('currentUser', loginInfo['username']);
+                this._storage.setItem('token', loginInfo['token']);
+                this._storage.setItem('currentUser', loginInfo['username']);
 
                 // Route the user into the application
                 this._router.navigate(['main']);
@@ -123,10 +144,20 @@ export class LoginComponent implements OnInit {
             .catch((loginError: Response) => {
               // Signal that Google authentication inside the popup window is done to close it
               googleAuthSource.next(true);
+
+              this.error = true;
               switch (loginError.status) {
+                case 400:
+                  this.errorMessage = 'You need an access code to sign in with that Google account';
+                  break;
+                case 403:
+                  this.errorMessage = 'That access code has already been used';
+                  break;
+                case 404:
+                  this.errorMessage = 'That access code is invalid';
+                  break;
                 default:
                   // API error
-                  this.error = true;
                   this.errorMessage = this.standardErrorMessage;
                   console.error(loginError);
               }
@@ -137,10 +168,10 @@ export class LoginComponent implements OnInit {
         // Update the Google sign-in button styling
         this.googleSignInImageSource = this.googleSignInImageSourceDefault;
 
+        this.error = true;
         switch (getAuthUrlError.status) {
           default:
             // API error
-            this.error = true;
             this.errorMessage = this.standardErrorMessage;
             console.error(getAuthUrlError);
         }
@@ -153,7 +184,10 @@ export class LoginComponent implements OnInit {
    */
   validate() {
     // Reset any previous error message
-    if (this.errorMessage !== undefined && this.errorMessage != '') this.errorMessage = '';
+    if (this.error) {
+      this.error = false;
+      this.errorMessage = '';
+    }
 
     // Username needs to be saved for closure created with service call to set local storage
     let username = this._username;
@@ -161,8 +195,8 @@ export class LoginComponent implements OnInit {
       .then((token) => {
         if (token !== null) {
           // Add the token and username data to local storage
-          localStorage.setItem('token', token);
-          localStorage.setItem('currentUser', username);
+          this._storage.setItem('token', token);
+          this._storage.setItem('currentUser', username);
 
           // Route the user into the application
           this._router.navigate(['main']);
@@ -174,27 +208,16 @@ export class LoginComponent implements OnInit {
         }
       })
       .catch((loginError: Response) => {
+        this.error = true;
         switch (loginError.status) {
           case 401:
-            this.error = true;
             this.errorMessage = 'Username or password is incorrect';
             break;
           default:
             // API error
-            this.error = true;
             this.errorMessage = this.standardErrorMessage;
             console.error(loginError);
         }
       });
-  }
-
-  /**
-   * Determines if a specific local storage item contains any meaningful data
-   * @param {string} storageItemKey the key of the local storage item
-   * @return {boolean} whether or not the key contains a meaningful (non-empty) data value
-   */
-  isValidStorageItem(storageItemKey: string): boolean {
-    let storageItem = localStorage.getItem(storageItemKey);
-    return storageItem != null && storageItem != undefined && storageItem != '';
   }
 }

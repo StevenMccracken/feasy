@@ -2,73 +2,100 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/toPromise';
 import { Router } from '@angular/router';
+import { Response } from '@angular/http';
 import { Observable } from 'rxjs/Observable';
-import { Injectable, OnInit} from '@angular/core';
-import { Headers, Http, RequestOptions, Response } from '@angular/http';
+import { Injectable, OnInit } from '@angular/core';
 
+import { FeasyService } from './feasy.service';
 import { Assignment } from '../objects/assignment';
+import { CommonUtilsService } from '../utils/common-utils.service';
+import { LocalStorageService } from '../utils/local-storage.service';
 
 @Injectable()
 export class AssignmentService {
-  private baseUrl = 'https://api.feasy-app.com';
-  private contentType_UrlEncoded = 'application/x-www-form-urlencoded';
-  private standardHeaders = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
-
-  constructor(private _http: Http, private _router: Router) {}
+  constructor(
+    private _router: Router,
+    private _feasyApi: FeasyService,
+    private _utils: CommonUtilsService,
+    private _storage: LocalStorageService
+  ) {}
 
   /**
-   * Sends a request to create a new assignment
-   * @param {Assignment} assignment the assignment object
+   * Sends a request to create MULTIPLE new assignment
+   * @param {Assignment[]} _assignments the assignment object array
    * @return {Promise<Assignment>} the assignment object with extra information from the API
    */
-  create(assignment: Assignment): Promise<Assignment> {
+  multipleCreate(_assignments: Assignment[]): Promise<Assignment[]>{
+    let array: Assignment[] = [];
+    console.log(_assignments);
+    for(let assignment of _assignments){
+      let temp = new Date();
+      try{
+        temp = new Date(assignment.dueDate.toString() + "T00:00:00");
+      }catch(err){
+        console.log(err);
+        temp = new Date();
+      }
+      assignment.dueDate = new Date(temp);
+      this.create(assignment)
+          .then((res: Assignment) => {
+            array.push(res);
+          })
+          .catch((err: any) => {
+            console.log(err);
+          })
+    }
+    return Promise.resolve(array);
+  }
+  /**
+   * Sends a request to create a new assignment
+   * @param {Assignment = new Assignment()} _assignment the assignment object
+   * @return {Promise<Assignment>} the assignment object with extra information from the API
+   */
+  create(_assignment: Assignment = new Assignment()): Promise<Assignment> {
+
+    console.log(_assignment);
     // Create request information
-    let token: string = localStorage.getItem('token');
-    let username: string = localStorage.getItem('currentUser');
+    let token: string = this._storage.getItem('token');
+    let username: string = this._storage.getItem('currentUser');
+    let createPath = `/users/${username}/assignments`;
+    let headersOptions = { Authorization: token };
 
-    let createUrl = `${this.baseUrl}/users/${username}/assignments`;
-    let headers = new Headers({
-      Authorization: token,
-      'Content-Type': this.contentType_UrlEncoded,
-    });
-
-    // Add required parameters
+    // Check required assignment attributes
     let invalidParams: string[] = [];
-    if (assignment.title == null || assignment.title == undefined) invalidParams.push('title');
-    if (assignment.dueDate == null || assignment.dueDate == undefined) assignment.dueDate = new Date();
+    if (!this._utils.hasValue(_assignment.title)) invalidParams.push('title');
+    if (!this._utils.hasValue(_assignment.dueDate)) _assignment.dueDate = new Date();
 
+    // Reject if there are invalid required assignment parameters
     if (invalidParams.length > 0) return Promise.reject(invalidParams);
 
-    let dateUnixSeconds = Math.round(assignment.dueDate.getTime() / 1000);
-    let requestParams = `title=${assignment.title}&dueDate=${dateUnixSeconds}`;
+    // Add required assignment attributes
+    let dateUnixSeconds = Math.round(_assignment.dueDate.getTime() / 1000);
+    let requestParams = {
+      title: _assignment.title,
+      dueDate: dateUnixSeconds,
+    };
 
-    // Attempt to add optional assignment attributes
-    if (assignment.class !== undefined && assignment.class !== null) {
-      requestParams = `${requestParams}&class=${assignment.class}`;
+    // Add optional assignment attributes
+    if (this._utils.hasValue(_assignment.class)) requestParams['class'] = _assignment.class;
+    if (this._utils.hasValue(_assignment.type)) requestParams['type'] = _assignment.type;
+    if (this._utils.hasValue(_assignment.description)) {
+      requestParams['description'] = _assignment.description;
     }
 
-    if (assignment.type !== undefined && assignment.type !== null) {
-      assignment.type = "Misc";
-    }
-
-    if (assignment.description !== undefined && assignment.description !== null) {
-      requestParams = `${requestParams}&description=${assignment.description}`;
-    }
-
-    if (assignment.completed !== undefined && assignment.completed !== null) {
-      requestParams = `${requestParams}&completed=${assignment.completed}`;
+    if (this._utils.hasValue(_assignment.completed)) {
+      requestParams['completed'] = _assignment.completed;
     }
 
     // Send request
-    return this._http.post(createUrl, requestParams, { headers: headers })
-      .toPromise()
+    return this._feasyApi.post(createPath, requestParams, headersOptions)
       .then((successResponse: Response) => {
         let responseBody = successResponse.json();
 
         // Update attributes for the local object that were created by the API
-        assignment._id = responseBody['_id'];
-        assignment.type = responseBody.type;
-        return Promise.resolve(assignment);
+        _assignment._id = responseBody['_id'];
+        _assignment.type = responseBody.type;
+        return Promise.resolve(_assignment);
       })
       .catch((errorResponse: Response) => {
         /*
@@ -94,23 +121,18 @@ export class AssignmentService {
 
   /**
    * Sends a request to retrieve a specific assignment
-   * @param {string} id the id of the desired assignment
+   * @param {string} _id the id of the desired assignment
    * @return {Promise<Assignment>} the assignment object for the specified id
    */
-  get(id: string): Promise<Assignment> {
+  get(_id: string): Promise<Assignment> {
     // Create request information
-    let token: string = localStorage.getItem('token');
-    let username: string = localStorage.getItem('currentUser');
-
-    let getUrl = `${this.baseUrl}/users/${username}/assignments/${id}`;
-    let headers = new Headers({
-      Authorization: token,
-      'Content-Type': this.contentType_UrlEncoded,
-    });
+    let token: string = this._storage.getItem('token');
+    let username: string = this._storage.getItem('currentUser');
+    let getPath = `/users/${username}/assignments/${_id}`;
+    let headersOptions = { Authorization: token };
 
     // Send request
-    return this._http.get(getUrl, { headers: headers })
-      .toPromise()
+    return this._feasyApi.get(getPath, headersOptions)
       .then((successResponse: Response) => {
         let responseBody = successResponse.json();
 
@@ -127,18 +149,13 @@ export class AssignmentService {
    */
   getAll(): Promise<Assignment[]> {
     // Create request information
-    let token: string = localStorage.getItem('token');
-    let username: string = localStorage.getItem('currentUser');
-
-    let getUrl = `${this.baseUrl}/users/${username}/assignments`;
-    let headers = new Headers({
-      Authorization: token,
-      'Content-Type': this.contentType_UrlEncoded,
-    });
+    let token: string = this._storage.getItem('token');
+    let username: string = this._storage.getItem('currentUser');
+    let getPath = `/users/${username}/assignments`;
+    let headersOptions = { Authorization: token };
 
     // Send request
-    return this._http.get(getUrl, { headers: headers })
-      .toPromise()
+    return this._feasyApi.get(getPath, headersOptions)
       .then((successResponse: Response) => {
         let assignmentJson = successResponse.json();
 
@@ -156,28 +173,24 @@ export class AssignmentService {
 
   /**
    * Sends a request to update an attribute for a specific assignment
-   * @param {string} id the id of the desired assignment
-   * @param {string} attribute the name of the assignment attribute to update
-   * @param {any} newValue the new value for the assignment's attribute
+   * @param {string} _id the id of the desired assignment
+   * @param {string} _attribute the name of the assignment attribute to update
+   * @param {any} _newValue the new value for the assignment's attribute
    * @return {Promise<any>} the Response object from the API
    */
-  private update(id: string, attribute: string, newValue: any): Promise<any> {
+  private update(_id: string, _attribute: string, _newValue: any): Promise<any> {
     // Create request information
-    let token = localStorage.getItem('token');
-    let username = localStorage.getItem('currentUser');
-    let updateUrl = `${this.baseUrl}/users/${username}/assignments/${id}/${attribute}`;
-    let headers = new Headers({
-      'Authorization': token,
-      'Content-Type': this.contentType_UrlEncoded,
-    });
+    let token = this._storage.getItem('token');
+    let username = this._storage.getItem('currentUser');
+    let updatePath = `/users/${username}/assignments/${_id}/${_attribute}`;
+    let headersOptions = { Authorization: token };
 
     // Add required parameters
-    let capitalizedAttribute = `${attribute.charAt(0).toUpperCase()}${attribute.slice(1)}`
-    let requestParams = `new${capitalizedAttribute}=${newValue}`;
+    let capitalizedAttribute = `${_attribute.charAt(0).toUpperCase()}${_attribute.slice(1)}`;
+    let requestParams = { [`new${capitalizedAttribute}`]: _newValue };
 
     // Send request
-    return this._http.put(updateUrl, requestParams, { headers: headers })
-      .toPromise()
+    return this._feasyApi.put(updatePath, requestParams, headersOptions)
       .then((successResponse: Response) => Promise.resolve(successResponse))
       .catch((updateError: Response) => {
         // Return detailed errors for invalid request error. Otherwise, return the response object
@@ -190,8 +203,8 @@ export class AssignmentService {
 
           // The request contains invalid/malformed parameters from the assignment's attributes
           let errorReason;
-          if (errorMessage.indexOf('Invalid') != -1) errorReason = 'invalid';
-          else if (errorMessage.indexOf('Unchanged') != -1) errorReason = 'unchanged';
+          if (/[iI]nvalid/.test(errorMessage)) errorReason = 'invalid';
+          else if (/[uU]nchanged/.test(errorMessage)) errorReason = 'unchanged';
           else errorReason = 'unknown';
 
           return Promise.reject(errorReason);
@@ -201,106 +214,92 @@ export class AssignmentService {
 
   /**
    * Sends a request to update an assignment's title
-   * @param {string} id the id of the desired assignment
-   * @param {string} newTitle the new title to update the assignment with
+   * @param {string} _id the id of the desired assignment
+   * @param {string} _newTitle the new title to update the assignment with
    * @return {Promise<any>} an empty resolved promise
    */
-  updateTitle(id: string, newTitle: string): Promise<any> {
-    return this.update(id, 'title', newTitle)
+  updateTitle(_id: string, _newTitle: string): Promise<any> {
+    return this.update(_id, 'title', _newTitle)
       .then((successResponse: Response) => Promise.resolve())
       .catch((updateError: any) => Promise.reject(updateError));
   }
 
   /**
    * Sends a request to update an assignment's due date
-   * @param {string} id the id of the desired assignment
-   * @param {Date} newDueDate the new due date to update the assignment with
+   * @param {string} _id the id of the desired assignment
+   * @param {Date} _newDueDate the new due date to update the assignment with
    * @return {Promise<any>} an empty resolved promise
    */
-  updateDueDate(id: string, newDueDate: Date): Promise<any> {
-    let newDueDateUnixSeconds = Math.round(newDueDate.getTime() / 1000);
-    return this.update(id, 'dueDate', newDueDateUnixSeconds)
+  updateDueDate(_id: string, _newDueDate: Date): Promise<any> {
+    let newDueDateUnixSeconds = Math.round(_newDueDate.getTime() / 1000);
+    return this.update(_id, 'dueDate', newDueDateUnixSeconds)
       .then((successResponse: Response) => Promise.resolve())
       .catch((updateError: any) => Promise.reject(updateError));
   }
 
   /**
    * Sends a request to update an assignment's completed attribute
-   * @param {string} id the id of the desired assignment
-   * @param {boolean} newCompleted the new completed value to update the assignment with
+   * @param {string} _id the id of the desired assignment
+   * @param {boolean} _newCompleted the new completed value to update the assignment with
    * @return {Promise<any>} an empty resolved promise
    */
-  updateCompleted(id: string, newCompleted: boolean): Promise<any> {
-    return this.update(id, 'completed', newCompleted)
+  updateCompleted(_id: string, _newCompleted: boolean): Promise<any> {
+    return this.update(_id, 'completed', _newCompleted)
       .then((successResponse: Response) => Promise.resolve())
       .catch((updateError: any) => Promise.reject(updateError));
   }
 
   /**
    * Sends a request to update an assignment's class
-   * @param {string} id the id of the desired assignment
-   * @param {string} newClass the new class value to update the assignment with
+   * @param {string} _id the id of the desired assignment
+   * @param {string} _newClass the new class value to update the assignment with
    * @return {Promise<any>} an empty resolved promise
    */
-  updateClass(id: string, newClass: string): Promise<any> {
-    return this.update(id, 'class', newClass)
+  updateClass(_id: string, _newClass: string): Promise<any> {
+    return this.update(_id, 'class', _newClass)
       .then((successResponse: Response) => Promise.resolve())
       .catch((updateError: any) => Promise.reject(updateError));
   }
 
   /**
    * Sends a request to update an assignment's type
-   * @param {string} id the id of the desired assignment
-   * @param {string} newType the new type value to udpate the assignment with
+   * @param {string} _id the id of the desired assignment
+   * @param {string} _newType the new type value to udpate the assignment with
    * @return {Promise<any>} an empty resolved promise
    */
-  updateType(id: string, newType: string): Promise<any> {
-    return this.update(id, 'type', newType)
+  updateType(_id: string, _newType: string): Promise<any> {
+    return this.update(_id, 'type', _newType)
       .then((successResponse: Response) => Promise.resolve())
       .catch((updateError: any) => Promise.reject(updateError));
   }
 
   /**
    * Sends a request to update an assignment's description
-   * @param {string} id the id of the desired assignment
-   * @param {string} newDescription the new description value to update the assignment with
+   * @param {string} _id the id of the desired assignment
+   * @param {string} _newDescription the new description value to update the assignment with
    * @return {Promise<any>} an empty resolved promise
    */
-  updateDescription(id: string, newDescription: string): Promise<any> {
-    return this.update(id, 'description', newDescription)
+  updateDescription(_id: string, _newDescription: string): Promise<any> {
+    return this.update(_id, 'description', _newDescription)
       .then((successResponse: Response) => Promise.resolve())
       .catch((updateError: any) => Promise.reject(updateError));
   }
 
   /**
    * Sends a request to delete an assignment
-   * @param {string} id the id of the desired assignment
+   * @param {string} _id the id of the desired assignment
    * @return {Promise<any>} an empty resolved promise
    */
-  delete(id: string): Promise<any> {
+  delete(_id: string): Promise<any> {
     // Create request information
-    let token = localStorage.getItem('token');
-    let username = localStorage.getItem('currentUser');
-    let deleteUrl = `${this.baseUrl}/users/${username}/assignments/${id}`;
-    let headers = new Headers({
-      'Authorization': token,
-      'Content-Type': this.contentType_UrlEncoded,
-    });
+    let token = this._storage.getItem('token');
+    let username = this._storage.getItem('currentUser');
+    let deletePath = `/users/${username}/assignments/${_id}`;
+    let headersOptions = { 'Authorization': token };
 
     // Send request
-    return this._http.delete(deleteUrl, { headers: headers })
-      .toPromise()
+    return this._feasyApi.delete(deletePath, headersOptions)
       .then((successResponse: Response) => Promise.resolve())
-      .catch((deleteError: Response) => Promise.reject(deleteError));
-  }
-
-  /**
-   * Determines if a specific local storage item contains any meaningful data
-   * @param {string} storageItemKey the key of the local storage item
-   * @return {boolean} whether or not the key contains a meaningful (non-empty) data value
-   */
-  isValidStorageItem(storageItemKey: string): boolean {
-    let storageItem = localStorage.getItem(storageItemKey);
-    return storageItem != null && storageItem != undefined && storageItem != '';
+      .catch((deleteError: any) => Promise.reject(deleteError));
   }
 }

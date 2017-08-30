@@ -10,36 +10,35 @@ import {
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 
+import { LocalStorageService } from '../utils/local-storage.service';
+
 @Injectable()
 export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
-  constructor(private _router: Router) {}
+  constructor(private _router: Router, private _storage: LocalStorageService) {}
 
-  canActivate(next: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
-    if (this.isValidStorageItem('currentUser') && this.isValidStorageItem('token')) return true;
+  // TODO: Add formal documentation
+  canActivate(_next: ActivatedRouteSnapshot, _state: RouterStateSnapshot): boolean {
+    if (this._storage.isValidItem('currentUser') && this._storage.isValidItem('token')) return true;
     else {
-      localStorage.removeItem('token');
-      localStorage.removeItem('currentUser');
+      this._storage.deleteItem('token');
+      this._storage.deleteItem('currentUser');
 
       this._router.navigate(['/login']);
       return false;
     }
   }
 
-  canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
-    return this.canActivate(route, state);
-  }
-
-  canLoad(route: Route): boolean {
-    return this.isValidStorageItem('currentUser') && this.isValidStorageItem('token');
+  // TODO: Add formal documentation
+  canActivateChild(_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): boolean {
+    return this.canActivate(_route, _state);
   }
 
   /**
-   * Determines if a specific local storage item contains any meaningful data
-   * @param {string} storageItemKey the key of the local storage item
-   * @return {boolean} whether or not the key contains a meaningful (non-empty) data value
+   * Determines whether or not a specific route can be loaded and routed to
+   * @param {Route} _route the specific route in the app
+   * @return {boolean} whether or note the route can be loaded
    */
-  isValidStorageItem(storageItemKey: string): boolean {
-    let storageItem = localStorage.getItem(storageItemKey);
-    return storageItem != null && storageItem != undefined && storageItem != '';
+  canLoad(_route: Route): boolean {
+    return this._storage.isValidItem('currentUser') && this._storage.isValidItem('token');
   }
 }
