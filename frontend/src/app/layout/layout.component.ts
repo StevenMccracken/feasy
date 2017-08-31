@@ -6,6 +6,7 @@ import { Component, OnInit } from '@angular/core';
 import { Account } from '../objects/user';
 import { Assignment } from '../objects/assignment';
 import { UserService } from '../services/user.service';
+import { AvatarService } from '../services/avatar.service';
 import { MessageService } from '../services/message.service';
 import { LoadLearnService } from '../services/load-learn.service';
 import { AssignmentService } from '../services/assignment.service';
@@ -22,6 +23,7 @@ declare var $: any;
 export class LayoutComponent implements OnInit {
   user: Account = new Account();
   firstName: string;
+  avatarUrl: string;
 
   taskArray: Assignment[] = [];
   testArray: Assignment[] = [];
@@ -34,7 +36,6 @@ export class LayoutComponent implements OnInit {
 
   currentLocation: string;
 
-
   constructor(
     private _router: Router,
     private _location: Location,
@@ -42,6 +43,7 @@ export class LayoutComponent implements OnInit {
     private _utils: CommonUtilsService,
     private _loadLearn: LoadLearnService,
     private _storage: LocalStorageService,
+    private _avatarService: AvatarService,
     private _messageService: MessageService,
     private _assignmentService: AssignmentService
   ) {}
@@ -78,6 +80,8 @@ export class LayoutComponent implements OnInit {
         if (this._utils.hasValue(this.user.firstName) && this.user.firstName !== '') {
           this.firstName = this.user.firstName.charAt(0).toUpperCase() + this.user.firstName.slice(1);
         } else this.firstName = this.user.username;
+
+        this.avatarUrl = this._avatarService.getAvatarUrl(this.user.avatar);
       })
       .catch((getError: Response) => {
         if (getError.status == 400 || getError.status == 403) {
@@ -99,6 +103,10 @@ export class LayoutComponent implements OnInit {
     if (link === '/main/calendar') this._router.navigate([link]);
   }
 
+  selectAvatar(): void {
+
+  }
+
   toggleSettings(type: string): void {
     if (type === 'color') {
       setTimeout(() => this._storage.setItem('qsColor', this.quickSettingColors.toString()), 300);
@@ -114,6 +122,7 @@ export class LayoutComponent implements OnInit {
       } , 300);
     }
   }
+
   addMore(): void{
     let size = this.taskArray.length;
     this.taskArray[size] = new Assignment();

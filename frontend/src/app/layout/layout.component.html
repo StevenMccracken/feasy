@@ -14,13 +14,13 @@
         <div class="background secondary">
         </div>
           <div class="user-setting">
-            <img class="circle avatar" src="https://cdn0.iconfinder.com/data/icons/avatars-6/500/Avatar_boy_man_people_account_client_male_person_user_work_sport_beard_team_glasses-512.png">
-          </div>
+            <img class="circle avatar" id="avatar" [src]="avatarUrl" (click)="selectAvatar()" alt="Avatar photo" />
           <p class="white-text">Hey,&nbsp;{{ firstName }}</p>
           <div class="action">
             <div class="logout" (click)="logout()">Logout</div>
             <div class="settings">Settings</div>
           </div>
+        </div>
       </div>
     </li>
     <li>

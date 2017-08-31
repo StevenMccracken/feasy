@@ -46,6 +46,10 @@ export class UserService {
       requestParams['lastName'] = _user.lastName;
     }
 
+    if (this._utils.hasValue(_user.avatar) && _user.avatar !== '') {
+      requestParams['avatar'] = _user.avatar;
+    }
+
     return this._feasyApi.post(createUserPath, requestParams)
       .then((successResponse: Response) => {
         // Extract the token from the response body
@@ -102,6 +106,57 @@ export class UserService {
         return Promise.resolve(new Account().deserialize(responseBody));
       })
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
+  }
+
+  /**
+   * Sends a request to update an attribute for the current user
+   * @param {string} _attribute the name of the user attribute to update
+   * @param {any} _newValue the new value for the user's attribute
+   * @return {Promise<any>} the Response object from the API
+   */
+  private update(_attribute: string, _newValue: any): Promise<any> {
+    // Create request information
+    let token = this._storage.getItem('token');
+    let username = this._storage.getItem('currentUser');
+    let updatePath = `/users/${username}/${_attribute}`;
+    let headersOptions = { Authorization: token };
+
+    // Add required parameters
+    let capitalizedAttribute = `${_attribute.charAt(0).toUpperCase()}${_attribute.slice(1)}`;
+    let requestParams = { [`new${capitalizedAttribute}`]: _newValue };
+
+    // Send request
+    return this._feasyApi.put(updatePath, requestParams, headersOptions)
+      .then((successResponse: Response) => Promise.resolve(successResponse))
+      .catch((updateError: Response) => {
+        // Return detailed errors for invalid request error. Otherwise, return the response object
+        if (updateError.status == 400) {
+          let responseBody = updateError.json();
+          let errorMessage: string = (responseBody &&
+            responseBody.error &&
+            responseBody.error.message) ||
+            '';
+
+          // The request contains invalid/malformed parameters from the assignment's attributes
+          let errorReason;
+          if (/[iI]nvalid/.test(errorMessage)) errorReason = 'invalid';
+          else if (/[uU]nchanged/.test(errorMessage)) errorReason = 'unchanged';
+          else errorReason = 'unknown';
+
+          return Promise.reject(errorReason);
+        } else return Promise.reject(updateError);
+      });
+  }
+
+  /**
+   * Sends a request to update a user's avatar
+   * @param {string} _newAvatar the new avatar to update the user with
+   * @return {Promise<any>} an empty resolved promise
+   */
+  updateAvatar(_newAvatar: string): Promise<any> {
+    return this.update('avatar', _newAvatar)
+      .then((successResponse: Response) => Promise.resolve())
+      .catch((updateError: any) => Promise.reject(updateError));
   }
 
   /**
