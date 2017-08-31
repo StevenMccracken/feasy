@@ -36,12 +36,12 @@ const create = function create(_assignmentInfo = {}) {
     newAssignment.completed = _assignmentInfo.completed;
 
     // Add optional properties
-    newAssignment.class = !UTIL.hasValue(_assignmentInfo.class) ? '' : _assignmentInfo.class;
-    newAssignment.type = !UTIL.hasValue(_assignmentInfo.type) ? '' : _assignmentInfo.type;
+    newAssignment.class = UTIL.hasValue(_assignmentInfo.class) ? _assignmentInfo.class : '';
+    newAssignment.type = UTIL.hasValue(_assignmentInfo.type) ? _assignmentInfo.type : '';
     if (!UTIL.hasValue(_assignmentInfo.description)) newAssignment.description = '';
     else newAssignment.description = _assignmentInfo.description;
 
-    if (!UTIL.hasValue(_assignmentInfo.googleId)) newAssignment.googleId = _assignmentInfo.googleId;
+    if (UTIL.hasValue(_assignmentInfo.googleId)) newAssignment.googleId = _assignmentInfo.googleId;
 
     newAssignment.save()
       .then(() => resolve(newAssignment)) // End then(newAssignment)

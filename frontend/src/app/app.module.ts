@@ -12,6 +12,7 @@ import { AuthGuard } from './router-guard/auth.guard';
 import { UserService } from './services/user.service';
 import { FeasyService } from './services/feasy.service';
 import { LoginComponent } from './login/login.component';
+import { AvatarService } from './services/avatar.service';
 import { SignupComponent } from './signup/signup.component';
 import { LayoutComponent } from './layout/layout.component';
 import { MessageService } from './services/message.service';
@@ -55,6 +56,7 @@ let gapiClientConfig: ClientConfig = {
     AuthGuard,
     UserService,
     FeasyService,
+    AvatarService,
     MessageService,
     AssignmentService,
     CommonUtilsService,
