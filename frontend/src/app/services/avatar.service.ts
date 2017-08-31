@@ -10,6 +10,7 @@ export class AvatarService {
   private lightFemale: string = '../../assets/avatar_lightFemale.png';
   private darkMale: string = '../../assets/avatar_darkMale.png';
   private darkFemale: string = '../../assets/avatar_darkFemale.png';
+  private lightMaleBeard: string = '../../assets/avatar_lightMaleBeard.png';
   private avatars = [
     {
       name: 'default',
@@ -30,6 +31,10 @@ export class AvatarService {
     {
       name: 'darkFemale',
       url: this.darkFemale,
+    },
+    {
+      name: 'lightMaleBeard',
+      url: this.lightMaleBeard,
     },
   ];
 
@@ -57,6 +62,9 @@ export class AvatarService {
         break;
       case 'darkFemale':
         avatarUrl = this.darkFemale;
+        break;
+      case 'lightMaleBeard':
+        avatarUrl = this.lightMaleBeard;
         break;
       default:
         avatarUrl = this.default;
