@@ -6,6 +6,7 @@ import { Component, OnInit } from '@angular/core';
 import { Account } from '../objects/user';
 import { Assignment } from '../objects/assignment';
 import { UserService } from '../services/user.service';
+import { AvatarService } from '../services/avatar.service';
 import { MessageService } from '../services/message.service';
 import { LoadLearnService } from '../services/load-learn.service';
 import { AssignmentService } from '../services/assignment.service';
@@ -22,6 +23,8 @@ declare var $: any;
 export class LayoutComponent implements OnInit {
   user: Account = new Account();
   firstName: string;
+  avatarUrl: string;
+  avatars: Object[] = [];
 
   taskArray: Assignment[] = [];
   testArray: Assignment[] = [];
@@ -34,6 +37,10 @@ export class LayoutComponent implements OnInit {
 
   currentLocation: string;
 
+  avatarError: boolean = false;
+  avatarErrorMessage: string;
+  avatarErrorDuplicateMessage: string = 'You are already using that avatar';
+  standardAvatarErrorMessage: string = 'We are unable to update your avatar at this time. Please contact us at feasyresponse@gmail.com to fix this issue';
 
   constructor(
     private _router: Router,
@@ -42,6 +49,7 @@ export class LayoutComponent implements OnInit {
     private _utils: CommonUtilsService,
     private _loadLearn: LoadLearnService,
     private _storage: LocalStorageService,
+    private _avatarService: AvatarService,
     private _messageService: MessageService,
     private _assignmentService: AssignmentService
   ) {}
@@ -78,6 +86,8 @@ export class LayoutComponent implements OnInit {
         if (this._utils.hasValue(this.user.firstName) && this.user.firstName !== '') {
           this.firstName = this.user.firstName.charAt(0).toUpperCase() + this.user.firstName.slice(1);
         } else this.firstName = this.user.username;
+
+        this.avatarUrl = this._avatarService.getAvatarUrl(this.user.avatar);
       })
       .catch((getError: Response) => {
         if (getError.status == 400 || getError.status == 403) {
@@ -114,20 +124,80 @@ export class LayoutComponent implements OnInit {
       } , 300);
     }
   }
-  addMore(): void{
+
+  addMore(): void {
     let size = this.taskArray.length;
     this.taskArray[size] = new Assignment();
   }
 
-  deleteCurrent(i: number): void{
+  deleteCurrent(i: number): void {
     this.taskArray.splice(i, 1);
   }
 
-  openLoadLearn(): void{
+  changeAvatar(): void {
+    // Populate all the possible avatars
+    this.avatars = this._avatarService.getAllAvatars();
+
+    // Make sure no errors are displayed
+    this.avatarError = false;
+    this.avatarErrorMessage = '';
+
+    // Open the avatar selction screen
+    $('#avatarSelect').modal('open');
+  }
+
+  updateAvatar(_url: string, _type: string): void {
+    if (_url === this.avatarUrl) {
+      this.avatarError = true;
+      this.avatarErrorMessage = this.avatarErrorDuplicateMessage;
+    } else {
+      this.avatarError = false;
+      this._userService.updateAvatar(_type)
+        .then(() => {
+          this.avatarUrl = _url;
+          $('#avatarSelect').modal('close');
+        })
+        .catch((updateError: any) => {
+          if (typeof updateError === 'string') this.handleUpdateError('avatar', updateError);
+          else this.handleError(updateError);
+
+          // handleError handles 500 errors, but does not update the UI for avatars. Update the UI separately
+          if (updateError.status === 500) {
+            // API error, server could be down/crashed
+            this.avatarError = true;
+            this.avatarErrorMessage = this.standardAvatarErrorMessage;
+          }
+        });
+    }
+  }
+
+  /**
+   * Handles error that comes during an update API call
+   * @param {string} _attribute a part of the object that couldn't be updated
+   * @param {string} _reason why the attribute couldn't be updated.
+   */
+  private handleUpdateError(_attribute: string, _reason: string): void {
+    this.avatarError = true;
+    switch (_reason) {
+      case 'invalid':
+        console.error('New %s was malformed', _attribute);
+        this.avatarErrorMessage = this.standardAvatarErrorMessage;
+        break;
+      case 'unchanged':
+        console.error('New %s was unchanged', _attribute);
+        this.avatarErrorMessage = this.avatarErrorDuplicateMessage;
+        break;
+      default:
+        console.error('New %s was invalid in some way', _attribute);
+        this.avatarErrorMessage = this.standardAvatarErrorMessage;
+    }
+  }
+
+  openLoadLearn(): void {
     $('#loadLearn').modal('open');
   }
 
-  addAllTask(): void{
+  addAllTask(): void {
     $('#loadLearn').modal('close');
     console.log(this.taskArray);
     this._assignmentService.multipleCreate(this.taskArray)
@@ -142,6 +212,7 @@ export class LayoutComponent implements OnInit {
                              console.log(err);
                            });
   }
+
   /**
    * Handles errors received from an API call
    * @param {Response = new Response()} _error the Response error from the API call

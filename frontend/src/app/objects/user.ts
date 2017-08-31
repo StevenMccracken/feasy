@@ -8,6 +8,7 @@ export class User implements Serializable<User> {
   password: string;
   firstName: string;
   lastName: string;
+  avatar: string;
 
   /**
    * Converts a JSON representing a user to a User object
@@ -20,6 +21,7 @@ export class User implements Serializable<User> {
     this.password = _input['password'];
     this.firstName = _input['firstName'];
     this.lastName = _input['lastName'];
+    this.avatar = _input['avatar'];
 
     return this;
   }
@@ -31,6 +33,7 @@ export class Account implements Serializable<Account> {
   username: string;
   firstName: string;
   lastName: string;
+  avatar: string;
 
   /**
    * Converts a JSON representing an account to an Account object
@@ -43,6 +46,7 @@ export class Account implements Serializable<Account> {
     this.username = _input['username'];
     this.firstName = _input['firstName'];
     this.lastName = _input['lastName'];
+    this.avatar = _input['avatar'];
 
     return this;
   }

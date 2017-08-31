@@ -50,6 +50,10 @@ const UserSchema = MONGOOSE.Schema({
     type: String,
   },
   accessTokenExpiryDate: { type: Number },
+  avatar: {
+    trim: true,
+    type: String,
+  },
 });
 
 // Executes right before user is saved in the database

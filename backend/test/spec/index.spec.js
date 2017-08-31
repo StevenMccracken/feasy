@@ -320,6 +320,31 @@ describe('Start server', () => {
     });
   }); // End update user 1's last name
 
+  // Update user 1's avatar
+  const updateUser1Avatar = 'Update user 1\'s avatar';
+  describe(updateUser1Avatar, () => {
+    let requestParams;
+    beforeEach(() => {
+      requestParams = {
+        url: `${baseUrl}/users/${user1Name}/avatar`,
+        headers: { Authorization: user1Token },
+        form: { newAvatar: 'female' },
+      };
+    });
+
+    it('updates user\'s avatar and returns status code 200', (done) => {
+      REQUEST.put(requestParams, (error, response, body) => {
+        expect(response.statusCode).toBe(200);
+
+        const data = JSON.parse(body);
+        expect(data.success).toBeDefined();
+
+        LOG(updateUser1Avatar, body);
+        done();
+      });
+    });
+  }); // End update user 1's avatar
+
   // Create assignment 1
   const createAssignment1 = 'Create assignment 1';
   const nowUnixSeconds = Math.floor(Date.now() / 1000);
