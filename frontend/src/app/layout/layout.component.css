@@ -100,7 +100,15 @@ h6 {
 .tableContent {
   padding-right: 50px;
 }
-
+.avatar-select{
+  margin-left: 10px;
+  margin-top: 30px;
+  margin-right: 10px;
+  margin-bottom: 30px;
+}
+.avatar-select:hover{
+  border: solid thick white;
+}
 thead {
   border-bottom: none;
 }

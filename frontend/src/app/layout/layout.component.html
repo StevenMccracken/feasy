@@ -14,13 +14,13 @@
         <div class="background secondary">
         </div>
           <div class="user-setting">
-            <img class="circle avatar" id="avatar" [src]="avatarUrl" (click)="selectAvatar()" alt="Avatar photo" />
+            <img class="circle avatar" [src]="avatarUrl" (click)="changeAvatar()">
+          </div>
           <p class="white-text">Hey,&nbsp;{{ firstName }}</p>
           <div class="action">
             <div class="logout" (click)="logout()">Logout</div>
             <div class="settings">Settings</div>
           </div>
-        </div>
       </div>
     </li>
     <li>
@@ -141,6 +141,18 @@
     </div>
     <div class="modal-footer">
       <a class="modal-action modal-close waves-effect waves-green btn-flat" (click)="addAllTask()">Import to Calendar</a>
+    </div>
+  </div>
+
+  <!-- Modal Structure -->
+  <div id="avatarSelect" class="modal">
+    <div class="modal-content center">
+      <h4>Avatar Selection</h4>
+      <div class="row">
+        <div class="col s4" *ngFor="let img of avatars">
+            <img class="circle avatar-select col s12" [src]="img.url" (click)="updateAvatar(img.url, img.name)">
+        </div>
+      </div>
     </div>
   </div>
   <router-outlet></router-outlet>

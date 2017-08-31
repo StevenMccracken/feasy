@@ -9,7 +9,7 @@ import { CommonUtilsService } from '../utils/common-utils.service';
 
 @Injectable()
 export class FeasyService {
-  private baseUrl: string = 'http://localhost:8080';//'https://api.feasy-app.com';
+  private baseUrl: string = 'https://api.feasy-app.com';//'https://api.feasy-app.com';
   private contentType_UrlEncoded: string = 'application/x-www-form-urlencoded';
   private standardHeaders: Headers = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
 

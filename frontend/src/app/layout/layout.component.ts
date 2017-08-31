@@ -24,6 +24,7 @@ export class LayoutComponent implements OnInit {
   user: Account = new Account();
   firstName: string;
   avatarUrl: string;
+  avatars: Object[] = [];
 
   taskArray: Assignment[] = [];
   testArray: Assignment[] = [];
@@ -82,6 +83,7 @@ export class LayoutComponent implements OnInit {
         } else this.firstName = this.user.username;
 
         this.avatarUrl = this._avatarService.getAvatarUrl(this.user.avatar);
+        this.avatars = this._avatarService.getAllAvatars();
       })
       .catch((getError: Response) => {
         if (getError.status == 400 || getError.status == 403) {
@@ -131,7 +133,22 @@ export class LayoutComponent implements OnInit {
   deleteCurrent(i: number): void{
     this.taskArray.splice(i, 1);
   }
+  changeAvatar(): void{
+    $('#avatarSelect').modal('open');
+  }
+  updateAvatar(url: string, name: string): void{
+    this._userService.updateAvatar(name)
+                     .then(() => {
+                       console.log('update success');
+                       this.avatarUrl = url;
+                       $('#avatarSelect').modal('close');
 
+                     })
+                     .catch((err: any) => {
+                       console.log(err);
+                     });
+
+  }
   openLoadLearn(): void{
     $('#loadLearn').modal('open');
   }
