@@ -13,12 +13,10 @@ export class Assignment implements Serializable<Assignment> {
   type: string;
   description: string;
 
-  /**
-   * booleans that allows click to edit functionality of tasks
-   */
-  editModeDescription: boolean = false;
-  editModeTitle: boolean = false;
+  // These allow click to edit functionality of tasks
   editModeDate: boolean = false;
+  editModeTitle: boolean = false;
+  editModeDescription: boolean = false;
 
   /**
    * Converts a JSON representing an assignment to an Assignment object

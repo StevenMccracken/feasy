@@ -1,74 +1,60 @@
+// Import angular packages
 import { Injectable } from '@angular/core';
 
+// Import our files
+import { CommonUtilsService } from '../utils/common-utils.service';
+
 /**
- * Returns a link to a downloadable avatar image for a given avatar identifier
+ * Returns a file path to a static avatar image for a given avatar identifier
  */
 @Injectable()
 export class AvatarService {
-  private default: string = '../../assets/avatar_default.png';
-  private lightMale: string = '../../assets/avatar_lightMale.png';
-  private lightFemale: string = '../../assets/avatar_lightFemale.png';
-  private darkMale: string = '../../assets/avatar_darkMale.png';
-  private darkFemale: string = '../../assets/avatar_darkFemale.png';
-  private lightMaleBeard: string = '../../assets/avatar_lightMaleBeard.png';
-  private avatars = [
-    {
+  private avatarsArray: Object[];
+  private avatars: Object = {
+    default: {
       name: 'default',
-      url: this.default,
+      url: '../../assets/avatar_default.png',
     },
-    {
+    lightMale: {
       name: 'lightMale',
-      url: this.lightMale,
+      url: '../../assets/avatar_lightMale.png',
     },
-    {
+    lightFemale: {
       name: 'lightFemale',
-      url: this.lightFemale,
+      url: '../../assets/avatar_lightFemale.png',
     },
-    {
+    darkMale: {
       name: 'darkMale',
-      url: this.darkMale,
+      url: '../../assets/avatar_darkMale.png',
     },
-    {
+    darkFemale: {
       name: 'darkFemale',
-      url: this.darkFemale,
+      url: '../../assets/avatar_darkFemale.png',
     },
-    {
+    lightMaleBeard: {
       name: 'lightMaleBeard',
-      url: this.lightMaleBeard,
+      url: '../../assets/avatar_lightMaleBeard.png',
     },
-  ];
+  };
 
-  constructor() {}
+  constructor(private _utils: CommonUtilsService) {
+    this.avatarsArray = Array.of(this.avatars);
+  }
 
   getDefaultAvatarUrl(): string {
-    return this.default;
+    return this.avatars['default'].url;
   }
 
   getAllAvatars(): Object[] {
-    return this.avatars;
+    return this.avatarsArray;
   }
 
   getAvatarUrl(_type: string = ''): string {
     let avatarUrl: string;
-    switch (_type) {
-      case 'lightMale':
-        avatarUrl = this.lightMale;
-        break;
-      case 'lightFemale':
-        avatarUrl = this.lightFemale;
-        break;
-      case 'darkMale':
-        avatarUrl = this.darkMale;
-        break;
-      case 'darkFemale':
-        avatarUrl = this.darkFemale;
-        break;
-      case 'lightMaleBeard':
-        avatarUrl = this.lightMaleBeard;
-        break;
-      default:
-        avatarUrl = this.default;
-    }
+    const avatarObject: Object = this.avatars[_type];
+    if (!this._utils.hasValue(avatarObject) || !this._utils.isJsonEmpty(avatarObject)) {
+      avatarUrl = this.avatars['default'].url;
+    } else avatarUrl = avatarObject['url'];
 
     return avatarUrl;
   }
