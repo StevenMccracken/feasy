@@ -150,8 +150,12 @@ export class LayoutComponent implements OnInit {
 
   updateAvatar(_url: string, _type: string): void {
     if (_url === this.avatarUrl) {
+      // Display error message
       this.avatarError = true;
       this.avatarErrorMessage = this.avatarErrorDuplicateMessage;
+
+      // Scroll to top of modal to make error message visible
+      $('#avatarSelect').scrollTop(0);
     } else {
       this.avatarError = false;
       this._userService.updateAvatar(_type)
@@ -160,6 +164,9 @@ export class LayoutComponent implements OnInit {
           $('#avatarSelect').modal('close');
         })
         .catch((updateError: any) => {
+          // Scroll to top of modal to make error message visible
+          $('#avatarSelect').scrollTop(0);
+
           if (typeof updateError === 'string') this.handleUpdateError('avatar', updateError);
           else this.handleError(updateError);
 
