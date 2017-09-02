@@ -226,6 +226,12 @@ const routing = function routing(_router) {
       .catch(error => _response.json(error));
   });
 
+  router.route('/users/:username/calendar/icloud').post((_request, _response) => {
+    MIDDLEWARE.syncIcloudCalendar(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
+
   /**
    * The GET route for retrieving all of a user's assignments. Sends an error
    * JSON or a JSON of the assignments. This route requires token authentication

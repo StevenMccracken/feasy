@@ -13,6 +13,7 @@ const USERS = require('../controller/user');
 const AUTH = require('./authentication_mod');
 const VALIDATE = require('./validation_mod');
 const GOOGLE_API = require('./googleApi_mod');
+const ICLOUD_API = require('./icloudApi_mod');
 const ASSIGNMENTS = require('../controller/assignment');
 
 const eventEmitter = new EVENTS.EventEmitter();
@@ -1599,6 +1600,88 @@ const syncGoogleCalendar = function syncGoogleCalendar(_request, _response) {
   }); // End return promise
 }; // End syncGoogleCalendar()
 
+const syncIcloudCalendar = function syncIcloudCalendar(_request, _response) {
+  const SOURCE = 'syncIcloudCalendar()';
+  log(SOURCE, _request);
+
+  return new Promise((resolve, reject) => {
+    AUTH.verifyToken(_request, _response)
+      .then((client) => {
+        // Token is valid. Check if client is requesting themself
+        if (client.username !== _request.params.username) {
+          // Client attempted to get assignments of another user
+          const errorJson = ERROR.error(
+            SOURCE,
+            _request,
+            _response,
+            ERROR.CODE.RESOURCE_ERROR,
+            'You cannot get another user\'s assignments',
+            `${client.username} tried to get assignments of ${_request.params.username}`
+          );
+
+          reject(errorJson);
+        } else {
+          // Check request parameters
+          let username;
+          let password;
+          const invalidParams = [];
+          if (!VALIDATE.isValidUsername(_request.params.username)) invalidParams.push('username');
+          if (!VALIDATE.isValidString(_request.body.icloudUsername)) {
+            invalidParams.push('icloudUsername');
+          } else username = _request.body.icloudUsername;
+
+          if (!VALIDATE.isValidString(_request.body.icloudPassword)) {
+            invalidParams.push('icloudPassword');
+          } else password = _request.body.icloudPassword;
+
+          let earliestDateQuery;
+          if (UTIL.hasValue(_request.query.earliestDate)) {
+            if (VALIDATE.isValidInteger(_request.query.earliestDate)) {
+              earliestDateQuery = new Date(parseInt(_request.query.earliestDate, 10) * 1000);
+            } else invalidParams.push('earliestDate');
+          } else earliestDateQuery = new Date();
+
+          if (invalidParams.length > 0) {
+            const errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.INVALID_REQUEST_ERROR,
+              `Invalid parameters: ${invalidParams.join()}`
+            );
+
+            reject(errorJson);
+          } else {
+            // Set latest date to be 3 months from now
+            const threeMonthsMilliseconds = Date.now() + 7257600000;
+            const latestDateQuery = new Date(threeMonthsMilliseconds);
+
+            ICLOUD_API.getCalendarEvents(username, password, earliestDateQuery, latestDateQuery)
+              .then((events) => {
+                resolve(events);
+              }) // End then(events)
+              .catch((getEventsError) => {
+                const errorJson = ERROR.error(
+                  SOURCE,
+                  _request,
+                  _response,
+                  ERROR.CODE.API_ERROR,
+                  null,
+                  getEventsError
+                );
+
+                reject(errorJson);
+              }); // End ICLOUD_API.getCalendarEvents()
+          }
+        }
+      }) // End then(client)
+      .catch((authError) => {
+        const errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
+        reject(errorJson);
+      }); // End AUTH.verifyToken()
+  }); // End return promise
+}; // End syncIcloudCalendar()
+
 /**
  * getAssignments - Retrieve all assignments created by a user
  * @param {Object} _request the HTTP request
@@ -2284,6 +2367,7 @@ module.exports = {
   createAssignment,
   parseSchedule,
   syncGoogleCalendar,
+  syncIcloudCalendar,
   getAssignments,
   getAssignmentById,
   updateAssignmentTitle,
