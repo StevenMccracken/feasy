@@ -34,6 +34,7 @@
     "ng-gapi": "0.0.42-1",
     "ng2-dragula": "^1.5.0",
     "rxjs": "^5.1.0",
+    "tslint-config-airbnb": "^5.2.1",
     "zone.js": "^0.8.4"
   },
   "devDependencies": {
@@ -52,7 +53,7 @@
     "karma-jasmine-html-reporter": "^0.2.2",
     "protractor": "~5.1.0",
     "ts-node": "~2.0.0",
-    "tslint": "~4.5.0",
+    "tslint": "^4.5.1",
     "typescript": "^2.3.4"
   }
 }

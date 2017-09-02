@@ -1,5 +1,7 @@
+// Import angular packages
 import { Injectable } from '@angular/core';
 
+// Import our files
 import { CommonUtilsService } from './common-utils.service';
 
 /**
@@ -15,7 +17,7 @@ export class LocalStorageService {
    * @return {boolean} whether or not the key is not null, not undefined, and not an empty string
    */
   isValidItem(_itemKey: string): boolean {
-    let storageItem:string = localStorage.getItem(_itemKey);
+    const storageItem: string = localStorage.getItem(_itemKey);
     return this._utils.hasValue(storageItem) && storageItem !== '';
   }
 
@@ -44,7 +46,9 @@ export class LocalStorageService {
    * @param {string} _itemKey the key of the existing local storage item
    */
   clearItem(_itemKey: string): void {
-    if (this.isValidItem(_itemKey)) this.setItem(_itemKey, '');
+    if (this.isValidItem(_itemKey)) {
+      this.setItem(_itemKey, '');
+    }
   }
 
   /**

@@ -1,7 +1,16 @@
+// Import angular packages
+import {
+  OnInit,
+  Component,
+} from '@angular/core';
+import {
+  FormGroup,
+  Validators,
+  FormBuilder,
+} from '@angular/forms';
 import { Router } from '@angular/router';
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
+// Import our files
 import { User } from '../objects/user';
 import { UserService } from '../services/user.service';
 import { LocalStorageService } from '../utils/local-storage.service';
@@ -17,7 +26,7 @@ export class SignupComponent {
   alphaCode: string = '';
   passwordValidator: string;
   error: boolean = false;
-  errorMessage: string;
+  errorMessage: string = '';
   private standardErrorMessage: string = 'Something bad happened. Please try signing up again';
   private varToWordMap: Object = {
     username: 'username',
@@ -30,7 +39,7 @@ export class SignupComponent {
   constructor(
     private _router: Router,
     private _userService: UserService,
-    private _storage: LocalStorageService
+    private _storage: LocalStorageService,
   ) {}
 
   /**
@@ -80,13 +89,13 @@ export class SignupComponent {
         } else if (Array.isArray(createUserError)) {
           // The values from the form were not in the correct format
           this.errorMessage = 'Incorrect fields: ';
-          if (createUserError.length == 1) {
+          if (createUserError.length === 1) {
             this.errorMessage += this.varToWordMap[createUserError[0]];
-          } else if (createUserError.length == 2) {
+          } else if (createUserError.length === 2) {
             this.errorMessage += `${this.varToWordMap[createUserError[0]]} and ${this.varToWordMap[createUserError[1]]}`;
           } else {
             for (let i = 0; i < createUserError.length - 1; i++) {
-              this.errorMessage += `${this.varToWordMap[createUserError[i]]}, `
+              this.errorMessage += `${this.varToWordMap[createUserError[i]]}, `;
             }
 
             this.errorMessage += `and ${this.varToWordMap[createUserError[createUserError.length - 1]]}`;
