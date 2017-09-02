@@ -5,7 +5,7 @@ import { AssignmentService } from './assignment.service';
 describe('AssignmentService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [AssignmentService]
+      providers: [AssignmentService],
     });
   });
 

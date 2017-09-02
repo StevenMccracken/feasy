@@ -1,9 +1,16 @@
+// Import angular packages
+import {
+  OnInit,
+  Component,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
-import { Subscription } from 'rxjs/Subscription';
-import { Component, OnInit } from '@angular/core';
 
-import { Account } from '../objects/user';
+// Import 3rd party libraries
+import { Subscription } from 'rxjs/Subscription';
+
+// Import our files
+import { Account } from '../objects/account';
 import { Assignment } from '../objects/assignment';
 import { UserService } from '../services/user.service';
 import { AvatarService } from '../services/avatar.service';
@@ -13,6 +20,7 @@ import { AssignmentService } from '../services/assignment.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
 
+// jQuery definition
 declare var $: any;
 
 @Component({
@@ -29,7 +37,7 @@ export class LayoutComponent implements OnInit {
   taskArray: Assignment[] = [];
   testArray: Assignment[] = [];
 
-  //quicksettings variables
+  // quicksettings variables
   quickSettingDescription: boolean = true;
   quickSettingLabel: boolean = true;
   quickSettingColors: boolean = false;
@@ -40,7 +48,9 @@ export class LayoutComponent implements OnInit {
   avatarError: boolean = false;
   avatarErrorMessage: string;
   avatarErrorDuplicateMessage: string = 'You are already using that avatar';
+  /* tslint:disable max-line-length */
   standardAvatarErrorMessage: string = 'We are unable to update your avatar at this time. Please contact us at feasyresponse@gmail.com to fix this issue';
+  /* tslint:enable max-line-length */
 
   constructor(
     private _router: Router,
@@ -51,7 +61,7 @@ export class LayoutComponent implements OnInit {
     private _storage: LocalStorageService,
     private _avatarService: AvatarService,
     private _messageService: MessageService,
-    private _assignmentService: AssignmentService
+    private _assignmentService: AssignmentService,
   ) {}
 
   sendMessage(): void {
@@ -66,20 +76,12 @@ export class LayoutComponent implements OnInit {
 
   ngOnInit() {
     this.taskArray[0] = new Assignment();
-    $("#button-slide").sideNav();
-    if(this._storage.isValidItem('qsColor')) {
-      this.quickSettingColors = this._storage.getItem('qsColor') === 'true';
-    }
+    $('#button-slide').sideNav();
+    if (this._storage.isValidItem('qsColor')) this.quickSettingColors = this._storage.getItem('qsColor') === 'true';
+    if (this._storage.isValidItem('qsDescription')) this.quickSettingDescription = this._storage.getItem('qsDescription') === 'true';
+    if (this._storage.isValidItem('qsLabel')) this.quickSettingLabel = this._storage.getItem('qsLabel') === 'true';
 
-    if(this._storage.isValidItem('qsDescription')) {
-      this.quickSettingDescription = this._storage.getItem('qsDescription') === 'true';
-    }
-
-    if(this._storage.isValidItem('qsLabel')) {
-      this.quickSettingLabel = this._storage.getItem('qsLabel') === 'true';
-    }
-
-    let currentUser: string = this._storage.getItem('currentUser');
+    const currentUser: string = this._storage.getItem('currentUser');
     this._userService.get(currentUser)
       .then((userAccount: Account) => {
         this.user = userAccount;
@@ -90,7 +92,7 @@ export class LayoutComponent implements OnInit {
         this.avatarUrl = this._avatarService.getAvatarUrl(this.user.avatar);
       })
       .catch((getError: Response) => {
-        if (getError.status == 400 || getError.status == 403) {
+        if (getError.status === 400 || getError.status === 403) {
           this.firstName = 'User';
           console.error(getError);
         } else this.handleError(getError);
@@ -100,7 +102,7 @@ export class LayoutComponent implements OnInit {
   logout(): void {
     this._storage.deleteItem('token');
     this._storage.deleteItem('currentUser');
-    $("#button-slide").sideNav('destroy');
+    $('#button-slide').sideNav('destroy');
     this._router.navigate(['login']);
   }
 
@@ -109,24 +111,24 @@ export class LayoutComponent implements OnInit {
     if (link === '/main/calendar') this._router.navigate([link]);
   }
 
-  toggleSettings(type: string): void {
-    if (type === 'color') {
-      setTimeout(() => this._storage.setItem('qsColor', this.quickSettingColors.toString()), 300);
-    }
-
-    if (type === 'label') {
-      setTimeout(() => this._storage.setItem('qsLabel', this.quickSettingLabel.toString()), 300);
-    }
-
-    if (type === 'description') {
-      setTimeout(() => {
-        this._storage.setItem('qsDescription', this.quickSettingDescription.toString());
-      } , 300);
+  toggleSettings(_type: string): void {
+    switch (_type) {
+      case 'color':
+        setTimeout(() => this._storage.setItem('qsColor', this.quickSettingColors.toString()), 300);
+        break;
+      case 'label':
+        setTimeout(() => this._storage.setItem('qsLabel', this.quickSettingLabel.toString()), 300);
+        break;
+      case 'description':
+        setTimeout(() => this._storage.setItem('qsDescription', this.quickSettingDescription.toString()), 300);
+        break;
+      default:
+        console.log('Can\'t toggle unknown settings type \'%s\'', _type);
     }
   }
 
   addMore(): void {
-    let size = this.taskArray.length;
+    const size = this.taskArray.length;
     this.taskArray[size] = new Assignment();
   }
 
@@ -148,8 +150,12 @@ export class LayoutComponent implements OnInit {
 
   updateAvatar(_url: string, _type: string): void {
     if (_url === this.avatarUrl) {
+      // Display error message
       this.avatarError = true;
       this.avatarErrorMessage = this.avatarErrorDuplicateMessage;
+
+      // Scroll to top of modal to make error message visible
+      $('#avatarSelect').scrollTop(0);
     } else {
       this.avatarError = false;
       this._userService.updateAvatar(_type)
@@ -158,6 +164,9 @@ export class LayoutComponent implements OnInit {
           $('#avatarSelect').modal('close');
         })
         .catch((updateError: any) => {
+          // Scroll to top of modal to make error message visible
+          $('#avatarSelect').scrollTop(0);
+
           if (typeof updateError === 'string') this.handleUpdateError('avatar', updateError);
           else this.handleError(updateError);
 
@@ -199,18 +208,17 @@ export class LayoutComponent implements OnInit {
 
   addAllTask(): void {
     $('#loadLearn').modal('close');
-    console.log(this.taskArray);
     this._assignmentService.multipleCreate(this.taskArray)
-                           .then((res: Assignment[]) => {
-                             this.clearMessage();
-                             this.sendMessage();
-                             this._loadLearn.setTaskArray(this.taskArray);
-                             this.taskArray = [];
-                             this.taskArray[0] = new Assignment();
-                           })
-                           .catch((err: any) => {
-                             console.log(err);
-                           });
+      .then((res: Assignment[]) => {
+        this.clearMessage();
+        this.sendMessage();
+        this._loadLearn.setTaskArray(this.taskArray);
+        this.taskArray = [];
+        this.taskArray[0] = new Assignment();
+      })
+      .catch((err: any) => {
+        console.error(err);
+      });
   }
 
   /**
@@ -218,14 +226,14 @@ export class LayoutComponent implements OnInit {
    * @param {Response = new Response()} _error the Response error from the API call
    */
   private handleError(_error: Response = new Response()): void {
-    if (_error.status == 401 || _error.status == 404) {
+    if (_error.status === 401 || _error.status === 404) {
       // Token is stale. Clear the user and token local storage
       this._storage.deleteItem('token');
       this._storage.deleteItem('currentUser');
 
       // Add the reason for re-routing to login
-      if (_error.status == 401) this._storage.setItem('expiredToken', 'true');
-      else if (_error.status == 404) this._storage.setItem('userDoesNotExist', 'true');
+      if (_error.status === 401) this._storage.setItem('expiredToken', 'true');
+      else if (_error.status === 404) this._storage.setItem('userDoesNotExist', 'true');
 
       // Route to the login page
       this._router.navigate(['/login']);

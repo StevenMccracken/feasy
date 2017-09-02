@@ -1,15 +1,25 @@
+// Import angular packages
+import {
+  Http,
+  Headers,
+  Response,
+  RequestOptions,
+  URLSearchParams,
+} from '@angular/http';
+import { Injectable } from '@angular/core';
+
+// Import 3rd party libraries
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
-import { Observable } from 'rxjs';
 import 'rxjs/add/operator/toPromise';
-import { Injectable } from '@angular/core';
-import { Headers, Http, RequestOptions, Response, URLSearchParams } from '@angular/http';
+import { Observable } from 'rxjs/Observable';
 
+// Import our files
 import { CommonUtilsService } from '../utils/common-utils.service';
 
 @Injectable()
 export class FeasyService {
-  private baseUrl: string = 'https://api.feasy-app.com';
+  private baseUrl: string = 'http://localhost:8080'; // 'https://api.feasy-app.com';
   private contentType_UrlEncoded: string = 'application/x-www-form-urlencoded';
   private standardHeaders: Headers = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
 
@@ -77,24 +87,28 @@ export class FeasyService {
     _requestType: string = '',
     _path: string = '',
     _bodyParameters: Object = {},
-    _headers: Object = {}
+    _headers: Object = {},
   ): Promise<Response> {
     // Append route path to base API URL
-    let requestUrl = this.buildRequestUrl(_path);
+    const requestUrl: string = this.buildRequestUrl(_path);
 
     // Create request search parameters object from JSON
-    let requestParameters = this.buildSearchParameters(_bodyParameters);
+    const requestParameters: URLSearchParams = this.buildSearchParameters(_bodyParameters);
 
     // Create headers for request
     let requestHeaders: Headers;
     if (this._utils.isJsonEmpty(_headers)) requestHeaders = this.standardHeaders;
     else {
       requestHeaders = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
-      for (let headerKey in _headers) requestHeaders.append(headerKey, _headers[headerKey]);
+      for (const headerKey in _headers) {
+        if (_headers.hasOwnProperty(headerKey)) {
+          requestHeaders.append(headerKey, _headers[headerKey]);
+        }
+      }
     }
 
     // Add headers to request options object
-    let requestOptions = new RequestOptions({ headers: requestHeaders });
+    const requestOptions: RequestOptions = new RequestOptions({ headers: requestHeaders });
 
     // Determine appropriate http request method
     let httpRequest;
@@ -138,9 +152,11 @@ export class FeasyService {
    */
   private buildSearchParameters(_parametersJson: Object = {}): URLSearchParams {
     // Create a request search parameters object from the body parameters JSON
-    let searchParameters = new URLSearchParams();
-    for (let parameter in _parametersJson) {
-      searchParameters.append(parameter, _parametersJson[parameter]);
+    const searchParameters: URLSearchParams = new URLSearchParams();
+    for (const parameter in _parametersJson) {
+      if (_parametersJson.hasOwnProperty(parameter)) {
+        searchParameters.append(parameter, _parametersJson[parameter]);
+      }
     }
 
     return searchParameters;
