@@ -1,8 +1,19 @@
+// Import angular packages
+import {
+  OnInit,
+  Component,
+} from '@angular/core';
+import {
+  FormGroup,
+  Validators,
+  FormBuilder,
+} from '@angular/forms';
 import { Router } from '@angular/router';
-import { Component, OnInit } from '@angular/core';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
+// Import 3rd party libraries
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+
+// Import our files
 import { UserService } from '../services/user.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
@@ -30,7 +41,7 @@ export class LoginComponent implements OnInit {
     private _router: Router,
     private _userService: UserService,
     private _utils: CommonUtilsService,
-    private _storage: LocalStorageService
+    private _storage: LocalStorageService,
 ) {}
 
   ngOnInit() {
@@ -100,8 +111,8 @@ export class LoginComponent implements OnInit {
         this.googleSignInImageSource = this.googleSignInImageSourceDefault;
 
         // Open the authentication URL in a popup window
-        var popup = window.open(authUrl, 'Authenticate Google', 'width=600, height=600');
-        if (popup === null) {
+        const popup = window.open(authUrl, 'Authenticate Google', 'width=600, height=600');
+        if (!this._utils.hasValue(popup)) {
           this.error = true;
           this.errorMessage = this.standardErrorMessage;
           console.error('Opening Google OAuth2.0 window returned null');
@@ -114,8 +125,8 @@ export class LoginComponent implements OnInit {
            * authentication in the popup. Popup variable is null inside the
            * user service call closure, so this subscription is necessary
            */
-          let googleAuthSource = new BehaviorSubject<boolean>(false); // Default value = false
-          let popupWindowStatus = googleAuthSource.asObservable();
+          const googleAuthSource = new BehaviorSubject<boolean>(false); // Default value = false
+          const popupWindowStatus = googleAuthSource.asObservable();
           popupWindowStatus.subscribe((finishedGoogleAuth) => {
             if (finishedGoogleAuth) popup.close();
           });
@@ -127,7 +138,7 @@ export class LoginComponent implements OnInit {
               googleAuthSource.next(true);
 
               // Check for the authentication info
-              if (loginInfo['token'] !== null && loginInfo['username'] !== null) {
+              if (this._utils.hasValue(loginInfo['token'])) {
                 // Add the token and username data to local storage
                 this._storage.setItem('token', loginInfo['token']);
                 this._storage.setItem('currentUser', loginInfo['username']);
@@ -190,10 +201,10 @@ export class LoginComponent implements OnInit {
     }
 
     // Username needs to be saved for closure created with service call to set local storage
-    let username = this._username;
+    const username = this._username;
     this._userService.validate(this._username, this._password)
       .then((token) => {
-        if (token !== null) {
+        if (this._utils.hasValue(token)) {
           // Add the token and username data to local storage
           this._storage.setItem('token', token);
           this._storage.setItem('currentUser', username);

@@ -1,25 +1,35 @@
-import { Subject } from 'rxjs/Subject';
+// Import angular packages
+import {
+  Input,
+  OnInit,
+  Component,
+  OnDestroy,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { Router } from '@angular/router';
+
+// Import 3rd party libraries
+import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Observable';
 import { Subscription } from 'rxjs/Subscription';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import {
-  startOfDay,
-  endOfDay,
   subDays,
   addDays,
-  endOfMonth,
+  addHours,
+  endOfDay,
   isSameDay,
+  startOfDay,
+  endOfMonth,
   isSameMonth,
-  addHours
 } from 'date-fns';
 import {
   CalendarEvent,
   CalendarEventAction,
-  CalendarEventTimesChangedEvent
+  CalendarEventTimesChangedEvent,
 } from 'angular-calendar';
-import { Component, ChangeDetectionStrategy, OnInit, Input, OnDestroy } from '@angular/core';
 
+// Import our files
 import { COLORS } from '../../objects/colors';
 import { Assignment } from '../../objects/assignment';
 import { LayoutComponent } from '../layout.component';
@@ -41,7 +51,6 @@ declare var Materialize: any;
 })
 
 export class CalendarComponent implements OnInit {
-
   // Assignment object used for the assignment form
   assignment: Assignment = new Assignment();
   jquery: any;
@@ -65,7 +74,7 @@ export class CalendarComponent implements OnInit {
   aDescription: Map<Assignment, CalendarEvent> = new Map<Assignment, CalendarEvent>();
 
   // array to store all the calendar events
-  events: CalendarEvent[] = new Array<CalendarEvent>();
+  events: CalendarEvent[] = [];
 
   activeDayIsOpen: boolean = false;
   onetime: boolean = false;
@@ -93,11 +102,11 @@ export class CalendarComponent implements OnInit {
   {
     label: '<i class="material-icons delete">delete_sweep</i>',
     onClick: ({ event }: { event: CalendarEvent }): void => {
-      let assignment = this.eDescription.get(event);
+      const assignment = this.eDescription.get(event);
       this._assignmentService.delete(assignment._id)
         .then(() => {
           for (let i = 0; i < this.currentDayArray.length; i++) {
-            if (this.currentDayArray[i] == assignment) {
+            if (this.currentDayArray[i] === assignment) {
               this.currentDayArray.splice(i, 1);
               break;
             }
@@ -123,13 +132,13 @@ export class CalendarComponent implements OnInit {
     private _loadLearn: LoadLearnService,
     private _storage: LocalStorageService,
     private _messageService: MessageService,
-    private _assignmentService: AssignmentService
+    private _assignmentService: AssignmentService,
   ) {}
 
   // TODO: This isn't used right now
   public refreshCalendar = () => {
     this.refresh.next();
-  };
+  }
 
   ngOnDestroy() {
     // unsubscribe to ensure no memory leaks
@@ -138,9 +147,9 @@ export class CalendarComponent implements OnInit {
 
   ngOnInit() {
     this.subscription = this._messageService.getMessage()
-      .subscribe(message => {
+      .subscribe((message) => {
         console.log(message);
-        let temp = this._loadLearn.getTaskArray();
+        const temp = this._loadLearn.getTaskArray();
         this.populateAfter(temp);
         console.log('hello');
       });
@@ -148,24 +157,25 @@ export class CalendarComponent implements OnInit {
     $('#viewEvent').modal({
       dismissible: true,
       ready: () => console.log('open modal'),
-      complete: function() {
+      complete: () => {
         console.log('this hit');
         this.initializeCalendar();
       },
     });
 
-    let storage: LocalStorageService = this._storage;
-    $(document).ready(function() {
+    // Used to capture local storage service variable inside jQuery closure
+    const storage: LocalStorageService = this._storage;
+    $(document).ready(function () {
       $('#select').material_select();
-      $('#select').on('change', function(e) {
-        let selected = e.currentTarget.selectedOptions[0].value;
+      $('#select').on('change', function (e) {
+        const selected = e.currentTarget.selectedOptions[0].value;
         storage.setItem('type', selected);
         $('#select').prop('selectedIndex', 0); // Sets the first option as selected
       });
     });
 
     $('.datepicker').pickadate({
-      onSet: (context) => this.assignment.dueDate = new Date(context.select),
+      onSet: context => this.assignment.dueDate = new Date(context.select),
       selectMonths: true, // Creates a dropdown to control month
       selectYears: 15, // Creates a dropdown of 15 years to control year
     });
@@ -192,7 +202,7 @@ export class CalendarComponent implements OnInit {
       .then(() => {
         // Remove the assignment from the events
         this.currentDayArray.splice(_index, 1);
-        let event: CalendarEvent = this.aDescription.get(_assignment);
+        const event: CalendarEvent = this.aDescription.get(_assignment);
         this.events = this.events.filter(iEvent => iEvent !== event);
 
         // Update the UI
@@ -214,18 +224,18 @@ export class CalendarComponent implements OnInit {
       .catch((getAssignmentsError: Response) => this.handleError(getAssignmentsError));
   }
 
-  updateCompleted(a: Assignment){
+  updateCompleted(a: Assignment) {
     this._assignmentService.updateCompleted(a._id, !a.completed)
-                           .then(() => {
-                             console.log('completed updated');
-                             a.completed = !a.completed;
-                             this.changeColor(a);
-                           })
-                           .catch((getAssignmentsError: Response) => this.handleError(getAssignmentsError));
+      .then(() => {
+        console.log('completed updated');
+        a.completed = !a.completed;
+        this.changeColor(a);
+      })
+      .catch((getAssignmentsError: Response) => this.handleError(getAssignmentsError));
   }
 
-  changeColor(a: Assignment){
-    let newEvent = this.aDescription.get(a);
+  changeColor(a: Assignment) {
+    const newEvent = this.aDescription.get(a);
     newEvent.color = this.determineColor(a);
     this.events.splice(this.events.indexOf(this.aDescription.get(a)), 1);
     this.events.push(newEvent);
@@ -239,8 +249,8 @@ export class CalendarComponent implements OnInit {
    */
   determineColor(_assignment: Assignment): any {
     let color;
-    let now = new Date();
-    let dueDate = _assignment.dueDate;
+    const now = new Date();
+    const dueDate = _assignment.dueDate;
 
     /**
      * Gray: Events that were before the current date
@@ -263,11 +273,11 @@ export class CalendarComponent implements OnInit {
     return color;
   }
 
-  populateAfter(_assignments: Assignment[]): void{
-    let cEvents: CalendarEvent[] = [];
-    for (let assignment of _assignments) {
+  populateAfter(_assignments: Assignment[]): void {
+    const cEvents: CalendarEvent[] = [];
+    for (const assignment of _assignments) {
       // Create a CalendarEvent for each assignment
-      let event: CalendarEvent = {
+      const event: CalendarEvent = {
         start: assignment.dueDate,
         end: assignment.dueDate,
         title: assignment.title,
@@ -294,11 +304,11 @@ export class CalendarComponent implements OnInit {
    */
   populate(_assignments: Assignment[]): void {
     this.events = [];
-    let cEvents: CalendarEvent[] = [];
+    const cEvents: CalendarEvent[] = [];
 
-    for (let assignment of _assignments) {
+    for (const assignment of _assignments) {
       // Create a CalendarEvent for each assignment
-      let event: CalendarEvent = {
+      const event: CalendarEvent = {
         start: assignment.dueDate,
         end: assignment.dueDate,
         title: assignment.title,
@@ -322,7 +332,7 @@ export class CalendarComponent implements OnInit {
 
   // TODO: Add formal documentation
   enableEdit(_assignment: Assignment, _index: number, type: string): void {
-    let id;
+    let id: string;
     switch (type) {
       case 'title':
         _assignment.editModeTitle = !_assignment.editModeTitle;
@@ -342,8 +352,8 @@ export class CalendarComponent implements OnInit {
         id = `#titleEdit${_index}`;
         setTimeout(() => $(id).focus(), 1);
 
-        let $input = $(`#datetime${_index}`).pickadate();
-        let picker = $input.pickadate('picker');
+        const $input = $(`#datetime${_index}`).pickadate();
+        const picker = $input.pickadate('picker');
         picker.set('select', _assignment.dueDate);
         break;
       default:
@@ -354,17 +364,19 @@ export class CalendarComponent implements OnInit {
   monthEventClick(event: any) {
     this.onetime = !this.onetime;
     if (this.onetime) {
-      let eventArray: CalendarEvent[] = event.day.events;
+      const eventArray: CalendarEvent[] = event.day.events;
       this.assignment.dueDate = new Date(event.day.date);
       this.currentDayArray = [];
 
-      for (let a of eventArray) this.currentDayArray.push(this.eDescription.get(a));
+      eventArray.forEach(e => this.currentDayArray.push(this.eDescription.get(e)));
 
-      if (this.currentDayArray.length != 0) {
+      if (this.currentDayArray.length !== 0) {
+        /* tslint:disable align */
         this.timer = setTimeout(() => {
           this.displayPopUp();
           this.onetime = !this.onetime;
         }, 300);
+        /* tslint:enable align */
       } else {
         this.onetime = !this.onetime;
         this.openView(event.day.date);
@@ -372,11 +384,11 @@ export class CalendarComponent implements OnInit {
     } else {
       clearTimeout(this.timer);
 
-      for (let a of this.currentDayArray){
-        a.editModeDate = false;
-        a.editModeDescription = false;
-        a.editModeTitle = false;
-      }
+      this.currentDayArray.forEach((assignment) => {
+        assignment.editModeDate = false;
+        assignment.editModeDescription = false;
+        assignment.editModeTitle = false;
+      });
 
       this.openView(event.day.date);
     }
@@ -391,17 +403,17 @@ export class CalendarComponent implements OnInit {
     if (this._utils.hasValue(this.e)) {
       if ($(this.e).is('#popup')) {
         $(this.e).children('.show').css('display', 'inline-block');
-        let prev_e = this.e;
+        const prev_e = this.e;
         setTimeout(() => $(prev_e).children('.show').css('display', 'none'), 3000);
       } else {
         $(this.e).attr('id', 'popup');
         let data = `<div id='popup' class='popuptext show'>`;
-        for (let a of  this.currentDayArray) data += `${a.title}<br>`;
+        this.currentDayArray.forEach(assignment => data += `${assignment.title}<br>`);
         data += '</div>';
 
         $(this.e).addClass('popup');
         this.e.insertAdjacentHTML('afterbegin', data);
-        let prev_e = this.e;
+        const prev_e = this.e;
 
         setTimeout(() => $(prev_e).children('.show').css('display', 'none'), 3000);
       }
@@ -437,7 +449,7 @@ export class CalendarComponent implements OnInit {
    * newEnd } the JSON containing the new event information
    */
   eventTimesChanged({ event, newStart, newEnd }: CalendarEventTimesChangedEvent): void {
-    let assignment = this.eDescription.get(event);
+    const assignment = this.eDescription.get(event);
     this._assignmentService.updateDueDate(assignment._id, newEnd)
       .then(() => {
         event.start = newEnd;
@@ -488,7 +500,7 @@ export class CalendarComponent implements OnInit {
    * @param {number} _index the index of the assignment in the assignments array // TODO: Verify this comment
    */
   updateTask(_assignment: Assignment, _index: number): void {
-    let id = _assignment._id;
+    const id = _assignment._id;
     _assignment.editModeTitle = false;
     _assignment.editModeDescription = false;
     _assignment.editModeDate = false;
@@ -501,7 +513,7 @@ export class CalendarComponent implements OnInit {
       });
 
     if ($(`#datetime${_index}`)[0].value !== '') {
-      let newDueDate = new Date($(`#datetime${_index}`)[0].value);
+      const newDueDate = new Date($(`#datetime${_index}`)[0].value);
       this._assignmentService.updateDueDate(id, newDueDate)
         .then(() => {
           console.log('Updated Due Date');
@@ -519,7 +531,7 @@ export class CalendarComponent implements OnInit {
           else if (updateError.status === 404) this.handle404Error(_assignment);
           else this.handleError(updateError);
         });
-      }
+    }
 
     this._assignmentService.updateDescription(id, _assignment.title)
       .then(() => console.log('Updated description'))
@@ -600,7 +612,7 @@ export class CalendarComponent implements OnInit {
   debug(): void {
     // console.log(event);
     // console.log(event.target);
-    //console.log(this.changes);
+    // console.log(this.changes);
   }
 
   dayClicked({ date, events }: { date: Date, events: CalendarEvent[] }): void {
@@ -631,7 +643,7 @@ export class CalendarComponent implements OnInit {
    * @param {Reponse} _error the error from the API call
    */
   private handleError(_error: Response): void {
-    if (_error.status == 401) {
+    if (_error.status === 401) {
       // Token is stale. Clear the user and token local storage, route them to login screen
       this._storage.deleteItem('token');
       this._storage.deleteItem('currentUser');
@@ -654,14 +666,14 @@ export class CalendarComponent implements OnInit {
   private handle404Error(_assignment: Assignment): void {
     // Find the assignment in the current day array
     for (let i = 0; i < this.currentDayArray.length; i++) {
-      if (this.currentDayArray[i] == _assignment) {
+      if (this.currentDayArray[i] === _assignment) {
         this.currentDayArray.splice(i, 1);
         break;
       }
     }
 
     // Remove the event linked to the assignment
-    let event: CalendarEvent = this.aDescription.get(_assignment);
+    const event: CalendarEvent = this.aDescription.get(_assignment);
     this.events = this.events.filter(iEvent => iEvent !== event);
   }
 

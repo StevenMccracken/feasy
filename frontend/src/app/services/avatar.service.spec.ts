@@ -5,7 +5,7 @@ import { AvatarService } from './avatar.service';
 describe('AvatarService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [AvatarService]
+      providers: [AvatarService],
     });
   });
 

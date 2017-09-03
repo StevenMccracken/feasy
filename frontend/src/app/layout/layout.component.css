@@ -8,11 +8,6 @@
   padding: 5px;
 }
 
-#avatar:hover {
-  -webkit-filter: grayscale;
-  -webkit-filter: brightness(80%);
-}
-
 .btn-flat {
   display: inline-table;
 }
@@ -107,18 +102,22 @@ h6 {
 .hide {
   display: none;
 }
+
 .tableContent {
   padding-right: 50px;
 }
-.avatar-select{
+
+.avatar-select {
   margin-left: 10px;
   margin-top: 30px;
   margin-right: 10px;
   margin-bottom: 30px;
 }
-.avatar-select:hover{
+
+.avatar-select:hover {
   border: solid thick white;
 }
+
 thead {
   border-bottom: none;
 }

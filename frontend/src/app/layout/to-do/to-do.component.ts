@@ -1,11 +1,20 @@
+// Import angular packages
+import {
+  Inject,
+  OnInit,
+  Component,
+} from '@angular/core';
 import { Router } from '@angular/router';
-import { Component, OnInit, Inject } from '@angular/core';
 
+// Import 3rd party libraries
 import { DragulaService } from 'ng2-dragula';
+
+// Import our files
 import { Assignment } from '../../objects/assignment';
 import { AssignmentService } from '../../services/assignment.service';
 import { LocalStorageService } from '../../utils/local-storage.service';
 
+// jQuery defintion
 declare var $: any;
 
 @Component({
@@ -23,7 +32,7 @@ export class ToDoComponent implements OnInit {
   showlist: boolean = false;
   dragContent: boolean = false;
 
-  completeEmpty:boolean = false;
+  completeEmpty: boolean = false;
   uncompleteEmpty: boolean = false;
   completeCounter: number = 0;
   uncompleteCounter: number = 0;
@@ -32,7 +41,7 @@ export class ToDoComponent implements OnInit {
     private _router: Router,
     private _storage: LocalStorageService,
     private _dragulaService: DragulaService,
-    private _assignmentService: AssignmentService
+    private _assignmentService: AssignmentService,
   ) {
     _dragulaService.drop
       .subscribe(value => this.onDrop(value, _dragulaService));
@@ -42,21 +51,21 @@ export class ToDoComponent implements OnInit {
     this.todoInitializer();
   }
 
-  todoInitializer(): void{
+  todoInitializer(): void {
     this.assignment.dueDate = new Date();
     this.completedAssignments = [], this.incompleteAssignments = [];
     this._assignmentService.getAll()
       .then((assignments: Assignment[]) => {
         if (assignments.length > 0) {
-          for (let assignment of assignments){
+          assignments.forEach((assignment) => {
             if (assignment.completed) this.completedAssignments.push(assignment);
             else this.incompleteAssignments.push(assignment);
-          }
+          });
 
-          this.completeEmpty = (this.completedAssignments.length === 0);
+          this.completeEmpty = this.completedAssignments.length === 0;
           this.completeCounter = this.completedAssignments.length;
 
-          this.uncompleteEmpty = (this.incompleteAssignments.length === 0);
+          this.uncompleteEmpty = this.incompleteAssignments.length === 0;
           this.uncompleteCounter = this.incompleteAssignments.length;
 
           this.sortAssignments();
@@ -74,18 +83,20 @@ export class ToDoComponent implements OnInit {
 
   private onDrop(args, _dragulaService) {
     console.log(args);
-    let info = args[1].id.split('-');
-    let arr = info[0] === 'unComplete' ? this.incompleteAssignments : this.completedAssignments;
+    const info = args[1].id.split('-');
+    const arr = info[0] === 'unComplete' ? this.incompleteAssignments : this.completedAssignments;
 
+    const index = parseInt(info[1], 10);
+    const assignment = arr[index];
+    const complete = args[2].id === 'completed';
 
-    let index = parseInt(info[1]);
-    let assignment = arr[index];
-    let complete = args[2].id === 'completed';
     console.log(assignment);
     console.log('Updating assignment %s completed to %s', assignment._id, complete);
-    if(complete != assignment.completed){
+
+    if (complete !== assignment.completed) {
       console.log(complete);
       console.log(assignment.completed);
+
       this._assignmentService.updateCompleted(assignment._id, complete)
         .then(() => {
           this.uncompleteCounter = complete ? this.uncompleteCounter - 1 : this.uncompleteCounter + 1;
@@ -98,27 +109,28 @@ export class ToDoComponent implements OnInit {
           this.completeEmpty = this.completeCounter === 0;
         })
         .catch((error: any) => {
-          console.log(error);
-          //this._dragulaService.find('')
+          console.error(error);
+          // this._dragulaService.find('')
         });
     }
   }
 
   initializeform(): void {
-    let storage: LocalStorageService = this._storage;
-    $(document).ready(function() {
+    // Capture local storage service variable for closure created by jQuery
+    const storage: LocalStorageService = this._storage;
+    $(document).ready(function () {
       $('#select').material_select();
-      $('#select').on('change', function(e) {
-          let selected = e.currentTarget.selectedOptions[0].value;
-          storage.setItem('type', selected);
-          $('#select').prop('selectedIndex', 0); // Sets the first option as selected
+      $('#select').on('change', function (e) {
+        const selected = e.currentTarget.selectedOptions[0].value;
+        storage.setItem('type', selected);
+        $('#select').prop('selectedIndex', 0); // Sets the first option as selected
       });
 
       $('.datepicker').pickadate({
-        onSet: function(context) {
+        onSet: (context) => {
           console.log(context);
           storage.setItem('dueDate', (new Date(context.select)).toString());
-          //this.assignment.dueDate = new Date(context.select);
+          // this.assignment.dueDate = new Date(context.select);
         },
         selectMonths: true, // Creates a dropdown to control month
         selectYears: 15, // Creates a dropdown of 15 years to control year,
@@ -148,13 +160,14 @@ export class ToDoComponent implements OnInit {
     this.incompleteAssignments.push(assignment);
     this.sortAssignments();
 
-    let storage: LocalStorageService = this._storage;
-    $(document).ready(function() {
+    // Capture local storage service variable for closure created by jQuery
+    const storage: LocalStorageService = this._storage;
+    $(document).ready(function () {
       $('.datepicker').pickadate({
-        onSet: function(context) {
+        onSet: (context) => {
           console.log(context);
           storage.setItem('dueDate', (new Date(context.select)).toString());
-          //this.assignment.dueDate = new Date(context.select);
+          // this.assignment.dueDate = new Date(context.select);
         },
         selectMonths: true, // Creates a dropdown to control month
         selectYears: 15, // Creates a dropdown of 15 years to control year
@@ -172,29 +185,31 @@ export class ToDoComponent implements OnInit {
   }
 
   deleteEventAction(assignment: Assignment): void {
-    let index = this.completedAssignments.indexOf(assignment);
-    let incomplete = index < 0;
+    const index = this.completedAssignments.indexOf(assignment);
+    const incomplete = index < 0;
     console.log(assignment);
     this._assignmentService.delete(assignment._id)
       .then(() => {
-          this.spliceArray(assignment, incomplete);
-          console.log(assignment);
-          console.log(incomplete);
+        this.spliceArray(assignment, incomplete);
+        console.log(assignment);
+        console.log(incomplete);
       })
       .catch((deleteError: Response) => {
         if (deleteError.status === 404) {
-          alert('something wrong :(');
+          console.error('Deleting the assignment didn\'t work:');
+          console.error(deleteError);
         } else this.handleError(deleteError);
       });
   }
 
-  spliceArray(assignment: Assignment, incomplete: boolean): void{
-    if(incomplete){
-      let index = this.incompleteAssignments.indexOf(assignment);
+  spliceArray(assignment: Assignment, incomplete: boolean): void {
+    let index: number;
+    if (incomplete) {
+      index = this.incompleteAssignments.indexOf(assignment);
       this.incompleteAssignments.splice(index, 1);
-    }else{
-      let index = this.completedAssignments.indexOf(assignment);
-      this.completedAssignments.splice(index, 1)
+    } else {
+      index = this.completedAssignments.indexOf(assignment);
+      this.completedAssignments.splice(index, 1);
     }
   }
 
@@ -203,13 +218,13 @@ export class ToDoComponent implements OnInit {
 
     if (type === 'description' && !assignment.editModeDate) {
       assignment.editModeDescription = !assignment.editModeDescription;
-      let id = `#descriptionEdit${index}`;
+      const id = `#descriptionEdit${index}`;
       setTimeout(() => $(id).focus(), 1);
     }
 
     if (type === 'title' && !assignment.editModeDate) {
       assignment.editModeTitle = !assignment.editModeTitle;
-      let id = `#titleEdit${index}`;
+      const id = `#titleEdit${index}`;
       setTimeout(() => $(id).focus(), 1);
     }
 
@@ -217,11 +232,11 @@ export class ToDoComponent implements OnInit {
       assignment.editModeTitle = true;
       assignment.editModeDescription = true;
       assignment.editModeDate = true;
-      let id = `#titleEdit${index}`;
+      const id = `#titleEdit${index}`;
 
       setTimeout(() => $(id).focus(), 1);
-      let $input = $(`#datetime${index}`).pickadate();
-      let picker = $input.pickadate('picker');
+      const $input = $(`#datetime${index}`).pickadate();
+      const picker = $input.pickadate('picker');
       picker.set('select', assignment.dueDate);
     }
   }
@@ -265,7 +280,7 @@ export class ToDoComponent implements OnInit {
    * @param {Assigment} assigment the update assigment
    */
   updateTask(assignment: Assignment, index: number): void {
-    let id = assignment._id;
+    const id = assignment._id;
     assignment.editModeTitle = false;
     assignment.editModeDescription = false;
     assignment.editModeDate = false;
@@ -278,7 +293,7 @@ export class ToDoComponent implements OnInit {
       });
 
     if ($(`#datetime${index}`)[0].value !== '') {
-      let newDueDate = new Date($(`#datetime${index}`)[0].value);
+      const newDueDate = new Date($(`#datetime${index}`)[0].value);
       this._assignmentService.updateDueDate(id, newDueDate)
         .then(() => {
           console.log('Updated due date');
@@ -292,7 +307,7 @@ export class ToDoComponent implements OnInit {
     }
 
     this._assignmentService.updateType(id, assignment.type)
-      .then(() => console.log('Update Type'))
+      .then(() => console.log('Updated type'))
       .catch((updateError: any) => {
         if (typeof updateError === 'string') this.handleUpdateError('description', updateError);
         else if (updateError.status === 404) this.handle404Error(assignment);
@@ -347,7 +362,7 @@ export class ToDoComponent implements OnInit {
    * @param {Response} _error the error response from the API call
    */
   private handleError(_error: Response): void {
-    if (_error.status == 401) {
+    if (_error.status === 401) {
       // Token is stale. Clear the user and token local storage, route them to login screen
       this._storage.deleteItem('token');
       this._storage.deleteItem('currentUser');
@@ -379,7 +394,7 @@ export class ToDoComponent implements OnInit {
   private handle404Error(assignment: Assignment): void {
     // Find the assignment in the assignments array
     for (let i = 0; i < this.incompleteAssignments.length; i++) {
-      if (this.incompleteAssignments[i] == assignment) {
+      if (this.incompleteAssignments[i] === assignment) {
         this.incompleteAssignments.splice(i, 1);
         break;
       }
@@ -389,7 +404,7 @@ export class ToDoComponent implements OnInit {
   // TODO: Are these necessary?
   debug(e: any): void {
     console.log(e);
-    //console.log(this.date);
+    // console.log(this.date);
     console.log(this.assignment);
   }
 
@@ -398,6 +413,6 @@ export class ToDoComponent implements OnInit {
   }
 
   dummyFunct(): string {
-    return "2015/06/20";
+    return '2015/06/20';
   }
 }
