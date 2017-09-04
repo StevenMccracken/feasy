@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 // Import our files
 import { User } from '../objects/user';
 import { UserService } from '../services/user.service';
+import { ErrorService } from '../services/error.service';
 import { LocalStorageService } from '../utils/local-storage.service';
 
 @Component({
@@ -38,6 +39,7 @@ export class SignupComponent {
 
   constructor(
     private _router: Router,
+    private _error: ErrorService,
     private _userService: UserService,
     private _storage: LocalStorageService,
   ) {}
@@ -71,7 +73,7 @@ export class SignupComponent {
           console.error('Failed to create new user because token is null');
         }
       })
-      .catch((createUserError) => {
+      .catch((createUserError: any) => {
         this.error = true;
 
         // Update the HTML to display an error message
@@ -88,7 +90,7 @@ export class SignupComponent {
           }
         } else if (Array.isArray(createUserError)) {
           // The values from the form were not in the correct format
-          this.errorMessage = 'Incorrect fields: ';
+          this.errorMessage = 'Invalid fields: ';
           if (createUserError.length === 1) {
             this.errorMessage += this.varToWordMap[createUserError[0]];
           } else if (createUserError.length === 2) {
@@ -100,7 +102,7 @@ export class SignupComponent {
 
             this.errorMessage += `and ${this.varToWordMap[createUserError[createUserError.length - 1]]}`;
           }
-        } else if (createUserError.status === 404) {
+        } else if (this._error.isResourceDneError(createUserError)) {
           this.errorMessage = 'That access code is invalid';
         } else {
           // An unexpected error occurred (other than bad request or resource error)
