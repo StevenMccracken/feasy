@@ -5,7 +5,7 @@ import { LoadLearnService } from './load-learn.service';
 describe('LoadLearnService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [LoadLearnService]
+      providers: [LoadLearnService],
     });
   });
 

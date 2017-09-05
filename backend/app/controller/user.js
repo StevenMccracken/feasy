@@ -33,12 +33,13 @@ const create = function create(_userInfo) {
     // Add optional properties
     newUser.firstName = UTIL.hasValue(_userInfo.firstName) ? _userInfo.firstName : '';
     newUser.lastName = UTIL.hasValue(_userInfo.lastName) ? _userInfo.lastName : '';
+    newUser.avatar = UTIL.hasValue(_userInfo.avatar) ? _userInfo.avatar : '';
 
     newUser.save()
       .then(() => resolve(newUser)) // End then()
       .catch(saveError => reject(saveError)); // End newUser.save()
   }); // End return promise
-}; // End crete()
+}; // End create()
 
 /**
  * createGoogle - Saves a new google user in the database
@@ -63,6 +64,7 @@ const createGoogle = function createGoogle(_userInfo) {
   // Add optional properties
   newUser.firstName = UTIL.hasValue(_userInfo.firstName) ? _userInfo.firstName : '';
   newUser.lastName = UTIL.hasValue(_userInfo.lastName) ? _userInfo.lastName : '';
+  newUser.avatar = UTIL.hasValue(_userInfo.avatar) ? _userInfo.avatar : '';
   if (UTIL.hasValue(_userInfo.accessToken)) newUser.accessToken = _userInfo.accessToken;
 
   return new Promise((resolve, reject) => {
@@ -104,8 +106,8 @@ const getByUsername = function getByUsername(_username, _includePassword) {
 
   return new Promise((resolve, reject) => {
     let projection;
-    if (_includePassword) projection = '_id googleId username password email firstName lastName';
-    else projection = '_id googleId username email firstName lastName';
+    if (_includePassword) projection = '_id googleId username password email firstName lastName avatar';
+    else projection = '_id googleId username email firstName lastName avatar';
 
     USER.findOne({ username: _username }, projection)
       .then(userInfo => resolve(userInfo)) // End then(userInfo)
@@ -123,7 +125,7 @@ const getByGoogleId = function getByGoogleId(_googleId) {
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
-    const projection = '_id googleId username email firstName lastName accessToken refreshToken accessTokenExpiryDate';
+    const projection = '_id googleId username email firstName lastName accessToken refreshToken accessTokenExpiryDate avatar';
     USER.findOne({ googleId: _googleId }, projection)
       .then(userInfo => resolve(userInfo)) // End then(userInfo)
       .catch(findError => reject(findError)); // End USER.findOne()

@@ -1,13 +1,20 @@
+// Import angular packages
+import {
+  NgZone,
+  Injectable,
+} from '@angular/core';
+import { Router } from '@angular/router';
+import { Response } from '@angular/http';
+
+// Import 3rd party libraries
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/toPromise';
-import { Router } from '@angular/router';
-import { Response } from '@angular/http';
-import { Injectable, NgZone } from '@angular/core';
 import { GoogleAuthService } from 'ng-gapi/lib/GoogleAuthService';
 
+// Import our files
 import { User } from '../objects/user';
-import { Account } from '../objects/user';
+import { Account } from '../objects/account';
 import { FeasyService } from './feasy.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
@@ -19,7 +26,7 @@ export class UserService {
     private _feasyApi: FeasyService,
     private _utils: CommonUtilsService,
     private _storage: LocalStorageService,
-    private _googleAuthService: GoogleAuthService
+    private _googleAuthService: GoogleAuthService,
   ) {}
 
   /**
@@ -29,8 +36,8 @@ export class UserService {
    * @return {Promise<string>} the authentication token for the newly created user
    */
   create(_user: User = new User(), _alphaCode: string = ''): Promise<string> {
-    let createUserPath = '/users';
-    let requestParams = {
+    const createUserPath: string = '/users';
+    const requestParams: Object = {
       username: _user.username,
       password: _user.password,
       email: _user.email,
@@ -46,34 +53,38 @@ export class UserService {
       requestParams['lastName'] = _user.lastName;
     }
 
+    if (this._utils.hasValue(_user.avatar) && _user.avatar !== '') {
+      requestParams['avatar'] = _user.avatar;
+    }
+
     return this._feasyApi.post(createUserPath, requestParams)
       .then((successResponse: Response) => {
         // Extract the token from the response body
-        let responseBody = successResponse.json();
-        let token: string = responseBody && responseBody.success && responseBody.success.token;
+        const responseBody = successResponse.json();
+        const token: string = responseBody && responseBody.success && responseBody.success.token;
         return Promise.resolve(this._utils.hasValue(token) ? token : null);
       })
       .catch((errorResponse: Response) => {
-        let responseBody = errorResponse.json();
-        let errorMessage: string = responseBody && responseBody.error && responseBody.error.message;
+        const responseBody = errorResponse.json();
+        const errorMessage: string = responseBody && responseBody.error && responseBody.error.message;
 
         /*
          * Return detailed errors for invalid request error or
          * resource errors. Otherwise, return the response object
          */
-        if (errorResponse.status == 400) {
+        if (errorResponse.status === 400) {
           // The request contains invalid/malformed parameters from the user's attributes
           let commaSeparatedParams: string;
-          if (errorMessage == undefined) commaSeparatedParams = '';
+          if (!this._utils.hasValue(errorMessage)) commaSeparatedParams = '';
           else commaSeparatedParams = errorMessage.split('Invalid parameters: ')[1];
 
           // Comma separated params should be something like username,email,firstName
-          let invalidParameters = commaSeparatedParams.split(',');
+          const invalidParameters = commaSeparatedParams.split(',');
           return Promise.reject(invalidParameters);
-        } else if (errorResponse.status == 403) {
+        } else if (errorResponse.status === 403) {
           // A user with either the username or email already exists
           let duplicateParameter = '';
-          if (errorMessage !== undefined) {
+          if (this._utils.hasValue(errorMessage)) {
             if (errorMessage.indexOf('username') !== -1) duplicateParameter = 'username';
             else if (errorMessage.indexOf('email') !== -1) duplicateParameter = 'email';
             else if (errorMessage.indexOf('alpha') !== -1) duplicateParameter = 'alpha';
@@ -91,17 +102,68 @@ export class UserService {
    */
   get(_username: string): Promise<Account> {
     // Create request information
-    let token: string = this._storage.getItem('token');
-    let getUserPath = `/users/${_username}`;
-    let headersOptions = { 'Authorization': token };
+    const token: string = this._storage.getItem('token');
+    const getUserPath = `/users/${_username}`;
+    const headersOptions = { Authorization: token };
 
     // Send request
     return this._feasyApi.get(getUserPath, headersOptions)
       .then((successResponse: Response) => {
-        let responseBody = successResponse.json();
+        const responseBody = successResponse.json();
         return Promise.resolve(new Account().deserialize(responseBody));
       })
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
+  }
+
+  /**
+   * Sends a request to update an attribute for the current user
+   * @param {string} _attribute the name of the user attribute to update
+   * @param {any} _newValue the new value for the user's attribute
+   * @return {Promise<any>} the Response object from the API
+   */
+  private update(_attribute: string, _newValue: any): Promise<any> {
+    // Create request information
+    const token = this._storage.getItem('token');
+    const username = this._storage.getItem('currentUser');
+    const updatePath = `/users/${username}/${_attribute}`;
+    const headersOptions = { Authorization: token };
+
+    // Add required parameters
+    const capitalizedAttribute = `${_attribute.charAt(0).toUpperCase()}${_attribute.slice(1)}`;
+    const requestParams = { [`new${capitalizedAttribute}`]: _newValue };
+
+    // Send request
+    return this._feasyApi.put(updatePath, requestParams, headersOptions)
+      .then((successResponse: Response) => Promise.resolve(successResponse))
+      .catch((updateError: Response) => {
+        // Return detailed errors for invalid request error. Otherwise, return the response object
+        if (updateError.status === 400) {
+          const responseBody = updateError.json();
+          const errorMessage: string = (responseBody &&
+            responseBody.error &&
+            responseBody.error.message) ||
+            '';
+
+          // The request contains invalid/malformed parameters from the assignment's attributes
+          let errorReason;
+          if (/[iI]nvalid/.test(errorMessage)) errorReason = 'invalid';
+          else if (/[uU]nchanged/.test(errorMessage)) errorReason = 'unchanged';
+          else errorReason = 'unknown';
+
+          return Promise.reject(errorReason);
+        } else return Promise.reject(updateError);
+      });
+  }
+
+  /**
+   * Sends a request to update a user's avatar
+   * @param {string} _newAvatar the new avatar to update the user with
+   * @return {Promise<any>} an empty resolved promise
+   */
+  updateAvatar(_newAvatar: string): Promise<any> {
+    return this.update('avatar', _newAvatar)
+      .then((successResponse: Response) => Promise.resolve())
+      .catch((updateError: any) => Promise.reject(updateError));
   }
 
   /**
@@ -112,8 +174,8 @@ export class UserService {
    */
   validate(_username: string, _password: string): Promise<string> {
     // Create request information
-    let loginPath = '/login';
-    let requestParams = {
+    const loginPath = '/login';
+    const requestParams = {
       username: _username,
       password: _password,
     };
@@ -121,29 +183,29 @@ export class UserService {
     // Send request
     return this._feasyApi.post(loginPath, requestParams)
       .then((successResponse: Response) => {
-        let responseBody = successResponse.json();
-        let token: string = responseBody && responseBody.success && responseBody.success.token;
-        return Promise.resolve(token === undefined ? null : token);
+        const responseBody = successResponse.json();
+        const token: string = responseBody && responseBody.success && responseBody.success.token;
+        return Promise.resolve(this._utils.hasValue(token) ? token : null);
       })
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
   }
 
   /**
-   * Sends an existing token from local storage to the /login/refresh api route to refresh the token
+   * Sends an existing token from local storage to the /login/refresh API route to refresh the token
    * @return {Promise<string>} the token to authenticate subsequent requests
    */
   refreshAuthToken(): Promise<string> {
     // Create request information
-    let token: string = this._storage.getItem('token');
-    let refreshTokenPath = '/login/refresh';
-    let headersOptions = { 'Authorization': token };
+    const token: string = this._storage.getItem('token');
+    const refreshTokenPath = '/login/refresh';
+    const headersOptions = { Authorization: token };
 
     // Send request
     return this._feasyApi.get(refreshTokenPath, headersOptions)
       .then((successResponse: Response) => {
-        let responseBody = successResponse.json();
-        let token: string = responseBody && responseBody.success && responseBody.success.token;
-        return Promise.resolve(this._utils.hasValue(token) ? token : null);
+        const responseBody = successResponse.json();
+        const newToken: string = responseBody && responseBody.success && responseBody.success.token;
+        return Promise.resolve(this._utils.hasValue(newToken) ? newToken : null);
       })
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
   }
@@ -154,14 +216,14 @@ export class UserService {
    */
   getAuthorizationUrl(): Promise<string> {
     // Create request information
-    let getAuthPath = '/auth/googleUrl';
+    const getAuthPath = '/auth/googleUrl';
 
     // Send request
     return this._feasyApi.get(getAuthPath)
       .then((successResponse: Response) => {
-        let responseBody = successResponse.json();
-        let authUrl: string = responseBody && responseBody.success && responseBody.success.authUrl;
-        return Promise.resolve(authUrl === undefined ? null : authUrl);
+        const responseBody = successResponse.json();
+        const authUrl: string = responseBody && responseBody.success && responseBody.success.authUrl;
+        return Promise.resolve(this._utils.hasValue(authUrl) ? authUrl : null);
       })
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
   }
@@ -174,17 +236,18 @@ export class UserService {
    */
   authenticateGoogle(_alphaCode: string = ''): Promise<Object> {
     // Create request information
-    let authenticatePath = `/auth/google/await?alphaCode=${_alphaCode}`;
+    const authenticatePath = `/auth/google/await?alphaCode=${_alphaCode}`;
 
     // Send request
     return this._feasyApi.get(authenticatePath)
       .then((successResponse: Response) => {
-        let responseBody = successResponse.json();
-        let token: string = responseBody && responseBody.success && responseBody.success.token;
-        let username: string = responseBody && responseBody.success && responseBody.success.username;
-        let authInfo = {
-          token: token === undefined ? null : token,
-          username: username === undefined ? null : username,
+        const responseBody = successResponse.json();
+        const token: string = responseBody && responseBody.success && responseBody.success.token;
+        const username: string = responseBody && responseBody.success && responseBody.success.username;
+
+        const authInfo = {
+          token: this._utils.hasValue(token) ? token : null,
+          username: this._utils.hasValue(username) ? username : null,
         };
 
         return Promise.resolve(authInfo);

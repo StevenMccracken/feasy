@@ -169,6 +169,16 @@ const routing = function routing(_router) {
   });
 
   /**
+   * The PUT route for updating a user's avatar. Sends an error JSON or a
+   * JSON of the successful update. This route requires token authentication
+   */
+  router.route('/users/:username/avatar').put((_request, _response) => {
+    MIDDLEWARE.updateUserAvatar(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
+
+  /**
    * The DELETE route for deleting a user. Sends an error JSON or a JSON
    * of the successful deletion. This route requires token authentication
    */
