@@ -24,9 +24,6 @@ function log(_message) {
   LOG.log('Media Module', _message);
 }
 
-// initialize pdf2json parser to grab pdf text content as raw
-const parser = new PdfParser(this, 1);
-
 /**
  * parsePdf - Parses a pdf file and returns the content, split by whitespace
  * @param {String} _filepath the path where the pdf file exists
@@ -37,6 +34,9 @@ const parsePdf = function parsePdf(_filepath) {
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
+    // Initialize pdf2json parser
+    const parser = new PdfParser(this, 1);
+
     // Load the pdf file and start the parse
     parser.loadPDF(_filepath);
     parser.on('pdfParser_dataError', parseError => reject(parseError));
@@ -47,7 +47,7 @@ const parsePdf = function parsePdf(_filepath) {
       const rawText = parser.getRawTextContent();
 
       // Remove the page break symbols that pdfParser added
-      const pageBreaksRemovedText = rawText.replace(/[-]{16}Page \(\d\) Break[-]{16}/g, '');
+      const pageBreaksRemovedText = rawText.replace(/[-]{16}Page \(\d*\) Break[-]{16}/g, '');
 
       // Remove all line-delimiting characters from the string
       const pureText = pageBreaksRemovedText.replace(/(?:\r\n|\r|\n|\t)/g, ' ');
