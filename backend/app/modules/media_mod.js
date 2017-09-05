@@ -7,6 +7,7 @@ const LOG = require('./log_mod');
 const Multer = require('multer');
 const PdfParser = require('pdf2json');
 const UTIL = require('./utility_mod');
+const PYTHON = require('python-shell');
 
 // Temporary file download configuration
 const UPLOAD_CONFIG = Multer({
@@ -29,7 +30,7 @@ const parser = new PdfParser(this, 1);
 /**
  * parsePdf - Parses a pdf file and returns the content, split by whitespace
  * @param {String} _filepath the path where the pdf file exists
- * @return {Promise<String[]>} array of pdf text content
+ * @return {Promise<String>} the pure pdf text content
  */
 const parsePdf = function parsePdf(_filepath) {
   const SOURCE = 'parsePdf()';
@@ -41,23 +42,52 @@ const parsePdf = function parsePdf(_filepath) {
     parser.on('pdfParser_dataError', parseError => reject(parseError));
     /* eslint-disable no-unused-vars */
     parser.on('pdfParser_dataReady', (pdfData) => {
-      // Split the raw text into strings and store into an array
-      const text = parser.getRawTextContent();
-      // const filename = UTIL.newUuid();
-      // log(`Writing ${filename}`);
-      // FS.writeFile(`./app/media/pdfs/${filename}.txt`, text, (error) => {
-      //   if (error) {
-      //     log(`Failed writing ${filename} because:`);
-      //     console.log(error);
-      //   } else log('Successfully wrote ', filename);
-      // });
+    /* eslint-disable no-unused-vars */
+      // Get the raw text content from the pdf data structure
+      const rawText = parser.getRawTextContent();
 
-      const textArray = text.split(/\s+/);
-      resolve(textArray);
+      // Remove the page break symbols that pdfParser added
+      const pageBreaksRemovedText = rawText.replace(/[-]{16}Page \(\d\) Break[-]{16}/g, '');
+
+      // Remove all line-delimiting characters from the string
+      const pureText = pageBreaksRemovedText.replace(/(?:\r\n|\r|\n|\t)/g, ' ');
+
+      // const textArray = text.split(/\s+/);
+      resolve(pureText);
     }); // End parser.on(pdfParser_dataReady)
-    /* eslint-enable no-unused-vars */
   }); // End return promise
 }; // End parsePdf()
+
+/**
+ * pythonParse - Spawns a python process to analyze dates within a given string of text
+ * @param {String} [_text=''] the text to parse and analyze
+ * @return {any} the results of the parsing
+ */
+const pythonParse = function pythonParse(_text = '') {
+  const SOURCE = 'pythonParse()';
+  log(SOURCE);
+
+  const promise = new Promise((resolve, reject) => {
+    try {
+      // Create the options for the python script to accept text arguments
+      const currentWorkingDirectory = process.cwd();
+      const scriptOptions = {
+        mode: 'text',
+        scriptPath: `${currentWorkingDirectory}/../python/`,
+        args: ['-text', _text],
+      };
+
+      PYTHON.run('script.py', scriptOptions, (scriptError, results) => {
+        if (UTIL.hasValue(scriptError)) reject(scriptError);
+        else resolve(results);
+      });
+    } catch (pythonError) {
+      reject(pythonError);
+    }
+  }); // End promise
+
+  return promise;
+}; // End pythonParse()
 
 /**
  * removeTempFile - Removes a file from the local filesystem
@@ -76,6 +106,7 @@ const removeTempFile = function removeTempFile(_filePath) {
 
 module.exports = {
   parsePdf,
+  pythonParse,
   upload: UPLOAD_CONFIG,
   removeTempFile,
 };
