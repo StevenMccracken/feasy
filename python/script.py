@@ -9,10 +9,10 @@ parser.add_argument('-text', help='directly input a string of text')
 parser.add_argument('-v', '--version', action='version', version='%(prog)s 2.0')
 args = parser.parse_args()
 
-print(args)
+#print(args)
 if args.file:
 	print("reading from a text file...")
-	print(args.file)
+	#print(args.file)
 	text_file = open(args.file,'r',encoding="utf-8",errors='replace') #open file in read-only mode
 	text = text_file.read()
 elif args.text:
@@ -32,13 +32,13 @@ while (result):
 	new_result = date_regex.search(text, desc_start)
 	if (new_result): desc_end = new_result.span()[0]
 	else: 
-		print('End of Search')
+		#print('End of Search')
 		break
 	description = text[desc_start:desc_end]
 	#print(description)
 	output.append((date,description))
 	result = new_result
-#print(output)
+print(output)
 	
 #print(result.span()[0])
 #re.search('[0-9]{1,2}:[0-9]{2} ?(AM|PM)?','time with optional am/pm', flags=re.IGNORECASE)
