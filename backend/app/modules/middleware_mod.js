@@ -1411,7 +1411,22 @@ const parseSchedule = function parseSchedule(_request, _response) {
                 .then((pdfText) => {
                   // Send text content to python script
                   MEDIA.pythonParse(pdfText)
-                    .then(pythonResult => resolve(pythonResult)) // End then(pythonResult)
+                    .then((pythonResult) => {
+                      const re = /["[\s\]'),]*\('([0-2]{1}[0-9]|[3][01]|[0-9]{1})-((?:Jan(?:uary)?|(?:Feb)|(?:Mar)|(?:Apr)|(?:May)|(?:Jun)|(?:Jul)|(?:Aug)|(?:Sep)|(?:Oct)|(?:Nov)|(?:Dec)))',[\s]'/g;
+
+                      const startIndexes = [];
+                      /* eslint-disable no-constant-condition */
+                      while (true) {
+                        const matchArray = re.exec(pythonResult);
+                        if (UTIL.hasValue(matchArray)) {
+                          startIndexes.push(matchArray.index);
+                        } else break;
+                      }
+                      /* eslint-enable no-constant-condition */
+
+                      const events = pythonResult.split(re).splice(1);
+                      resolve(events);
+                    }) // End then(pythonResult)
                     .catch(pythonError => reject(pythonError)); // End MEDIA.pythonParse()
                 })
                 .catch((parseError) => {

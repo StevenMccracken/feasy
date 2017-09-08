@@ -68,6 +68,8 @@ const pythonParse = function pythonParse(_text = '') {
   log(SOURCE);
 
   const promise = new Promise((resolve, reject) => {
+    // Encoded the text as a UTF-8 string for the python script
+    // const utf8Encoded = UTIL.utf8.encode(_text);
     try {
       // Create the options for the python script to accept text arguments
       const currentWorkingDirectory = process.cwd();
@@ -79,7 +81,21 @@ const pythonParse = function pythonParse(_text = '') {
 
       PYTHON.run('script.py', scriptOptions, (scriptError, results) => {
         if (UTIL.hasValue(scriptError)) reject(scriptError);
-        else resolve(results);
+        else {
+          let cleanResult;
+          // Remove redundant escape characters and extra \x characters for UTF-8
+          if (Array.isArray(results)) {
+            const length = results.length;
+            if (length === 0) cleanResult = '';
+            else {
+              const actualResult = results[length - 1];
+              cleanResult = actualResult.replace(/\\x/gi, '\\');
+            }
+          } else if (typeof results === 'string') cleanResult = results.replace(/\\x/g, '\\');
+          else cleanResult = results;
+
+          resolve(cleanResult);
+        }
       });
     } catch (pythonError) {
       reject(pythonError);

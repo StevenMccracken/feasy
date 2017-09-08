@@ -2,6 +2,7 @@
  * utility_mod - @module for common functions to reduce verbosity
  */
 
+const UTF8 = require('utf8');
 const Uuid = require('uuid/v4');
 
 const unixEndTimeSeconds = 2147471999;
@@ -37,6 +38,7 @@ const getIp = function getIp(_request = {}) {
 };
 
 module.exports = {
+  utf8: UTF8,
   newUuid,
   hasValue,
   getIp,
