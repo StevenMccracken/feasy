@@ -33,8 +33,8 @@ export class UserService {
 
   /**
    * Sends a request to create a new user
-   * @param {User = new User()} _user the user object
-   * @param {string} _alphaCode the special access alpha code
+   * @param {User} [_user = new User()] the user object
+   * @param {string} [_alphaCode = ''] the special access alpha code
    * @return {Promise<string>} the authentication token for the newly created user
    */
   create(_user: User = new User(), _alphaCode: string = ''): Promise<string> {

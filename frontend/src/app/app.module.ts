@@ -9,7 +9,7 @@ import { MaterialModule } from '@angular/material';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-// Import 3rd party libraries
+// Import 3rd-party libraries
 import {
   ClientConfig,
   GoogleApiModule,

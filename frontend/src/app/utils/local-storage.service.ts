@@ -9,7 +9,30 @@ import { CommonUtilsService } from './common-utils.service';
  */
 @Injectable()
 export class LocalStorageService {
-  constructor(private _utils: CommonUtilsService) {}
+  private storage: Storage;
+
+  constructor(private _utils: CommonUtilsService) {
+    this.storage = this.localStorageExists() ? localStorage : new Storage();
+  }
+
+  /**
+   * Determines if local storage capabilities are enabled for the current user-agent
+   * @return {boolean} the existence of local storage
+   */
+  private localStorageExists(): boolean {
+    const testKey = 'test';
+    const testValue = 'test';
+    let localStorageExists = true;
+
+    try {
+      localStorage.setItem(testKey, testValue);
+      localStorage.removeItem(testKey);
+    } catch (localStorageError) {
+      localStorageExists = false;
+    }
+
+    return localStorageExists;
+  }
 
   /**
    * Determines if a specific local storage item contains any meaningful data
@@ -17,7 +40,7 @@ export class LocalStorageService {
    * @return {boolean} whether or not the key is not null, not undefined, and not an empty string
    */
   isValidItem(_itemKey: string): boolean {
-    const storageItem: string = localStorage.getItem(_itemKey);
+    const storageItem: string = this.storage.getItem(_itemKey);
     return this._utils.hasValue(storageItem) && storageItem !== '';
   }
 
@@ -27,7 +50,7 @@ export class LocalStorageService {
    * @return {string} the specific local storage item
    */
   getItem(_itemKey: string): string {
-    return localStorage.getItem(_itemKey);
+    return this.storage.getItem(_itemKey);
   }
 
   /**
@@ -38,7 +61,7 @@ export class LocalStorageService {
    * @param {string} _value the value to set for _itemKey
    */
   setItem(_itemKey: string, _value: string): void {
-    localStorage.setItem(_itemKey, _value);
+    this.storage.setItem(_itemKey, _value);
   }
 
   /**
@@ -56,6 +79,6 @@ export class LocalStorageService {
    * @param {string} _itemKey the key of the local storage item
    */
   deleteItem(_itemKey: string): void {
-    localStorage.removeItem(_itemKey);
+    this.storage.removeItem(_itemKey);
   }
 }

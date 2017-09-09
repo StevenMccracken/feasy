@@ -25,4 +25,52 @@ export class Account implements Serializable<Account> {
 
     return this;
   }
+
+  getId(): string {
+    return this._id;
+  }
+
+  getEmail(): string {
+    return this.email;
+  }
+
+  getUsername(): string {
+    return this.username;
+  }
+
+  getFirstName(): string {
+    return this.firstName;
+  }
+
+  getLastName(): string {
+    return this.lastName;
+  }
+
+  getAvatar(): string {
+    return this.avatar;
+  }
+
+  setId(_id: string): void {
+    this._id = _id;
+  }
+
+  setEmail(_email: string): void {
+    this.email = _email;
+  }
+
+  setUsername(_username: string): void {
+    this.username = _username;
+  }
+
+  setFirstName(_firstName: string): void {
+    this.firstName = _firstName;
+  }
+
+  setLastName(_lastName: string): void {
+    this.lastName = _lastName;
+  }
+
+  setAvatar(_avatar: string): void {
+    this.avatar = _avatar;
+  }
 }

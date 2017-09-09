@@ -10,7 +10,7 @@ export class CommonUtilsService {
 
   /**
    * Determines whether a JSON is empty or not
-   * @param {Object = {}} _json the JSON to test
+   * @param {Object} [_json={}] the JSON to test
    * @return {boolean} whether or not the JSON is empty
    */
   isJsonEmpty(_json: Object = {}): boolean {
