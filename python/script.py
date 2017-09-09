@@ -27,16 +27,16 @@ while (result):
 	desc_start = result.span()[1]
 	new_result = date_regex.search(text, desc_start)
 	if (new_result): desc_end = new_result.span()[0]
-	else: 
+	else:
 		break # End of Search
 	description = text[desc_start:desc_end]
-	data[date] = description.strip('\n') # add to dictionart
+	data[date] = description.strip('\n') # add to dictionary
 	result = new_result
 if (args.pretty):
 	print(json.dumps(data, indent=4))
 else:
 	print(json.dumps(data))
-	
+
 #print(result.span()[0])
 #re.search('[0-9]{1,2}:[0-9]{2} ?(AM|PM)?','time with optional am/pm', flags=re.IGNORECASE)
 #re.search('\b((?:Jan(?:uary)?|(?:Feb)|(?:Mar)|(?:Apr)|(?:May)|(?:Jun)|(?:Jul)|(?:Aug)|(?:Sep)|(?:Oct)|(?:Nov)|(?:Dec)))-([0-2]{1}[0-9]|[3][01]|[0-9]{1})','findtime', flags=re.IGNORECASE)

@@ -18,7 +18,7 @@ function log(_message) {
 
 /**
  * create - Saves a new assignment for a user in the database
- * @param {Object} [_assignmentInfo={}] JSON containing the assignment attributes
+ * @param {Object} [_assignmentInfo = {}] JSON containing the assignment attributes
  * @return {Promise<Assignment>} the Mongoose object
  */
 const create = function create(_assignmentInfo = {}) {
@@ -48,6 +48,31 @@ const create = function create(_assignmentInfo = {}) {
       .catch(saveAssignmentError => reject(saveAssignmentError)); // End newAssignment.save()
   }); // End return promise
 }; // End create()
+
+/**
+ * createLocal - Creates a new assignment for a user in memory (not in the database)
+ * @param {Object} [_assignmentInfo = {}] JSON containing the assignment attributes
+ * @return {Assignment} the Mongoose object
+ */
+const createLocal = function createLocal(_assignmentInfo = {}) {
+  const SOURCE = 'createLocal()';
+  log(SOURCE);
+
+  const newAssignment = new ASSIGNMENT();
+
+  newAssignment.title = _assignmentInfo.title;
+  newAssignment.userId = _assignmentInfo.userId;
+  newAssignment.dueDate = _assignmentInfo.dueDate;
+  newAssignment.completed = _assignmentInfo.completed;
+
+  // Add optional properties
+  newAssignment.class = UTIL.hasValue(_assignmentInfo.class) ? _assignmentInfo.class : '';
+  newAssignment.type = UTIL.hasValue(_assignmentInfo.type) ? _assignmentInfo.type : '';
+  if (!UTIL.hasValue(_assignmentInfo.description)) newAssignment.description = '';
+  else newAssignment.description = _assignmentInfo.description;
+
+  return newAssignment;
+}; // End createLocal()
 
 /**
  * Converts a given Google event from the Google Calendar API to our Mongoose Assignment object
@@ -263,6 +288,7 @@ const removeAllByUser = function removeAllByUser(_userId) {
 
 module.exports = {
   create,
+  createLocal,
   convertGoogleEvent,
   getById,
   getAll,

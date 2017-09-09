@@ -5,6 +5,7 @@
 
 const EVENTS = require('events');
 const LOG = require('./log_mod');
+const MOMENT = require('moment');
 const ERROR = require('./error_mod');
 const MEDIA = require('./media_mod');
 const UTIL = require('./utility_mod');
@@ -1412,22 +1413,53 @@ const parseSchedule = function parseSchedule(_request, _response) {
                   // Send text content to python script
                   MEDIA.pythonParse(pdfText)
                     .then((pythonResult) => {
-                      const re = /["[\s\]'),]*\('([0-2]{1}[0-9]|[3][01]|[0-9]{1})-((?:Jan(?:uary)?|(?:Feb)|(?:Mar)|(?:Apr)|(?:May)|(?:Jun)|(?:Jul)|(?:Aug)|(?:Sep)|(?:Oct)|(?:Nov)|(?:Dec)))',[\s]'/g;
+                      const datesJson = JSON.parse(UTIL.utf8.encode(pythonResult));
+                      const currentYear = MOMENT().year();
+                      const assignmentsJson = {};
 
-                      const startIndexes = [];
-                      /* eslint-disable no-constant-condition */
-                      while (true) {
-                        const matchArray = re.exec(pythonResult);
-                        if (UTIL.hasValue(matchArray)) {
-                          startIndexes.push(matchArray.index);
-                        } else break;
-                      }
-                      /* eslint-enable no-constant-condition */
+                      Object.keys(datesJson).forEach((date) => {
+                        // Create a valid date object for the current year at 12 pm
+                        const moment = MOMENT(date);
+                        moment.hour(12);
+                        moment.year(currentYear);
 
-                      const events = pythonResult.split(re).splice(1);
-                      resolve(events);
+                        // Get the description and description length
+                        const description = String(datesJson[date]) || '';
+                        const endIndex = description.length > 20 ? 20 : description.length;
+
+                        // Create the title from the description
+                        let title;
+                        if (description === '') title = UTIL.newUuid();
+                        else title = `${description.substring(0, endIndex).trim()}${description.length > endIndex ? '...' : ''}`;
+
+                        // Create the assignment info
+                        const assignmentInfo = {
+                          title,
+                          userId: client._id,
+                          dueDate: moment.toDate(),
+                          completed: false,
+                          description,
+                        };
+
+                        // Create the local assignment object and add it to the return result
+                        const localAssignment = ASSIGNMENTS.createLocal(assignmentInfo);
+                        assignmentsJson[localAssignment._id] = localAssignment;
+                      });
+
+                      resolve(assignmentsJson);
                     }) // End then(pythonResult)
-                    .catch(pythonError => reject(pythonError)); // End MEDIA.pythonParse()
+                    .catch((pythonError) => {
+                      const errorJson = ERROR.error(
+                        SOURCE,
+                        _request,
+                        _response,
+                        ERROR.CODE.API_ERROR,
+                        null,
+                        pythonError
+                      );
+
+                      reject(errorJson);
+                    }); // End MEDIA.pythonParse()
                 })
                 .catch((parseError) => {
                   const errorJson = ERROR.error(
@@ -1443,8 +1475,8 @@ const parseSchedule = function parseSchedule(_request, _response) {
                 }); // End MEDIA.parsePdf()
             }
           }
-        });
-      })
+        }); // End getPdf()
+      }) // End then(client)
       .catch((authError) => {
         const errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);

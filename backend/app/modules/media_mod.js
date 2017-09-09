@@ -60,7 +60,7 @@ const parsePdf = function parsePdf(_filepath) {
 
 /**
  * pythonParse - Spawns a python process to analyze dates within a given string of text
- * @param {String} [_text=''] the text to parse and analyze
+ * @param {String} [_text = ''] the text to parse and analyze
  * @return {any} the results of the parsing
  */
 const pythonParse = function pythonParse(_text = '') {
