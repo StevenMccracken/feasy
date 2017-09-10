@@ -1373,6 +1373,13 @@ const parseSchedule = function parseSchedule(_request, _response) {
             const invalidParams = [];
             if (!UTIL.hasValue(_request.file)) invalidParams.push('pdf');
 
+            // Check optional parameters
+            let hasValidClass = false;
+            if (UTIL.hasValue(_request.body.class)) {
+              if (!VALIDATE.isValidString(_request.body.class)) invalidParams.push('class');
+              else hasValidClass = true;
+            }
+
             if (invalidParams.length > 0) {
               const errorJson = ERROR.error(
                 SOURCE,
@@ -1413,24 +1420,36 @@ const parseSchedule = function parseSchedule(_request, _response) {
                   // Send text content to python script
                   MEDIA.pythonParse(pdfText)
                     .then((pythonResult) => {
-                      const datesJson = JSON.parse(UTIL.utf8.encode(pythonResult));
+                      // Parse the python JSON string
+                      const resultsJson = JSON.parse(pythonResult.toString('utf8'));
                       const currentYear = MOMENT().year();
-                      const assignmentsJson = {};
 
-                      Object.keys(datesJson).forEach((date) => {
-                        // Create a valid date object for the current year at 12 pm
+                      // Create Assignment objects for the date keys from the PDF-parsed JSON
+                      const assignments = Object.keys(resultsJson).map((date) => {
+                        /**
+                         * Create a valid MOMENT object for the current year,
+                         * at 12 pm each day, for the assignment's due date
+                         */
                         const moment = MOMENT(date);
                         moment.hour(12);
                         moment.year(currentYear);
 
-                        // Get the description and description length
-                        const description = String(datesJson[date]) || '';
-                        const endIndex = description.length > 20 ? 20 : description.length;
+                        // Get the description for the date
+                        const description = UTIL.hasValue(resultsJson[date]) ? String(resultsJson[date]) : '';
 
-                        // Create the title from the description
+                        // Get the length of the description, or the first 20 indices of the string
+                        const endIndex = Math.min(20, description.length);
+
+                        /**
+                         * Create the title from the description. If the description is blank,
+                         * use the assignment's due date in a pretty string format. If the
+                         * desription is not blank, but longer than 20 characters, use the
+                         * first 20 characters of the description with an ellipsis at the end
+                         */
+                        const titleEnd = description.length > endIndex ? '...' : '';
                         let title;
-                        if (description === '') title = UTIL.newUuid();
-                        else title = `${description.substring(0, endIndex).trim()}${description.length > endIndex ? '...' : ''}`;
+                        if (endIndex === 0) title = moment.format('dddd, MMMM Do YYYY, h:mm:ss a');
+                        else title = `${description.substring(0, endIndex).trim()}${titleEnd}`;
 
                         // Create the assignment info
                         const assignmentInfo = {
@@ -1438,39 +1457,34 @@ const parseSchedule = function parseSchedule(_request, _response) {
                           userId: client._id,
                           dueDate: moment.toDate(),
                           completed: false,
+                          class: hasValidClass ? _request.body.class : '',
                           description,
                         };
 
-                        // Create the local assignment object and add it to the return result
+                        // Create the local assignment object
                         const localAssignment = ASSIGNMENTS.createLocal(assignmentInfo);
-                        assignmentsJson[localAssignment._id] = localAssignment;
+                        return localAssignment;
                       });
 
+                      // Sort the assignments in ascending order by due date
+                      assignments.sort((a, b) => {
+                        const momentA = MOMENT(a.dueDate);
+                        const momentB = MOMENT(b.dueDate);
+                        if (momentA.isBefore(momentB)) return -1;
+                        if (momentA.isAfter(momentB)) return 1;
+                        return 0;
+                      });
+
+                      const assignmentsJson = UTIL.arrayToJson(assignments, '_id');
                       resolve(assignmentsJson);
                     }) // End then(pythonResult)
                     .catch((pythonError) => {
-                      const errorJson = ERROR.error(
-                        SOURCE,
-                        _request,
-                        _response,
-                        ERROR.CODE.API_ERROR,
-                        null,
-                        pythonError
-                      );
-
+                      const errorJson = ERROR.pythonError(SOURCE, _request, _response, pythonError);
                       reject(errorJson);
                     }); // End MEDIA.pythonParse()
                 })
                 .catch((parseError) => {
-                  const errorJson = ERROR.error(
-                    SOURCE,
-                    _request,
-                    _response,
-                    ERROR.CODE.API_ERROR,
-                    null,
-                    parseError
-                  );
-
+                  const errorJson = ERROR.mediaError(SOURCE, _request, _response, parseError);
                   reject(errorJson);
                 }); // End MEDIA.parsePdf()
             }
@@ -1690,11 +1704,7 @@ const getAssignments = function getAssignments(_request, _response) {
           ASSIGNMENTS.getAll(client._id)
             .then((assignments) => {
               // Convert assignments array to JSON
-              const assignmentsJson = {};
-              assignments.forEach((assignment) => {
-                assignmentsJson[assignment._id] = assignment;
-              });
-
+              const assignmentsJson = UTIL.arrayToJson(assignments, '_id');
               resolve(assignmentsJson);
             }) // End then(assignments)
             .catch((getError) => {

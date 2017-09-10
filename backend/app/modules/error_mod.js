@@ -420,6 +420,56 @@ const googleApiError = function googleApiError(_source, _request, _response, _er
 }; // End googleApiError()
 
 /**
+ * mediaError - Determines the correct error JSON for a media error
+ * @param {String} _source the function where the error occurred
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {Object} _error the media error
+ * @return {Object} a formalized error JSON
+ */
+const mediaError = function mediaError(_source, _request, _response, _error) {
+  let errorJson;
+  switch (_error) {
+    default:
+      errorJson = error(
+        _source,
+        _request,
+        _response,
+        ERROR_CODE.API_ERROR,
+        null,
+        _error
+      );
+  } // End switch (_error)
+
+  return errorJson;
+}; // End mediaError()
+
+/**
+ * pythonError - Determines the correct error JSON for a Python error
+ * @param {String} _source the function where the error occurred
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {Object} _error the Python error
+ * @return {Object} a formalized error JSON
+ */
+const pythonError = function pythonError(_source, _request, _response, _error) {
+  let errorJson;
+  switch (_error) {
+    default:
+      errorJson = error(
+        _source,
+        _request,
+        _response,
+        ERROR_CODE.API_ERROR,
+        null,
+        _error
+      );
+  } // End switch (_error)
+
+  return errorJson;
+}; // End pythonError()
+
+/**
  * codeError - Determines the correct error JSON for
  * a mongoose error associated with the Code schema
  * @param {String} _source the function where the error occurred
@@ -450,8 +500,10 @@ module.exports = {
   CODE: ERROR_CODE,
   codeError,
   userError,
+  mediaError,
   bcryptError,
   multerError,
+  pythonError,
   googleApiError,
   assignmentError,
   authenticationError,

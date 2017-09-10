@@ -17,39 +17,6 @@ function log(_message) {
 }
 
 /**
- * create - Saves a new assignment for a user in the database
- * @param {Object} [_assignmentInfo = {}] JSON containing the assignment attributes
- * @return {Promise<Assignment>} the Mongoose object
- */
-const create = function create(_assignmentInfo = {}) {
-  const SOURCE = 'create()';
-  log(SOURCE);
-
-  return new Promise((resolve, reject) => {
-    /* eslint-disable prefer-const */
-    let newAssignment = new ASSIGNMENT();
-    /* eslint-enable prefer-const */
-
-    newAssignment.title = _assignmentInfo.title;
-    newAssignment.userId = _assignmentInfo.userId;
-    newAssignment.dueDate = _assignmentInfo.dueDate;
-    newAssignment.completed = _assignmentInfo.completed;
-
-    // Add optional properties
-    newAssignment.class = UTIL.hasValue(_assignmentInfo.class) ? _assignmentInfo.class : '';
-    newAssignment.type = UTIL.hasValue(_assignmentInfo.type) ? _assignmentInfo.type : '';
-    if (!UTIL.hasValue(_assignmentInfo.description)) newAssignment.description = '';
-    else newAssignment.description = _assignmentInfo.description;
-
-    if (UTIL.hasValue(_assignmentInfo.googleId)) newAssignment.googleId = _assignmentInfo.googleId;
-
-    newAssignment.save()
-      .then(() => resolve(newAssignment)) // End then(newAssignment)
-      .catch(saveAssignmentError => reject(saveAssignmentError)); // End newAssignment.save()
-  }); // End return promise
-}; // End create()
-
-/**
  * createLocal - Creates a new assignment for a user in memory (not in the database)
  * @param {Object} [_assignmentInfo = {}] JSON containing the assignment attributes
  * @return {Assignment} the Mongoose object
@@ -71,8 +38,29 @@ const createLocal = function createLocal(_assignmentInfo = {}) {
   if (!UTIL.hasValue(_assignmentInfo.description)) newAssignment.description = '';
   else newAssignment.description = _assignmentInfo.description;
 
+  if (UTIL.hasValue(_assignmentInfo.googleId)) {
+    newAssignment.googleId = _assignmentInfo.googleId;
+  }
+
   return newAssignment;
 }; // End createLocal()
+
+/**
+ * create - Saves a new assignment for a user in the database
+ * @param {Object} [_assignmentInfo = {}] JSON containing the assignment attributes
+ * @return {Promise<Assignment>} the Mongoose object
+ */
+const create = function create(_assignmentInfo = {}) {
+  const SOURCE = 'create()';
+  log(SOURCE);
+
+  return new Promise((resolve, reject) => {
+    const newAssignment = createLocal(_assignmentInfo);
+    newAssignment.save()
+      .then(() => resolve(newAssignment)) // End then(newAssignment)
+      .catch(saveAssignmentError => reject(saveAssignmentError)); // End newAssignment.save()
+  }); // End return promise
+}; // End create()
 
 /**
  * Converts a given Google event from the Google Calendar API to our Mongoose Assignment object
@@ -92,9 +80,7 @@ const convertGoogleEvent = function convertGoogleEvent(_userId, _googleEvent) {
    * is not actually a Google Calendar event from the Google API
    */
   try {
-    /* eslint-disable prefer-const */
-    let newAssignment = new ASSIGNMENT();
-    /* eslint-enable prefer-const */
+    const newAssignment = new ASSIGNMENT();
 
     newAssignment.title = _googleEvent.summary;
     newAssignment.userId = _userId;
@@ -287,8 +273,8 @@ const removeAllByUser = function removeAllByUser(_userId) {
 }; // End removeAllByUser()
 
 module.exports = {
-  create,
   createLocal,
+  create,
   convertGoogleEvent,
   getById,
   getAll,
