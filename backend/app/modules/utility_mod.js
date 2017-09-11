@@ -4,6 +4,7 @@
 
 const UTF8 = require('utf8');
 const Uuid = require('uuid/v4');
+const MOMENT = require('moment');
 
 const unixEndTimeSeconds = 2147471999;
 const unixEndTimeMilliseconds = unixEndTimeSeconds * 1000;
@@ -59,11 +60,12 @@ const arrayToJson = function arrayToJson(_array = [], _key) {
 };
 
 module.exports = {
-  utf8: UTF8,
+  getIp,
   newUuid,
   hasValue,
-  getIp,
+  utf8: UTF8,
   arrayToJson,
+  moment: MOMENT,
   unixEndTimeSeconds,
   unixEndTimeMilliseconds,
 };

@@ -272,6 +272,24 @@ const removeAllByUser = function removeAllByUser(_userId) {
   }); // End return promise
 }; // End removeAllByUser()
 
+/**
+ * sort - Sorts assignments by their due date in ascending order
+ * @param {Array<Assignment>} _assignments the array of assignments to sort
+ */
+const sort = function sort(_assignments = []) {
+  _assignments.sort((assignment1, assignment2) => {
+    const moment1 = UTIL.moment(assignment1.dueDate);
+    const moment2 = UTIL.moment(assignment2.dueDate);
+
+    let intValue;
+    if (moment1.isBefore(moment2)) intValue = -1;
+    else if (moment1.isAfter(moment2)) intValue = 1;
+    else intValue = 0;
+
+    return intValue;
+  });
+}; // End sort()
+
 module.exports = {
   createLocal,
   create,
@@ -286,4 +304,5 @@ module.exports = {
   bulkSave,
   remove,
   removeAllByUser,
+  sort,
 };

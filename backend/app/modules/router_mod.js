@@ -193,7 +193,7 @@ const routing = function routing(_router) {
    * JSON of the created assignment. This route requires token authentication
    */
   router.route('/users/:username/assignments').post((_request, _response) => {
-    MIDDLEWARE.createAssignment(_request, _response)
+    MIDDLEWARE.createAssignmentsHandler(_request, _response)
       .then((result) => {
         _response.status(201);
         _response.json(result);

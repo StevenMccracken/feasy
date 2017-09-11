@@ -5,7 +5,6 @@
 
 const EVENTS = require('events');
 const LOG = require('./log_mod');
-const MOMENT = require('moment');
 const ERROR = require('./error_mod');
 const MEDIA = require('./media_mod');
 const UTIL = require('./utility_mod');
@@ -1237,118 +1236,299 @@ const deleteUser = function deleteUser(_request, _response) {
 
 /**
  * createAssignment - Creates a new assignment for a user and returns the created assignment
+ * @param {Object} _client the authenticated client information
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-const createAssignment = function createAssignment(_request, _response) {
+const createAssignment = function createAssignment(_client, _request, _response) {
   const SOURCE = 'createAssignment()';
   log(SOURCE, _request);
 
-  return new Promise((resolve, reject) => {
-    AUTH.verifyToken(_request, _response)
-      .then((client) => {
-        // Token is valid. Check if client is requesting themself
-        if (client.username !== _request.params.username) {
-          // Client attempted to create an assignment for another user
-          const errorJson = ERROR.error(
-            SOURCE,
-            _request,
-            _response,
-            ERROR.CODE.RESOURCE_ERROR,
-            'You cannot create another user\'s assignments',
-            `${client.username} tried to create an assignment for ${_request.params.username}`
-          );
+  const promise = new Promise((resolve, reject) => {
+    // Check if client is requesting themself
+    if (_client.username !== _request.params.username) {
+      // Client attempted to create an assignment for another user
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.RESOURCE_ERROR,
+        'You cannot create another user\'s assignments',
+        `${_client.username} tried to create an assignment for ${_request.params.username}`
+      );
 
-          reject(errorJson);
-        } else if (!VALIDATE.isValidUsername(_request.params.username)) {
+      reject(errorJson);
+    } else if (!VALIDATE.isValidUsername(_request.params.username)) {
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        'Invalid parameters: username'
+      );
+
+      reject(errorJson);
+    } else {
+      // Check request body parameters. Start with required parameters
+      const invalidParams = [];
+      if (!VALIDATE.isValidString(_request.body.title)) invalidParams.push('title');
+      if (!VALIDATE.isValidInteger(_request.body.dueDate)) invalidParams.push('dueDate');
+
+      // Check optional parameters
+      let hasValidClass = false;
+      if (UTIL.hasValue(_request.body.class)) {
+        if (!VALIDATE.isValidString(_request.body.class)) invalidParams.push('class');
+        else hasValidClass = true;
+      }
+
+      let hasValidType = false;
+      if (UTIL.hasValue(_request.body.type)) {
+        if (!VALIDATE.isValidString(_request.body.type)) invalidParams.push('type');
+        else hasValidType = true;
+      }
+
+      let hasValidDescription = false;
+      if (UTIL.hasValue(_request.body.description)) {
+        if (!VALIDATE.isValidString(_request.body.description)) invalidParams.push('description');
+        else hasValidDescription = true;
+      }
+
+      let hasValidCompleted = false;
+      if (UTIL.hasValue(_request.body.completed)) {
+        if (_request.body.completed !== 'true' && _request.body.completed !== 'false') {
+          invalidParams.push('completed');
+        } else hasValidCompleted = true;
+      }
+
+      if (invalidParams.length > 0) {
+        const errorJson = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          `Invalid parameters: ${invalidParams.join()}`
+        );
+
+        reject(errorJson);
+      } else {
+        // All request parameters are valid. First add required parameters
+        const assignmentInfo = {
+          userId: _client._id.toString(),
+          title: _request.body.title,
+          dueDate: new Date(parseInt(_request.body.dueDate, 10) * 1000),
+        };
+
+        // Add completed boolean value to assignment
+        assignmentInfo.completed = _request.body.completed === 'true';
+
+        // Add optional parameters
+        if (hasValidClass) assignmentInfo.class = _request.body.class;
+        if (hasValidType) assignmentInfo.type = _request.body.type;
+        if (hasValidDescription) assignmentInfo.description = _request.body.description;
+
+        // Save assignment to database
+        ASSIGNMENTS.create(assignmentInfo)
+          .then(createdAssignment => resolve(createdAssignment)) // End then(createdAssignment)
+          .catch((createError) => {
+            const errorJson = ERROR.assignmentError(SOURCE, _request, _response, createError);
+            reject(errorJson);
+          }); // End ASSIGNMENTS.create()
+      }
+    }
+  }); // End create promise
+
+  return promise;
+}; // End createAssignment()
+
+/**
+ * createAssignments - Creates new assignments in
+ * batch for a user and returns the created assignments
+ * @param {Object} _client the authenticated client information
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+const createAssignments = function createAssignments(_client, _request, _response) {
+  const SOURCE = 'createAssignments()';
+  log(SOURCE, _request);
+
+  const promise = new Promise((resolve, reject) => {
+    // Token is valid. Check if client is requesting themself
+    if (_client.username !== _request.params.username) {
+      // Client attempted to create assignments for another user
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.RESOURCE_ERROR,
+        'You cannot create another user\'s assignments',
+        `${_client.username} tried to create assignments for ${_request.params.username}`
+      );
+
+      reject(errorJson);
+    } else if (!VALIDATE.isValidUsername(_request.params.username)) {
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        'Invalid parameters: username'
+      );
+
+      reject(errorJson);
+    } else {
+      /**
+       * Check request body assignments parameter to make sure it is
+       * a non-empty array with valid stringified assignment JSONs
+       */
+      const assignmentsStringArray = _request.body.assignments;
+      if (
+        !UTIL.hasValue(assignmentsStringArray) ||
+        !Array.isArray(assignmentsStringArray) ||
+        assignmentsStringArray.length === 0
+      ) {
+        const errorJson = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          'Invalid parameters: assignments'
+        );
+
+        reject(errorJson);
+      } else {
+        const assignments = [];
+        const invalidParams = [];
+
+        // Iterate over all JSON strings and attempt to parse them
+        let counter = 0;
+        assignmentsStringArray.forEach((assignmentString) => {
+          try {
+            // If the parse works, inspect it's properties to determine if it's valid
+            const assignmentJson = JSON.parse(assignmentString);
+
+            const invalidDetails = [];
+            if (!VALIDATE.isValidString(assignmentJson.title)) invalidDetails.push('title');
+            if (!VALIDATE.isValidInteger(assignmentJson.dueDate)) {
+              invalidDetails.push('dueDate');
+            }
+
+            // Check optional parameters
+            let hasValidClass = false;
+            if (UTIL.hasValue(assignmentJson.class)) {
+              if (!VALIDATE.isValidString(assignmentJson.class)) invalidDetails.push('class');
+              else hasValidClass = true;
+            }
+
+            let hasValidType = false;
+            if (UTIL.hasValue(assignmentJson.type)) {
+              if (!VALIDATE.isValidString(assignmentJson.type)) invalidDetails.push('type');
+              else hasValidType = true;
+            }
+
+            let hasValidDescription = false;
+            if (UTIL.hasValue(assignmentJson.description)) {
+              if (!VALIDATE.isValidString(assignmentJson.description)) {
+                invalidDetails.push('description');
+              } else hasValidDescription = true;
+            }
+
+            if (UTIL.hasValue(assignmentJson.completed)) {
+              if (assignmentJson.completed !== 'true' && assignmentJson.completed !== 'false') {
+                invalidDetails.push('completed');
+              }
+            }
+
+            if (invalidDetails.length > 0) {
+              const errorDetails = `${counter}: ${invalidDetails.join('.')}`;
+              invalidParams.push(errorDetails);
+            } else {
+              // All request parameters are valid. First add required parameters
+              const assignmentInfo = {
+                userId: _client._id.toString(),
+                title: assignmentJson.title,
+                dueDate: new Date(parseInt(assignmentJson.dueDate, 10) * 1000),
+              };
+
+              // Add completed boolean value to assignment
+              assignmentInfo.completed = assignmentJson.completed === 'true';
+
+              // Add optional parameters
+              if (hasValidClass) assignmentInfo.class = assignmentJson.class;
+              if (hasValidType) assignmentInfo.type = assignmentJson.type;
+              if (hasValidDescription) assignmentInfo.description = assignmentJson.description;
+
+              const assignment = ASSIGNMENTS.createLocal(assignmentInfo);
+              assignments.push(assignment);
+            }
+          } catch (jsonParseError) {
+            // The assignment is not a valid JSON string
+            const errorDetails = `${counter}: invalid_json`;
+            invalidParams.push(errorDetails);
+          }
+
+          counter++;
+        });
+
+        if (invalidParams.length > 0) {
           const errorJson = ERROR.error(
             SOURCE,
             _request,
             _response,
             ERROR.CODE.INVALID_REQUEST_ERROR,
-            'Invalid parameters: username'
+            `Invalid parameters: ${invalidParams.join()}`
           );
 
           reject(errorJson);
         } else {
-          // Check request body parameters. Start with required parameters
-          const invalidParams = [];
-          if (!VALIDATE.isValidString(_request.body.title)) invalidParams.push('title');
-          if (!VALIDATE.isValidInteger(_request.body.dueDate)) invalidParams.push('dueDate');
-
-          // Check optional parameters
-          let hasValidClass = false;
-          if (UTIL.hasValue(_request.body.class)) {
-            if (!VALIDATE.isValidString(_request.body.class)) invalidParams.push('class');
-            else hasValidClass = true;
-          }
-
-          let hasValidType = false;
-          if (UTIL.hasValue(_request.body.type)) {
-            if (!VALIDATE.isValidString(_request.body.type)) invalidParams.push('type');
-            else hasValidType = true;
-          }
-
-          let hasValidDescription = false;
-          if (UTIL.hasValue(_request.body.description)) {
-            if (!VALIDATE.isValidString(_request.body.description)) invalidParams.push('description');
-            else hasValidDescription = true;
-          }
-
-          let hasValidCompleted = false;
-          if (UTIL.hasValue(_request.body.completed)) {
-            if (_request.body.completed !== 'true' && _request.body.completed !== 'false') {
-              invalidParams.push('completed');
-            } else hasValidCompleted = true;
-          }
-
-          if (invalidParams.length > 0) {
-            const errorJson = ERROR.error(
-              SOURCE,
-              _request,
-              _response,
-              ERROR.CODE.INVALID_REQUEST_ERROR,
-              `Invalid parameters: ${invalidParams.join()}`
-            );
-
-            reject(errorJson);
-          } else {
-            // All request parameters are valid. First add required parameters
-            const assignmentInfo = {
-              userId: client._id.toString(),
-              title: _request.body.title,
-              dueDate: new Date(parseInt(_request.body.dueDate, 10) * 1000),
-            };
-
-            // Add completed boolean value to assignment
-            if (hasValidCompleted && _request.body.completed === 'true') {
-              assignmentInfo.completed = true;
-            } else if (hasValidCompleted && _request.body.completed === 'false') {
-              assignmentInfo.completed = false;
-            } else assignmentInfo.completed = false;
-
-            // Add optional parameters
-            if (hasValidClass) assignmentInfo.class = _request.body.class;
-            if (hasValidType) assignmentInfo.type = _request.body.type;
-            if (hasValidDescription) assignmentInfo.description = _request.body.description;
-
-            // Save assignment to database
-            ASSIGNMENTS.create(assignmentInfo)
-              .then(createdAssignment => resolve(createdAssignment)) // End then(createdAssignment)
-              .catch((createError) => {
-                const errorJson = ERROR.assignmentError(SOURCE, _request, _response, createError);
-                reject(errorJson);
-              }); // End ASSIGNMENTS.create()
-          }
+          ASSIGNMENTS.bulkSave(assignments)
+            .then((savedAssignments) => {
+              const savedAssignmentsJson = UTIL.arrayToJson(savedAssignments, '_id');
+              resolve(savedAssignmentsJson);
+            }) // End then(savedAssignments)
+            .catch((saveError) => {
+              const errorJson = ERROR.assignmentError(SOURCE, _request, _response, saveError);
+              reject(errorJson);
+            }); // End ASSIGNMENTS.bulkSave()
         }
+      }
+    }
+  }); // End create promise
+
+  return promise;
+}; // End createAssignments()
+
+/**
+ * createAssignmentsHandler - Determines which create assignment function
+ * to call based on the presence of multiple assignments in the request body
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+const createAssignmentsHandler = function createAssignmentsHandler(_request, _response) {
+  const SOURCE = 'createAssignmentsHandler()';
+  log(SOURCE, _request);
+
+  const promise = new Promise((resolve, reject) => {
+    AUTH.verifyToken(_request, _response)
+      .then((client) => {
+        let createFunction;
+        if (UTIL.hasValue(_request.body.assignments)) createFunction = createAssignments;
+        else createFunction = createAssignment;
+
+        createFunction(client, _request, _response)
+          .then(createResult => resolve(createResult)) // End then(createResult)
+          .catch(createError => reject(createError)); // End createFunction()
       }) // End then(client)
       .catch((authError) => {
         const errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
       }); // End AUTH.verifyToken()
-  }); // End return promise
-}; // End createAssignment()
+  }); // End create promise
+
+  return promise;
+}; // End createAssignmentsHandler()
 
 /**
  * parseSchedule - Parses a pdf schedule for assignment due dates
@@ -1422,15 +1602,15 @@ const parseSchedule = function parseSchedule(_request, _response) {
                     .then((pythonResult) => {
                       // Parse the python JSON string
                       const resultsJson = JSON.parse(pythonResult.toString('utf8'));
-                      const currentYear = MOMENT().year();
+                      const currentYear = UTIL.moment().year();
 
                       // Create Assignment objects for the date keys from the PDF-parsed JSON
                       const assignments = Object.keys(resultsJson).map((date) => {
                         /**
-                         * Create a valid MOMENT object for the current year,
+                         * Create a valid moment object for the current year,
                          * at 12 pm each day, for the assignment's due date
                          */
-                        const moment = MOMENT(date);
+                        const moment = UTIL.moment(date);
                         moment.hour(12);
                         moment.year(currentYear);
 
@@ -1467,14 +1647,7 @@ const parseSchedule = function parseSchedule(_request, _response) {
                       });
 
                       // Sort the assignments in ascending order by due date
-                      assignments.sort((a, b) => {
-                        const momentA = MOMENT(a.dueDate);
-                        const momentB = MOMENT(b.dueDate);
-                        if (momentA.isBefore(momentB)) return -1;
-                        if (momentA.isAfter(momentB)) return 1;
-                        return 0;
-                      });
-
+                      ASSIGNMENTS.sort(assignments);
                       const assignmentsJson = UTIL.arrayToJson(assignments, '_id');
                       resolve(assignmentsJson);
                     }) // End then(pythonResult)
@@ -2342,6 +2515,8 @@ module.exports = {
   updateUserAvatar,
   deleteUser,
   createAssignment,
+  createAssignments,
+  createAssignmentsHandler,
   parseSchedule,
   syncGoogleCalendar,
   getAssignments,
