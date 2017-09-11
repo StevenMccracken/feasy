@@ -3,6 +3,7 @@ const LOG = require('../log_mod');
 const UuidV4 = require('uuid/v4');
 const REQUEST = require('request');
 const SERVER = require('../../server');
+const CODES = require('../../app/controller/code');
 
 // Server will check for TEST env variable and adjust the port according to the environment
 let baseUrl = 'http://localhost:8080';
@@ -47,17 +48,25 @@ describe('Start server', () => {
     });
 
     it('creates a new user and returns status code 201', (done) => {
-      REQUEST.post(requestParams, (error, response, body) => {
-        expect(response.statusCode).toBe(201);
-        LOG(createUser1, body);
+      CODES.createRandom()
+        .then((alphaCode) => {
+          requestParams.form.alphaCode = alphaCode.uuid;
+          REQUEST.post(requestParams, (error, response, body) => {
+            expect(response.statusCode).toBe(201);
+            LOG(createUser1, body);
 
-        // Parse JSON response for the token
-        const data = JSON.parse(body);
-        expect(data.success).toBeDefined();
-        expect(data.success.token).toBeDefined();
-        user1Token = data.success.token;
-        done();
-      });
+            // Parse JSON response for the token
+            const data = JSON.parse(body);
+            expect(data.success).toBeDefined();
+            expect(data.success.token).toBeDefined();
+            user1Token = data.success.token;
+            done();
+          });
+        }) // End then(alphaCode)
+        .catch((createCodeError) => {
+          LOG(createUser1, createCodeError);
+          done();
+        }); // End CODES.createRandom()
     });
   }); // End create user 1
 
@@ -77,17 +86,25 @@ describe('Start server', () => {
     });
 
     it('creates a new user and returns status code 201', (done) => {
-      REQUEST.post(requestParams, (error, response, body) => {
-        expect(response.statusCode).toBe(201);
-        LOG(createUser2, body);
+      CODES.createRandom()
+        .then((alphaCode) => {
+          requestParams.form.alphaCode = alphaCode.uuid;
+          REQUEST.post(requestParams, (error, response, body) => {
+            expect(response.statusCode).toBe(201);
+            LOG(createUser1, body);
 
-        // Parse JSON response for the token
-        const data = JSON.parse(body);
-        expect(data.success).toBeDefined();
-        expect(data.success.token).toBeDefined();
-        user2Token = data.success.token;
-        done();
-      });
+            // Parse JSON response for the token
+            const data = JSON.parse(body);
+            expect(data.success).toBeDefined();
+            expect(data.success.token).toBeDefined();
+            user2Token = data.success.token;
+            done();
+          });
+        }) // End then(alphaCode)
+        .catch((createCodeError) => {
+          LOG(createUser2, createCodeError);
+          done();
+        }); // End CODES.createRandom()
     });
   }); // End create user 2
 
@@ -384,14 +401,20 @@ describe('Start server', () => {
       requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments/pdf`,
         headers: { Authorization: user1Token },
-        formData: { pdf: FS.createReadStream('./test/files/test_pdf_001.pdf') },
+        formData: {
+          class: 'test',
+          pdf: FS.createReadStream('./test/files/test_pdf_002.pdf'),
+        },
       };
     });
 
     it('uploads a pdf and returns status code 200', (done) => {
-      REQUEST.post(requestParams, (error, response) => {
+      REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        LOG(uploadPdf);
+
+        // Parse JSON response for the assignments
+        const data = JSON.parse(body);
+        LOG(uploadPdf, `Number of assignments found in PDF = ${Object.keys(data).length}`);
         done();
       });
     });

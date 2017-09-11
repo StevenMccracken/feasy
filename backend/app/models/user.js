@@ -3,10 +3,9 @@
  */
 
 const BCRYPT = require('bcryptjs');
-const MONGOOSE = require('mongoose');
+const DATABASE = require('../../config/database');
 
-MONGOOSE.Promise = require('bluebird');
-
+const MONGOOSE = DATABASE.driver;
 const UserSchema = MONGOOSE.Schema({
   email: {
     trim: true,

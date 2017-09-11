@@ -2,9 +2,9 @@
  * router_mod - @module for HTTP request routing
  */
 
-const UTIL = require('./utility_mod');
 const LOG = require('./log_mod');
 const MEDIA = require('./media_mod');
+const UTIL = require('./utility_mod');
 const MIDDLEWARE = require('./middleware_mod');
 
 /**
@@ -189,8 +189,8 @@ const routing = function routing(_router) {
   });
 
   /**
-   * The POST route for creating an assignment. Sends an error JSON or a
-   * JSON of the created assignment. This route requires token authentication
+   * The POST route for creating an assignment(s). Sends an error JSON or a
+   * JSON of the created assignment(s). This route requires token authentication
    */
   router.route('/users/:username/assignments').post((_request, _response) => {
     MIDDLEWARE.createAssignmentsHandler(_request, _response)
