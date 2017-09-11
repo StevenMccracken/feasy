@@ -517,6 +517,8 @@ const createUser = function createUser(_request, _response) {
     if (!VALIDATE.isValidUsername(_request.body.username)) invalidParams.push('username');
     if (!VALIDATE.isValidPassword(_request.body.password)) invalidParams.push('password');
     if (!VALIDATE.isValidEmail(_request.body.email)) invalidParams.push('email');
+
+    // TODO: DELETE THIS WHEN ALPHA IS OVER
     if (!VALIDATE.isValidString(_request.body.alphaCode)) invalidParams.push('alphaCode');
 
     // First name and last name are optional parameters
@@ -550,6 +552,7 @@ const createUser = function createUser(_request, _response) {
       reject(errorJson);
     } else {
       // Parameters are valid, so check if the alpha code has been used
+      // TODO: DELETE THIS WHEN ALPHA IS OVER
       CODES.getByUuid(_request.body.alphaCode)
         .then((code) => {
           if (!UTIL.hasValue(code)) {
@@ -578,6 +581,7 @@ const createUser = function createUser(_request, _response) {
             reject(errorJson);
           } else {
             // Valid code. Update the code to be used
+            // TODO: DELETE THIS WHEN ALPHA IS OVER
             CODES.updateAttribute(code, 'used', true)
               /* eslint-disable no-unused-vars */
               .then((updatedCode) => {
@@ -611,6 +615,7 @@ const createUser = function createUser(_request, _response) {
                     reject(errorJson);
 
                     // Unregister the alpha code
+                    // TODO: DELETE THIS WHEN ALPHA IS OVER
                     CODES.updateAttribute(code, 'used', false)
                       .catch((updateCodeError) => {
                         log(
@@ -1483,10 +1488,7 @@ const createAssignments = function createAssignments(_client, _request, _respons
           reject(errorJson);
         } else {
           ASSIGNMENTS.bulkSave(assignments)
-            .then((savedAssignments) => {
-              const savedAssignmentsJson = UTIL.arrayToJson(savedAssignments, '_id');
-              resolve(savedAssignmentsJson);
-            }) // End then(savedAssignments)
+            .then(savedAssignments => resolve(savedAssignments)) // End then(savedAssignments)
             .catch((saveError) => {
               const errorJson = ERROR.assignmentError(SOURCE, _request, _response, saveError);
               reject(errorJson);
@@ -1534,6 +1536,7 @@ const createAssignmentsHandler = function createAssignmentsHandler(_request, _re
  * parseSchedule - Parses a pdf schedule for assignment due dates
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
  */
 const parseSchedule = function parseSchedule(_request, _response) {
   const SOURCE = 'parseSchedule()';
@@ -1600,19 +1603,24 @@ const parseSchedule = function parseSchedule(_request, _response) {
                   // Send text content to python script
                   MEDIA.pythonParse(pdfText)
                     .then((pythonResult) => {
-                      // Parse the python JSON string
+                      // Parse the python JSON string. TODO: Wrap parse call in a try/catch block
                       const resultsJson = JSON.parse(pythonResult.toString('utf8'));
                       const currentYear = UTIL.moment().year();
 
-                      // Create Assignment objects for the date keys from the PDF-parsed JSON
-                      const assignments = Object.keys(resultsJson).map((date) => {
+                      // Define inline function to map python date result to a Mongoose assignment
+                      const convertPythonEvent = function convertPythonEvent(date = '') {
                         /**
                          * Create a valid moment object for the current year,
                          * at 12 pm each day, for the assignment's due date
                          */
-                        const moment = UTIL.moment(date);
-                        moment.hour(12);
-                        moment.year(currentYear);
+                        let moment;
+                        try {
+                          moment = UTIL.moment(date);
+                          moment.hour(12);
+                          moment.year(currentYear);
+                        } catch (momentError) {
+                          moment = UTIL.moment();
+                        }
 
                         // Get the description for the date
                         const description = UTIL.hasValue(resultsJson[date]) ? String(resultsJson[date]) : '';
@@ -1644,12 +1652,15 @@ const parseSchedule = function parseSchedule(_request, _response) {
                         // Create the local assignment object
                         const localAssignment = ASSIGNMENTS.createLocal(assignmentInfo);
                         return localAssignment;
-                      });
+                      };
+
+                      // Create Assignment objects for the date keys from the PDF-parsed JSON
+                      const dateKeys = Object.keys(resultsJson);
+                      const assignments = dateKeys.map(convertPythonEvent);
 
                       // Sort the assignments in ascending order by due date
                       ASSIGNMENTS.sort(assignments);
-                      const assignmentsJson = UTIL.arrayToJson(assignments, '_id');
-                      resolve(assignmentsJson);
+                      resolve(assignments);
                     }) // End then(pythonResult)
                     .catch((pythonError) => {
                       const errorJson = ERROR.pythonError(SOURCE, _request, _response, pythonError);
@@ -1671,6 +1682,12 @@ const parseSchedule = function parseSchedule(_request, _response) {
   }); // End return promise
 }; // End parseSchedule()
 
+/**
+ * syncGoogleCalendar - Syncs a Google user's Google Calendar to create Feasy-specific assignments
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
 const syncGoogleCalendar = function syncGoogleCalendar(_request, _response) {
   const SOURCE = 'syncGoogleCalendar()';
   log(SOURCE, _request);
@@ -1875,11 +1892,7 @@ const getAssignments = function getAssignments(_request, _response) {
         } else {
           // Request is valid. Retrieve assignments from the database
           ASSIGNMENTS.getAll(client._id)
-            .then((assignments) => {
-              // Convert assignments array to JSON
-              const assignmentsJson = UTIL.arrayToJson(assignments, '_id');
-              resolve(assignmentsJson);
-            }) // End then(assignments)
+            .then(assignments => resolve(assignments)) // End then(assignments)
             .catch((getError) => {
               const errorJson = ERROR.assignmentError(SOURCE, _request, _response, getError);
               reject(errorJson);

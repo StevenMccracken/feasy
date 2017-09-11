@@ -3,6 +3,8 @@ const LOG = require('../log_mod');
 const UuidV4 = require('uuid/v4');
 const REQUEST = require('request');
 const SERVER = require('../../server');
+
+// TODO: DELETE THIS WHEN ALPHA IS OVER
 const CODES = require('../../app/controller/code');
 
 // Server will check for TEST env variable and adjust the port according to the environment
@@ -48,6 +50,7 @@ describe('Start server', () => {
     });
 
     it('creates a new user and returns status code 201', (done) => {
+      // TODO: DELETE THIS WHEN ALPHA IS OVER
       CODES.createRandom()
         .then((alphaCode) => {
           requestParams.form.alphaCode = alphaCode.uuid;
@@ -86,6 +89,7 @@ describe('Start server', () => {
     });
 
     it('creates a new user and returns status code 201', (done) => {
+      // TODO: DELETE THIS WHEN ALPHA IS OVER
       CODES.createRandom()
         .then((alphaCode) => {
           requestParams.form.alphaCode = alphaCode.uuid;
@@ -393,6 +397,48 @@ describe('Start server', () => {
     });
   }); // End create assignment 1
 
+  // Create multiple assignments
+  const createMultipleAssignments = 'Create multiple assignments';
+  describe(createMultipleAssignments, () => {
+    let requestParams;
+    beforeEach(() => {
+      const assignments = [
+        {
+          title: 'multiple assignments 1',
+          dueDate: nowUnixSeconds,
+        },
+        {
+          title: 'multiple assignments 2',
+          dueDate: nowUnixSeconds,
+        },
+        {
+          title: 'multiple assignments 3',
+          dueDate: nowUnixSeconds,
+        },
+      ];
+
+      requestParams = {
+        url: `${baseUrl}/users/${user1Name}/assignments`,
+        headers: { Authorization: user1Token },
+        form: {
+          assignments: assignments.map(assignment => JSON.stringify(assignment)),
+        },
+      };
+    });
+
+    it('creates multiple assignments and returns status code 201', (done) => {
+      REQUEST.post(requestParams, (error, response, body) => {
+        expect(response.statusCode).toBe(201);
+
+        // Parse JSON response for the assignments
+        const data = JSON.parse(body);
+        expect(Array.isArray(data)).toBe(true);
+        LOG(createMultipleAssignments, `Count = ${data.length}`);
+        done();
+      });
+    });
+  }); // End create multiple assignments
+
   // Upload pdf
   const uploadPdf = 'Upload pdf';
   describe(uploadPdf, () => {
@@ -414,7 +460,8 @@ describe('Start server', () => {
 
         // Parse JSON response for the assignments
         const data = JSON.parse(body);
-        LOG(uploadPdf, `Number of assignments found in PDF = ${Object.keys(data).length}`);
+        expect(Array.isArray(data)).toBe(true);
+        LOG(uploadPdf, `Number of assignments found in PDF = ${data.length}`);
         done();
       });
     });
@@ -425,7 +472,6 @@ describe('Start server', () => {
   /* eslint-disable no-unused-vars */
   let assignment2Id;
   /* eslint-enable no-unused-vars */
-
   describe(createAssignment2, () => {
     let requestParams;
     beforeEach(() => {
@@ -474,7 +520,8 @@ describe('Start server', () => {
 
         // Parse JSON response for the assignments
         const data = JSON.parse(body);
-        LOG(getUser1Assignments, `Count = ${Object.keys(data).length}`);
+        expect(Array.isArray(data)).toBe(true);
+        LOG(getUser1Assignments, `Count = ${data.length}`);
         done();
       });
     });

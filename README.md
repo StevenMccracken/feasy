@@ -20,33 +20,38 @@
   * Create user route (__POST__ https://api.feasy-app.com/users)
 * The URLs in this guide that contain square brackets are meant to have those brackets substituted with with actual values
 * The JSON responses in this guide that contain square brackets will have actual values when returned from the server
+* Each response will have a unique ID in the headers (`requestId`) to use for anonymous identification if you need clarification about your specific request
 
 <a name="table-of-contents"></a>
 ## Table of Contents
 
 1. [Base route](#base-route)
 2. [Login](#login)
-3. [Google Authentication URL](#google-auth-url)
-4. [Google Authentication](#google-auth)
-5. [Create a user](#create-user)
-6. [Retrieve a user's information](#get-user)
-7. [Change a user's username](#update-username)
-8. [Change a user's password](#update-password)
-9. [Change a user's email](#update-email)
-10. [Change a user's first name](#update-firstName)
-11. [Change a user's last name](#update-lastName)
-12. [Delete a user](#delete-user)
-13. [Create an assignment](#create-assignment)
-14. [Get a user's assignments](#get-assignments)
-15. [Get an assignment's information](#get-assignment)
-16. [Change an assignment's title](#update-title)
-17. [Change an assignment's class](#update-class)
-18. [Change an assignment's type](#update-type)
-19. [Change an assignment's description](#update-description)
-20. [Change an assignment's completed](#update-completed)
-21. [Change an assignment's due date](#update-dueDate)
-22. [Delete an assignment](#delete-assignment)
-23. [Errors](#errors)
+3. [Refresh token](#refresh-token)
+4. [Google Authentication URL](#google-auth-url)
+5. [Google Authentication](#google-auth)
+6. [Create a user](#create-user)
+7. [Retrieve a user's information](#get-user)
+8. [Change a user's username](#update-username)
+9. [Change a user's password](#update-password)
+10. [Change a user's email](#update-email)
+11. [Change a user's first name](#update-firstName)
+12. [Change a user's last name](#update-lastName)
+13. [Change a user's avatar](#update-avatar)
+14. [Delete a user](#delete-user)
+15. [Create an assignment/assignments](#create-assignments)
+16. [Automatically create assignments from a PDF syllabus](#parse-syllabus)
+17. [Sync your Google Calendar](#sync-google-calendar)
+18. [Get a user's assignments](#get-assignments)
+19. [Get an assignment's information](#get-assignment)
+20. [Change an assignment's title](#update-title)
+21. [Change an assignment's class](#update-class)
+22. [Change an assignment's type](#update-type)
+23. [Change an assignment's description](#update-description)
+24. [Change an assignment's completed](#update-completed)
+25. [Change an assignment's due date](#update-dueDate)
+26. [Delete an assignment](#delete-assignment)
+27. [Errors](#errors)
 
 ## Routes
 
@@ -72,7 +77,7 @@
 ### Login
 
 * Route: __POST__ https://api.feasy-app.com/login
-* Purpose: Registers the client on the server so that subsequent requests only require a generated token, not their username and password
+* Purpose: Registers the client on the server so that subsequent requests only require the generated token, not their username and password
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
   * In the request body
@@ -95,6 +100,33 @@
 * Notes
   * Token will be a string starting with the word ___JWT___ followed by one space, and then a random string of uppercase and lowercase characters, numbers, periods, and underscores
   * This token must be sent in the headers of almost every request
+  * This token __will expire__ 1 week from the time it is issued
+
+**[⬆ back to top](#table-of-contents)**
+<a name="refresh-token"></a>
+### Refresh token
+
+* Route: __GET__ https://api.feasy-app.com/login/refresh
+* Purpose: Re-registers the client on the server and provides a new token so that subsequent requests only require the newly-generated token, not their username and password
+* Required parameters
+  * In the header
+    * `Authorization`
+* Optional parameters: _none_
+* Successful request returns
+  * Status code: __200__
+  * Response body JSON
+  ```json
+  {
+    "success": {
+      "message": "Successfully refreshed token",
+      "token": "JWT [random string]"
+    }
+  }
+  ```
+* Notes
+  * Token will be a string starting with the word ___JWT___ followed by one space, and then a random string of uppercase and lowercase characters, numbers, periods, and underscores
+  * This token must be sent in the headers of almost every request
+  * This token __will expire__ 1 week from the time it is issued
 
 **[⬆ back to top](#table-of-contents)**
 <a name="google-auth-url"></a>
@@ -164,6 +196,8 @@
       * Non-empty string containing alphanumeric characters, dashes, or underscores
     * `password`
       * Non-empty string containing alphanumeric and special characters
+    * `alphaCode`
+      * Non-empty string containing alphanumeric characters and dashes
 * Optional parameters
   * In the request body
     * `firstName`
@@ -183,6 +217,7 @@
   ```
 * Notes
   * `firstName` and `lastName` attributes will be saved as empty strings for the user information if they are not included in the request body
+  * `alphaCode` can only be acquired from authorized persons. This request parameter will not be required in the future
 
 **[⬆ back to top](#table-of-contents)**
 <a name="get-user"></a>
@@ -371,6 +406,36 @@
   * The `newLastName` value must be __different__ from the existing last name in the database
 
 **[⬆ back to top](#table-of-contents)**
+<a name="update-avatar"></a>
+### Change a user's avatar
+
+* Route: __PUT__ https://api.feasy-app.com/users/[username]/avatar
+* Purpose: Updates a user's avatar to a new value
+* Request body type: `x-www-form-urlencoded`
+* Required parameters
+  * In the header
+    * `Authorization`
+  * In the URL
+    * `[username]`
+      * Non-empty string containing alphanumeric characters, dashes, or underscores
+  * In the request body
+    * `newAvatar`
+      * Non-empty string containing alphanumeric characters, special characters, and spaces
+* Optional parameters: _none_
+* Successful request returns
+  * Status code: __200__
+  * Response body JSON
+  ```json
+  {
+    "success": {
+      "message": "Successfully updated avatar"
+    }
+  }
+  ```
+* Notes
+  * The `newAvatar` value must be __different__ from the existing avatar in the database
+
+**[⬆ back to top](#table-of-contents)**
 <a name="delete-user"></a>
 ### Delete a user
 
@@ -395,11 +460,11 @@
   ```
 
 **[⬆ back to top](#table-of-contents)**
-<a name="create-assignment"></a>
-### Create an assignment
+<a name="create-assignments"></a>
+### Create an assignment/assignments
 
 * Route: __POST__ https://api.feasy-app.com/users/[username]/assignments
-* Purpose: Creates an assignment for a user
+* Purpose: Creates an assignment, or multiple assignments at once, for a user
 * Request body type: `x-www-form-urlencoded`
 * Required parameters
   * In the header
@@ -423,6 +488,11 @@
       * Non-empty string containing alphanumeric characters, special characters, and spaces
     * `completed`
       * Non-empty string equal to `true` or `false`
+    * `assignments[]`
+      * Non-empty array containing JSON string representations of individual assignments
+      * Each string in the array __must__ be a valid JSON string. The request will be denied if any strings cannot be parsed as JSON
+      * Each JSON parsed from the array of strings __must__ conform to the requirements and data formats described above for creating a single assignment. The request will be denied if any JSONs do not conform to the requirements or data formats
+        * In other words, `title` and `dueDate` are required and must be in valid formats. If any of the optional parameters exist in the JSON, they must be in their respective valid formats
 * Successful request returns
   * Status code: __201__
   * Response body JSON
@@ -440,6 +510,24 @@
     "dateCreated": "[dateCreated value (UTC standard format)]"
   }
   ```
+  __OR__, if the request body contained an array of assignments to create:
+  ```json
+  {
+    "[assignment 1 _id value]": {
+      "__v": 0,
+      "_id": "[_id value]",
+      "userId": "[userId value]",
+      "description": "[description value]",
+      "type": "[type value]",
+      "class": "[class value]",
+      "completed": "[completed value (boolean)]",
+      "dueDate": "[dueDate value (UTC standard format)]",
+      "title": "[title value]",
+      "dateCreated": "[dateCreated value (UTC standard format)]"
+    },
+    "[And possibly more assignments]": "[in the JSON response]"
+  }
+  ```
 * Notes
   * `class`, `type`, and `description` attributes will be saved as empty strings for the user information if they are not included in the request body
   * `completed` will be saved as a boolean `false` value if it is not included in the request body
@@ -447,6 +535,112 @@
   * Attribute `_id` is very important to save
     * It is the only unique identifier for an assignment in the database
   * UTC standard format is YYYY-MM-DDTHH:MM:SSZ
+  * If `assignments[]` is included in the request body, all other request body parameters __will be ignored__
+  * Because of the nature of bulk creation of assignments, it is possible that some assignments may not be saved while others are, __even if__ all assignments were valid in the request body.
+    * Unfortunately, the API do not currently offer a detailed response message to indicate which assignments were not saved
+    * Even if the response errors because of a database issue, some assignments may still have been successfully saved
+
+*[⬆ back to top](#table-of-contents)**
+<a name="parse-syllabus"></a>
+### Automatically create assignments from a PDF syllabus
+
+* Route: __POST__ https://api.feasy-app.com/users/[username]/assignments/pdf
+* Purpose: Parses a PDF syllabus to find key dates and create assignments for those dates
+* Request body type: `multipart/form-data`
+* Required parameters
+  * In the header
+    * `Authorization`
+  * In the URL
+    * `[username]`
+      * Non-empty string containing alphanumeric characters, dashes, or underscores
+  * In the request body
+    * `pdf`
+      * A PDF file
+* Optional parameters
+  * In the request body
+    * `class`
+      * Non-empty string containing alphanumeric characters, special characters, and spaces
+* Successful request returns
+  * Status code: __200__
+  * Response body JSON
+  ```json
+  {
+    "[assignment 1 _id value]": {
+      "__v": 0,
+      "_id": "[_id value]",
+      "userId": "[userId value]",
+      "description": "[description value]",
+      "type": "[type value]",
+      "class": "[class value]",
+      "completed": false,
+      "dueDate": "[dueDate value (UTC standard format)]",
+      "title": "[title value]",
+      "dateCreated": "[dateCreated value (UTC standard format)]"
+    },
+    "[And possibly more assignments]": "[in the JSON response]"
+  }
+  ```
+* Notes
+  * Attribute `completed` will always be a boolean `false` for each assignment
+  * UTC standard format is YYYY-MM-DDTHH:MM:SSZ
+  * The algorithm is not perfect at parsing the PDF and determining the appropriate information for key dates. Therefore, the returned assignments are not saved to the database
+    * The assignments are not saved because the API cannot make assumptions about the validity of the assignments it parses
+    * To actually save the assignments, make sure they are in a valid JSON string format and send them to [this route](#create-assignments)
+      * __Make sure__ that each assignment's attributes conforms to the requirements and data formats for the [create assignments](#create-assignments) API route
+
+*[⬆ back to top](#table-of-contents)**
+<a name="sync-google-calendar"></a>
+### Sync your Google Calendar
+
+* Route: __GET__ https://api.feasy-app.com/users/[username]/calendar/google
+* Purpose: Sync's a user's Google calendar data to bring their events into Feasy
+* Required parameters
+  * In the header
+    * `Authorization`
+  * In the URL
+    * `[username]`
+      * Non-empty string containing alphanumeric characters, dashes, or underscores
+* Optional parameters
+  * In the URL query
+    * `earliestDate`
+      * Non-negative integer representing a UNIX timestamp in __seconds__
+      * Lowest value possible is 0 (January 1st, 1970, 12:00 AM UTC)
+      * Default value will be the current date and time
+    * `maxEvents`
+      * Positive integer representing the maximum number of events to sync in the future, starting from `earliestDate`
+      * Default value will be 100
+* Successful request returns
+  * Status code: __200__
+  * Response body JSON
+  ```json
+  {
+    "[assignment 1 _id value]": {
+      "__v": 0,
+      "_id": "[_id value]",
+      "googleId": "[googleId value]",
+      "userId": "[userId value]",
+      "description": "[description value]",
+      "type": "[type value]",
+      "class": "[class value]",
+      "completed": "[completed value (boolean)]",
+      "dueDate": "[dueDate value (UTC standard format)]",
+      "title": "[title value]",
+      "dateCreated": "[dateCreated value (UTC standard format)]"
+    },
+    "[And possibly more assignments]": "[in the JSON response]"
+  }
+  ```
+* Notes
+  * If the client __did not__ sign up using their Google account, this request will be __denied__
+  * Attribute `completed` will be a boolean `false` if the assignment's due date is before the current date or true otherwise, for each assignment
+  * UTC standard format is YYYY-MM-DDTHH:MM:SSZ
+  * Attribute `__v` is not necessary to save
+  * Attribute `_id` is very important to save
+    * It is the only unique identifier for an assignment in the database
+  * If the client syncs their Google Calendar multiple times and there are duplicate Google events being synced, those assignments will not by added to Feasy
+    * Only new Google events will be added to Feasy
+    * The request __will error__ in this scenario; however, events that are not duplicates will be saved
+      * The duplicate events will be in a comma-separated string in the response's error message
 
 **[⬆ back to top](#table-of-contents)**
 <a name="get-assignments"></a>
@@ -767,7 +961,7 @@
 <a name="api-error"></a>
 ### 1. API Error
 
-* Explanation: An unexpected error occurred on the server that we were unable to more clearly identify and explain
+* Explanation: An unexpected error occurred on the server that the API were unable to more clearly identify and explain
 * Status code: __500__
 * Formal type: `api_error`
 * Default message: _There was a problem with our back-end services_
@@ -784,7 +978,8 @@
 * Status code: __401__
 * Formal type: `authentication_error`
 * Default message: _There was an error while authenticating_
-* Notes: This error has the same status code as Login errors; however, this error will never occur in the base route (/), /login route, or __POST__ /users route
+* Notes
+  * This error has the same status code as Login errors; however, this error will never occur in the base route (/), /login route, or __POST__ /users route
 
 **[⬆ back to top - errors](#errors-table-of-contents)**
 <a name="invalid-media-error"></a>
@@ -795,7 +990,8 @@
 * Status code: __415__
 * Formal type: `invalid_media_type`
 * Default message: _That type of media file is forbidden_
-* Notes: The message will usually contain a more specific explanation of which filetypes are allowed
+* Notes
+  * The message will usually contain a more specific explanation of which filetypes are allowed
 
 **[⬆ back to top - errors](#errors-table-of-contents)**
 <a name="invalid-request-error"></a>
@@ -808,7 +1004,11 @@
 * Status code: __400__
 * Formal type: `invalid_request_error`
 * Default message: _One of your request parameters is invalid_
-* Notes: The non-default message will be `Invalid parameters: ` or `Unchanged parameters: `, followed by a comma-separated list of the incorrect parameter __key names__
+* Notes
+  * The non-default message will be `Invalid parameters: ` or `Unchanged parameters: `, followed by a comma-separated list of the incorrect parameter __key names__
+  * In the case of this error occurring while creating multiple assignments at once, the non-default message will be `Invalid parameters: `, followed by a comma-separated list of array indices and specific invalid parameters (separated by periods) for the assignments at those array indices
+    *  In other words, in a scenario where 4 assignments were created at once but the 2nd one was missing a dueDate and had an invalid completed attribute, __and__ the 4th one had an invalid title attribute, the error message would look like this:
+      * `Invalid parameters: 1: dueDate.completed,3: title`
 
 **[⬆ back to top - errors](#errors-table-of-contents)**
 <a name="login-error"></a>
@@ -818,7 +1018,8 @@
 * Status code: __401__
 * Formal type: `login_error`
 * Default message: _The username or password is incorrect_
-* Notes: This error has the same status code as Authentication errors; however, this error will only occur in the /login route
+* Notes
+  * This error has the same status code as Authentication errors; however, this error will only occur in the /login route
 
 **[⬆ back to top - errors](#errors-table-of-contents)**
 <a name="resource-dne-error"></a>
@@ -828,7 +1029,8 @@
 * Status code: __404__
 * Formal type: `resource_dne_error`
 * Default message: _That resource does not exist_
-* Notes: The message will usually contain which __type__ of resource does not exist, e.g. "That __assignment__ does not exist"
+* Notes
+  * The message will usually contain which __type__ of resource does not exist, e.g. "That __assignment__ does not exist"
 
 **[⬆ back to top - errors](#errors-table-of-contents)**
 <a name="resource-error"></a>
@@ -842,7 +1044,11 @@
 * Status code: __403__
 * Formal type: `resource_error`
 * Default message: _There was an error accessing that resource_
-* Notes: The message will usually contain a more specific explanation of why the request cannot be fulfilled
+* Notes
+  * The message will usually contain a more specific explanation of why the request cannot be fulfilled
+  * In the case of this error occurring when syncing the client's Google Calendar twice and finding duplicate events, the non-default error message contain a comma-separated string of assignment titles and due dates that were found to be duplicates
+    * In other words, in a scenario where 2 duplicate events are found while syncing a client's Google Calendar, the error message would look like this:
+      * `The following Google Calendar events were not saved because they are duplicates: Homework #4 on 2017-02-09T12:45:00Z,Quiz 7 on 2017-12-25T20:15:00Z`
 
 **[⬆ back to top - errors](#errors-table-of-contents)**
 **[⬆ back to top - main](#table-of-contents)**
