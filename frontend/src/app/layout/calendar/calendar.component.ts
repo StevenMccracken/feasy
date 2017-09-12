@@ -148,10 +148,8 @@ export class CalendarComponent implements OnInit {
   ngOnInit() {
     this.subscription = this._messageService.getMessage()
       .subscribe((message) => {
-        console.log(message);
         const temp = this._loadLearn.getTaskArray();
         this.populateAfter(temp);
-        console.log('hello');
       });
 
     $('#viewEvent').modal({

@@ -19,7 +19,7 @@ export class LocalStorageService {
   isValidItem(_itemKey: string): boolean {
     const storageItem: string = localStorage.getItem(_itemKey);
     return this._utils.hasValue(storageItem) && storageItem !== '';
-  }
+  } // End isValidItem()
 
   /**
    * Retrieves a specific item from local storage
@@ -28,18 +28,17 @@ export class LocalStorageService {
    */
   getItem(_itemKey: string): string {
     return localStorage.getItem(_itemKey);
-  }
+  } // End getItem()
 
   /**
-   * Sets a value for a specific item in local storage. Adds
-   * the value if _itemKey does not exist. Overwrites
-   * an existing value if _itemKey already exists
+   * Sets a value for a specific item in local storage. Adds the value if _itemKey
+   * does not exist. Overwrites an existing value if _itemKey already exists
    * @param {string} _itemKey the key of the local storage item
    * @param {string} _value the value to set for _itemKey
    */
   setItem(_itemKey: string, _value: string): void {
     localStorage.setItem(_itemKey, _value);
-  }
+  } // End setItem()
 
   /**
    * Clears any values in local storage for a specific item
@@ -49,7 +48,7 @@ export class LocalStorageService {
     if (this.isValidItem(_itemKey)) {
       this.setItem(_itemKey, '');
     }
-  }
+  } // End clearItem()
 
   /**
    * Removes a specific item from local storage. _itemKey and the associated value will be removed.
@@ -57,5 +56,5 @@ export class LocalStorageService {
    */
   deleteItem(_itemKey: string): void {
     localStorage.removeItem(_itemKey);
-  }
+  } // End deleteItem()
 }

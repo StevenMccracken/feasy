@@ -20,7 +20,7 @@ export class Assignment implements Serializable<Assignment> {
 
   /**
    * Converts a JSON representing an assignment to an Assignment object
-   * @param {Object = {}} _input JSON containing assignment information
+   * @param {Object} [_input = {}] JSON containing assignment information
    * @return {Assignment} assignment with the attributes from the JSON input
    */
   deserialize(_input: Object = {}): Assignment {
@@ -36,5 +36,5 @@ export class Assignment implements Serializable<Assignment> {
     this.editModeTitle = false;
 
     return this;
-  }
+  } // End deserialize()
 }

@@ -13,6 +13,11 @@
   text-align: center;
 }
 
+.btn-red {
+  color: #FFFFFF;
+  background-color: #E57373;
+}
+
 .cal-title {
   text-align: center;
 }
@@ -81,7 +86,7 @@ pre {
   color: #9E9E9E;
 }
 
-.row{
+.row {
   margin-top: 10px;
 }
 
@@ -95,9 +100,10 @@ select {
   margin-left: 11px;
 }
 
-.incomplete{
+.incomplete {
   color: gray;
 }
-.complete{
+
+.complete {
   color: green;
 }

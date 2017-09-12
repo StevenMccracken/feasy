@@ -10,22 +10,22 @@
     </div>
     <div class="row">
       <div class="input-field col s12 m12 l12">
-        <input placeholder="Username" id="username" type="text" name="username" class="validate" pattern="^\w+([\.-]?\w+)*$" [(ngModel)]="_username" required #username="ngModel">
+        <input placeholder="Username *" id="username" type="text" name="username" class="validate" required pattern="^\w+([\.-]?\w+)*$" [(ngModel)]="_username" #username="ngModel">
       </div>
       <div class="input-field col s12 m12 l12">
-        <input placeholder="Password" id="password" type="password" class="validate" name="password" [(ngModel)]="_password" required #password="ngModel">
+        <input placeholder="Password *" id="password" type="password" name="password" class="validate" required [(ngModel)]="_password" #password="ngModel">
       </div>
     </div>
     <div clas="row">
       <div class="input-field col s12 m12 l12">
         <input placeholder="Access code (for first time Google users only)" id="token" type="text" class="validate" pattern="^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$" name="token" [(ngModel)]="alphaCode" #token="ngModel">
+        <p>This access code is only required when <b>signing up</b> to use our app (even if you use a Google account). Once you have signed up, you do not need to enter a code to log in</p>
       </div>
     </div>
     <div class="row">
-      <button type="reset" class="waves-effect waves-light btn col s5 offset-m5 m3" [class.disabled]="!loginForm.form.valid && _token === ''" (click)="validate()">Login</button>
-      <button type="button" id="signup" class="waves-effect waves-light btn col s5 offset-s2 m3 offset-m1" routerLink="/signup">Signup</button>
+      <button type="submit" class="waves-effect waves-light btn btn-red col s5 offset-m5 m3" [class.disabled]="!loginForm.form.valid" (click)="signIn()">Login</button>
+      <button type="button" id="signup" class="waves-effect waves-light btn btn-red col s5 offset-s2 m3 offset-m1" routerLink="/signup">New here? Sign up now</button>
       <img id="googleSignIn" (click)="googleSignIn()" (mouseover)='googleSignInHover()' (mouseout)="googleSignInUnhover()" [src]="googleSignInImageSource" alt="Sign in with Google"/>
     </div>
-    <p>The access code is only required when <b>singing up</b> to use our app (even if you use a Google account). Once you have signed up, you do not need to enter a code to log in</p>
   </form>
 </div>

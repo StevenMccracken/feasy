@@ -28,37 +28,6 @@ export class AssignmentService {
   ) {}
 
   /**
-   * Sends a request to create MULTIPLE new assignment
-   * @param {Assignment[]} _assignments the assignment object array
-   * @return {Promise<Assignment>} the assignment object with extra information from the API
-   */
-  multipleCreate(_assignments: Assignment[]): Promise<Assignment[]> {
-    const array: Assignment[] = [];
-    for (const assignment of _assignments) {
-      // TODO: Why do this?
-      let temp = new Date();
-      try {
-        temp = new Date(assignment.dueDate.toString() + 'T00:00:00');
-      } catch (err) {
-        console.log(err);
-        temp = new Date();
-      }
-
-      // TODO: Fix this
-      assignment.dueDate = new Date(temp);
-      this.create(assignment)
-        .then((res: Assignment) => {
-          array.push(res);
-        })
-        .catch((err: any) => {
-          console.log(err);
-        });
-    }
-
-    return Promise.resolve(array);
-  }
-
-  /**
    * Sends a request to create a new assignment
    * @param {Assignment = new Assignment()} _assignment the assignment object
    * @return {Promise<Assignment>} the assignment object with extra information from the API
@@ -129,6 +98,83 @@ export class AssignmentService {
   }
 
   /**
+   * Sends a request to create multiple new assignments
+   * @param {Assignment[]} [_assignments = []] the array of assignment objects
+   * @return {Promise<Assignment[]>} the assignment array objects with extra information added from the API
+   */
+  bulkCreate(_assignments: Assignment[] = []): Promise<Assignment[]> {
+    // Create request information
+    const token: string = this._storage.getItem('token');
+    const username: string = this._storage.getItem('currentUser');
+    const createPath: string = `/users/${username}/assignments`;
+    const headersOptions: Object = { Authorization: token };
+
+    // Check required assignment attributes
+    const invalidAssignments: Object = {};
+    const formattedAssignments: Object[] = [];
+    for (let i = 0; i < _assignments.length; i++) {
+      const invalidParams = [];
+      if (!this._utils.hasValue(_assignments[i].title)) invalidParams.push('title');
+      if (!this._utils.hasValue(_assignments[i].dueDate)) invalidParams.push('dueDate');
+
+      if (invalidParams.length > 0) invalidAssignments[String(i)] = invalidParams;
+      else {
+        // Add required assignment attributes
+        const dateUnixSeconds: Number = Math.round(_assignments[i].dueDate.getTime() / 1000);
+        const assignmentAttributes: Object = {
+          title: _assignments[i].title,
+          dueDate: dateUnixSeconds,
+        };
+
+        // Add optional assignment attributes
+        if (this._utils.hasValue(_assignments[i].class)) assignmentAttributes['class'] = _assignments[i].class;
+        if (this._utils.hasValue(_assignments[i].type)) assignmentAttributes['type'] = _assignments[i].type;
+        if (this._utils.hasValue(_assignments[i].description)) assignmentAttributes['description'] = _assignments[i].description;
+        if (this._utils.hasValue(_assignments[i].completed)) assignmentAttributes['completed'] = _assignments[i].completed;
+
+        formattedAssignments.push(assignmentAttributes);
+      }
+    }
+
+    if (!this._utils.isJsonEmpty(invalidAssignments)) {
+      return Promise.reject(invalidAssignments);
+    } else {
+      // Create request parameters from assignment array
+      const requestParams = { assignments: formattedAssignments.map(this._utils.stringify) };
+
+      // Send request
+      return this._feasyApi.post(createPath, requestParams, headersOptions)
+        .then((successResponse: Response) => {
+          const apiAssignments = successResponse.json();
+
+          // Process assignments JSON to Assignment objects array
+          const assignments: Assignment[] = apiAssignments.map(this.convertAssignmentJson);
+          return Promise.resolve(assignments);
+        })
+        .catch((errorResponse: Response) => {
+          /*
+           * Return detailed errors for invalid request error or
+           * resource errors. Otherwise, return the response object
+           */
+          if (errorResponse.status === 400) {
+            const responseBody = errorResponse.json();
+            const errorMessage: string = (responseBody &&
+              responseBody.error &&
+              responseBody.error.message) ||
+              '';
+
+            // The request contains invalid/malformed parameters from the assignment's attributes
+            const commaSeparatedParams: string = errorMessage.split('Invalid parameters: ')[1];
+
+            // Comma separated params should be something like title,dueDate
+            const invalidParameters = commaSeparatedParams.split(',');
+            return Promise.reject(invalidParameters);
+          } else return Promise.reject(errorResponse);
+        });
+    }
+  }
+
+  /**
    * Sends a request to retrieve a specific assignment
    * @param {string} _id the id of the desired assignment
    * @return {Promise<Assignment>} the assignment object for the specified id
@@ -166,17 +212,10 @@ export class AssignmentService {
     // Send request
     return this._feasyApi.get(getPath, headersOptions)
       .then((successResponse: Response) => {
-        const assignmentJson = successResponse.json();
+        const apiAssignments = successResponse.json();
 
         // Process assignments JSON to Assignment objects array
-        const assignments: Assignment[] = [];
-        for (const assignmentId in assignmentJson) {
-          if (assignmentJson.hasOwnProperty(assignmentId)) {
-            const assignment = new Assignment().deserialize(assignmentJson[assignmentId]);
-            assignments.push(assignment);
-          }
-        }
-
+        const assignments: Assignment[] = apiAssignments.map(this.convertAssignmentJson);
         return Promise.resolve(assignments);
       })
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
@@ -312,5 +351,15 @@ export class AssignmentService {
     return this._feasyApi.delete(deletePath, headersOptions)
       .then((successResponse: Response) => Promise.resolve())
       .catch((deleteError: any) => Promise.reject(deleteError));
+  }
+
+  /**
+   * Converts an assignment from the API to a local Assignment object
+   * @param {Object} [_assignmentJson = {}] [description]
+   * @return {Assignment} [description]
+   */
+  convertAssignmentJson(_assignmentJson: Object = {}): Assignment {
+    const assignment = new Assignment().deserialize(_assignmentJson);
+    return assignment;
   }
 }

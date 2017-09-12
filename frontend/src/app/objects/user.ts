@@ -12,7 +12,7 @@ export class User implements Serializable<User> {
 
   /**
    * Converts a JSON representing a user to a User object
-   * @param {Object = {}} _input JSON containing user information
+   * @param {Object} [_input = {}] JSON containing user information
    * @return {User} user with the attributes from the JSON input
    */
   deserialize(_input: Object = {}): User {
@@ -24,5 +24,5 @@ export class User implements Serializable<User> {
     this.avatar = _input['avatar'];
 
     return this;
-  }
+  } // End deserialize()
 }

@@ -32,12 +32,12 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
       // TODO: Does this statement even get evaluated?
       return false;
     }
-  }
+  } // End canActivate()
 
   // TODO: Add formal documentation
   canActivateChild(_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): boolean {
     return this.canActivate(_route, _state);
-  }
+  } // End canActivateChild()
 
   /**
    * Determines whether or not a specific route can be loaded and routed to
@@ -46,5 +46,5 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
    */
   canLoad(_route: Route): boolean {
     return this._storage.isValidItem('currentUser') && this._storage.isValidItem('token');
-  }
+  } // End canLoad()
 }

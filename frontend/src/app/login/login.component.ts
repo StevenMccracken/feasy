@@ -42,12 +42,15 @@ export class LoginComponent implements OnInit {
     private _userService: UserService,
     private _utils: CommonUtilsService,
     private _storage: LocalStorageService,
-) {}
+  ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
+    // Check if there is a currentUser and token in local storage
     if (this._storage.isValidItem('currentUser') && this._storage.isValidItem('token')) {
+      // Both items exists, so there is no need to have the user enter their username/password
       console.log('Got %s from browser local storage', this._storage.getItem('currentUser'));
 
+      // Try and refresh the auth token. Regardless of the result, route the user to the main page
       this._userService.refreshAuthToken()
         .then((token: string) => {
           if (this._utils.hasValue(token)) this._storage.setItem('token', token);
@@ -66,7 +69,11 @@ export class LoginComponent implements OnInit {
       this._storage.isValidItem('expiredToken') &&
       this._storage.getItem('expiredToken') === 'true'
     ) {
-      // Remove the expiredToken local storage item now
+      /*
+       * Somewhere else in the app updated this storage item to indicate
+       * that the user currently logged in has an expired token. Remove their
+       * current token and prompt them to enter their username and password
+       */
       this._storage.deleteItem('expiredToken');
 
       // Update the login screen error
@@ -74,19 +81,26 @@ export class LoginComponent implements OnInit {
       this.errorMessage = 'Please sign in again to continue';
       this.googleSignInImageSource = this.googleSignInImageSourceDefault;
     } else {
+      // There is no token in storage currently, so don't display errors. Just display the main login form
       this.error = false;
       this.errorMessage = '';
       this.googleSignInImageSource = this.googleSignInImageSourceDefault;
     }
-  }
+  } // End ngOnInit()
 
-  googleSignInHover() {
+  /**
+   * Updates the Google sign-in button image source to the hovered image
+   */
+  googleSignInHover(): void {
     this.googleSignInImageSource = this.googleSignInImageSourceHovered;
-  }
+  } // End googleSignInHover()
 
-  googleSignInUnhover() {
+  /**
+   * Updates the Google sign-in button image source to the unhovered image
+   */
+  googleSignInUnhover(): void {
     this.googleSignInImageSource = this.googleSignInImageSourceDefault;
-  }
+  } // End googleSignInUnhover()
 
   /**
    * Presents a popup window to authenticate offline access via
@@ -94,7 +108,7 @@ export class LoginComponent implements OnInit {
    * API. Updates the local storage with authentication information.
    * Routes the user to the main page once the login is successful
    */
-  googleSignIn() {
+  googleSignIn(): void {
     // Update the Google sign-in button styling
     this.googleSignInImageSource = this.googleSignInImageSourcePressed;
 
@@ -151,7 +165,7 @@ export class LoginComponent implements OnInit {
                 this.errorMessage = this.standardErrorMessage;
                 console.error('Couldn\'t log in user because token or username was null');
               }
-            })
+            }) // End then(loginInfo)
             .catch((loginError: Response) => {
               // Signal that Google authentication inside the popup window is done to close it
               googleAuthSource.next(true);
@@ -172,9 +186,9 @@ export class LoginComponent implements OnInit {
                   this.errorMessage = this.standardErrorMessage;
                   console.error(loginError);
               }
-            });
+            }); // End this._userService.authenticateGoogle()
         }
-      })
+      }) // End then(authUrl)
       .catch((getAuthUrlError: Response) => {
         // Update the Google sign-in button styling
         this.googleSignInImageSource = this.googleSignInImageSourceDefault;
@@ -182,53 +196,69 @@ export class LoginComponent implements OnInit {
         this.error = true;
         switch (getAuthUrlError.status) {
           default:
-            // API error
             this.errorMessage = this.standardErrorMessage;
             console.error(getAuthUrlError);
         }
-      });
-  }
+      }); // End this._userService.getAuthorizationUrl()
+  } // End googleSignIn()
 
   /**
    * Calls the login service and updates the local storage with authentication
-   * information. Routes the user to the main page once the login is successful
+   * information. Routes the user to the main page if the login is successful
    */
-  validate() {
+  signIn(): void {
     // Reset any previous error message
     if (this.error) {
       this.error = false;
       this.errorMessage = '';
     }
 
-    // Username needs to be saved for closure created with service call to set local storage
-    const username = this._username;
-    this._userService.validate(this._username, this._password)
-      .then((token) => {
-        if (this._utils.hasValue(token)) {
-          // Add the token and username data to local storage
-          this._storage.setItem('token', token);
-          this._storage.setItem('currentUser', username);
+    // Checks the values from the form because that form validation can fail sometimes
+    const usernameEntered: Boolean = this._utils.hasValue(this._username);
+    const passwordEntered: Boolean = this._utils.hasValue(this._password);
+    this.error = !usernameEntered || !passwordEntered;
 
-          // Route the user into the application
-          this._router.navigate(['main']);
-        } else {
-          // Returned token was null. Very strange
-          this.error = true;
-          this.errorMessage = this.standardErrorMessage;
-          console.error('Couldn\'t log in user because token was null');
-        }
-      })
-      .catch((loginError: Response) => {
-        this.error = true;
-        switch (loginError.status) {
-          case 401:
-            this.errorMessage = 'Username or password is incorrect';
-            break;
-          default:
-            // API error
+    // If the form validation failed and invalid username/password were passed to the component, display an error
+    if (this.error) {
+      this.errorMessage = 'Please enter your ';
+      if (!usernameEntered) this.errorMessage += 'username';
+      if (!passwordEntered) {
+        if (!usernameEntered) this.errorMessage += ' and password';
+        else this.errorMessage += 'password';
+      }
+
+      if (this.errorMessage === 'Please enter your ') this.errorMessage += 'login credentials';
+    } else {
+      // Username needs to be saved for closure created with service call to set local storage
+      const username = this._username;
+      this._userService.validate(this._username, this._password)
+        .then((token) => {
+          if (this._utils.hasValue(token)) {
+            // Add the token and username data to local storage
+            this._storage.setItem('token', token);
+            this._storage.setItem('currentUser', username);
+
+            // Route the user into the application
+            this._router.navigate(['main']);
+          } else {
+            // Returned token was null. Very strange
+            this.error = true;
             this.errorMessage = this.standardErrorMessage;
-            console.error(loginError);
-        }
-      });
-  }
+            console.error('Couldn\'t log in user because token was null');
+          }
+        }) // End then(token)
+        .catch((loginError: Response) => {
+          this.error = true;
+          switch (loginError.status) {
+            case 401:
+              this.errorMessage = 'Username or password is incorrect';
+              break;
+            default:
+              // API error
+              this.errorMessage = this.standardErrorMessage;
+              console.error(loginError);
+          }
+        }); // End this._userService.validate()
+    }
+  } // End signIn()
 }

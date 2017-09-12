@@ -19,7 +19,7 @@ import { CommonUtilsService } from '../utils/common-utils.service';
 
 @Injectable()
 export class FeasyService {
-  private baseUrl: string = 'https://api.feasy-app.com';
+  private baseUrl: string = 'http://localhost:8080'; // 'https://api.feasy-app.com';
   private contentType_UrlEncoded: string = 'application/x-www-form-urlencoded';
   private standardHeaders: Headers = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
 
@@ -155,7 +155,12 @@ export class FeasyService {
     const searchParameters: URLSearchParams = new URLSearchParams();
     for (const parameter in _parametersJson) {
       if (_parametersJson.hasOwnProperty(parameter)) {
-        searchParameters.append(parameter, _parametersJson[parameter]);
+        if (Array.isArray(_parametersJson[parameter])) {
+          _parametersJson[parameter].forEach((value) => {
+            const key = `${parameter}[]`;
+            searchParameters.append(key, value);
+          })
+        } else searchParameters.append(parameter, _parametersJson[parameter]);
       }
     }
 

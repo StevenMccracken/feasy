@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 // Import our files
 import { User } from '../objects/user';
 import { UserService } from '../services/user.service';
+import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
 
 @Component({
@@ -39,6 +40,7 @@ export class SignupComponent {
   constructor(
     private _router: Router,
     private _userService: UserService,
+    private _utils: CommonUtilsService,
     private _storage: LocalStorageService,
   ) {}
 
@@ -47,7 +49,7 @@ export class SignupComponent {
    * Updates the local storage with the corresponding authentication
    * credentials. Routes the user to the main page on successful sign-up
    */
-  signupUser(): void {
+  signup(): void {
     if (this.error) {
       this.error = false;
       this.errorMessage = '';
@@ -55,9 +57,10 @@ export class SignupComponent {
 
     if (!this.user) return;
 
+    // Send the user data to the API to create the user
     this._userService.create(this.user, this.alphaCode)
       .then((token: string) => {
-        if (token !== null) {
+        if (this._utils.hasValue(token)) {
           // Add token and username info to browser local storage
           this._storage.setItem('token', token);
           this._storage.setItem('currentUser', this.user.username);
@@ -68,9 +71,9 @@ export class SignupComponent {
           // User service did not return a token for some reason
           this.error = true;
           this.errorMessage = this.standardErrorMessage;
-          console.error('Failed to create new user because token is null');
+          console.error('Failed to create new user because token is null/undefined');
         }
-      })
+      }) // End then(token)
       .catch((createUserError) => {
         this.error = true;
 
@@ -107,6 +110,6 @@ export class SignupComponent {
           this.errorMessage = this.standardErrorMessage;
           console.error(createUserError);
         }
-      });
-  }
+      }); // End this._userService.create()
+  } // End signup()
 }

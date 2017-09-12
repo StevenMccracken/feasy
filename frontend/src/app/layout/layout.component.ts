@@ -52,6 +52,12 @@ export class LayoutComponent implements OnInit {
   standardAvatarErrorMessage: string = 'We are unable to update your avatar at this time. Please contact us at feasyresponse@gmail.com to fix this issue';
   /* tslint:enable max-line-length */
 
+  loadNLearnError: boolean = false;
+  loadNLearnErrorMessage: string;
+  /* tslint:disable max-line-length */
+  standardLoadNLearnErrorMessage: string = 'We are unable to create those assignments at this time. Please contact us at feasyresponse@gmail.com to fix this issue';
+  /* tslint:enable max-line-length */
+
   constructor(
     private _router: Router,
     private _location: Location,
@@ -207,18 +213,45 @@ export class LayoutComponent implements OnInit {
   }
 
   addAllTask(): void {
-    $('#loadLearn').modal('close');
-    this._assignmentService.multipleCreate(this.taskArray)
-      .then((res: Assignment[]) => {
+    // Clear any previous error messages
+    this.loadNLearnError = false;
+    this.loadNLearnErrorMessage = '';
+
+    // Correct the date format for the assignments from the form
+    const assignments: Assignment[] = this.taskArray.map((assignment) => {
+      // Set the time to be at 12 pm on the given day for the due date
+      const unixMillis = Date.parse(String(assignment.dueDate));
+      assignment.dueDate = new Date(unixMillis + 43200000);
+
+      return assignment;
+    });
+
+    // Create the assignments all at once
+    this._assignmentService.bulkCreate(assignments)
+      .then((createdAssignments: Assignment[]) => {
+        $('#loadLearn').modal('close');
+
+        // Clear any previous messages for the message service
         this.clearMessage();
-        this.sendMessage();
-        this._loadLearn.setTaskArray(this.taskArray);
+
+        // Add the saved assignments to the load n learn service
+        this._loadLearn.setTaskArray(createdAssignments);
+
+        // Reset the task array
         this.taskArray = [];
         this.taskArray[0] = new Assignment();
+
+        // Notify all listeners that the load n learn service has the created assignments
+        this.sendMessage();
+
+        // Navigate back to the calendar component
+        this.closeNav('/main/calendar');
       })
-      .catch((err: any) => {
-        console.error(err);
-      });
+      .catch((bulkCreateError: any) => {
+        this.loadNLearnError = true;
+        this.loadNLearnErrorMessage = this.standardLoadNLearnErrorMessage;
+        console.error(bulkCreateError);
+      }); // End this._assignmentService.bulkCreate()
   }
 
   /**

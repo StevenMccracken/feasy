@@ -12,7 +12,7 @@ export class Account implements Serializable<Account> {
 
   /**
    * Converts a JSON representing an account to an Account object
-   * @param {Object = {}} _input JSON containing account information
+   * @param {Object} [_input = {}] JSON containing account information
    * @return {Account} account with the attributes from the JSON input
    */
   deserialize(_input: Object = {}): Account {
@@ -24,5 +24,5 @@ export class Account implements Serializable<Account> {
     this.avatar = _input['avatar'];
 
     return this;
-  }
+  } // End deserialize()
 }
