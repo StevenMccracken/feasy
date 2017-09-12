@@ -16,6 +16,7 @@ import { GoogleAuthService } from 'ng-gapi/lib/GoogleAuthService';
 import { User } from '../objects/user';
 import { Account } from '../objects/account';
 import { FeasyService } from './feasy.service';
+import { ErrorService } from './error.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
 
@@ -23,6 +24,7 @@ import { LocalStorageService } from '../utils/local-storage.service';
 export class UserService {
   constructor(
     private _router: Router,
+    private _error: ErrorService,
     private _feasyApi: FeasyService,
     private _utils: CommonUtilsService,
     private _storage: LocalStorageService,
@@ -31,8 +33,8 @@ export class UserService {
 
   /**
    * Sends a request to create a new user
-   * @param {User = new User()} _user the user object
-   * @param {string} _alphaCode the special access alpha code
+   * @param {User} [_user = new User()] the user object
+   * @param {string} [_alphaCode = ''] the special access alpha code
    * @return {Promise<string>} the authentication token for the newly created user
    */
   create(_user: User = new User(), _alphaCode: string = ''): Promise<string> {
@@ -65,33 +67,32 @@ export class UserService {
         return Promise.resolve(this._utils.hasValue(token) ? token : null);
       })
       .catch((errorResponse: Response) => {
-        const responseBody = errorResponse.json();
-        const errorMessage: string = responseBody && responseBody.error && responseBody.error.message;
+        const error = this._error.getError(errorResponse);
+        if (this._error.isInvalidRequestError(error)) {
+          const invalidParams = this._error.getInvalidParameters(error);
+        }
 
         /*
          * Return detailed errors for invalid request error or
          * resource errors. Otherwise, return the response object
          */
-        if (errorResponse.status === 400) {
+        if (this._error.isInvalidRequestError(error)) {
           // The request contains invalid/malformed parameters from the user's attributes
-          let commaSeparatedParams: string;
-          if (!this._utils.hasValue(errorMessage)) commaSeparatedParams = '';
-          else commaSeparatedParams = errorMessage.split('Invalid parameters: ')[1];
-
-          // Comma separated params should be something like username,email,firstName
-          const invalidParameters = commaSeparatedParams.split(',');
+          const invalidParameters = this._error.getInvalidParameters(error);
           return Promise.reject(invalidParameters);
-        } else if (errorResponse.status === 403) {
-          // A user with either the username or email already exists
-          let duplicateParameter = '';
+        } else if (this._error.isResourceError(error)) {
+          // A user with either the username, email, or access code already exists
+          let duplicateParameter: string;
+          const errorMessage: string = error.getMessage();
           if (this._utils.hasValue(errorMessage)) {
             if (errorMessage.indexOf('username') !== -1) duplicateParameter = 'username';
             else if (errorMessage.indexOf('email') !== -1) duplicateParameter = 'email';
             else if (errorMessage.indexOf('alpha') !== -1) duplicateParameter = 'alpha';
+            else duplicateParameter = '';
           }
 
           return Promise.reject(duplicateParameter);
-        } else return Promise.reject(errorResponse);
+        } else return Promise.reject(error);
       });
   }
 
@@ -112,7 +113,10 @@ export class UserService {
         const responseBody = successResponse.json();
         return Promise.resolve(new Account().deserialize(responseBody));
       })
-      .catch((errorResponse: Response) => Promise.reject(errorResponse));
+      .catch((errorResponse: Response) => {
+        const error = this._error.getError(errorResponse);
+        Promise.reject(error);
+      });
   }
 
   /**

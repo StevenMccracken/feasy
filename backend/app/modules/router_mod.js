@@ -27,7 +27,8 @@ const routing = function routing(_router) {
     /* eslint-disable no-param-reassign */
     _request.headers.requestId = uniqueRequestId;
     /* eslint-enable no-param-reassign */
-    _response.header('requestId', uniqueRequestId);
+    _response.set('requestId', uniqueRequestId);
+    _response.set('Access-Control-Expose-Headers', 'requestId');
 
     log(`${_request.method} ${_request.url}`, _request);
     _next();
