@@ -1,6 +1,6 @@
 <div class="row login">
   <form class="col s12 m10 offset-m1 l4 offset-l4" #loginForm="ngForm" autocomplete="off">
-    <h4 class="logo"> Feasy </h4>
+    <h4 class="logo">Feasy</h4>
     <div *ngIf="this.error">
       <div class="card error-message">
         <div class="card-content">
@@ -10,10 +10,10 @@
     </div>
     <div class="row">
       <div class="input-field col s12 m12 l12">
-        <input placeholder="Username *" id="username" type="text" name="username" class="validate" required pattern="^\w+([\.-]?\w+)*$" [(ngModel)]="_username" #username="ngModel">
+        <input placeholder="Username (required)" id="username" type="text" name="username" class="validate" required pattern="^\w+([\.-]?\w+)*$" [(ngModel)]="_username" #username="ngModel">
       </div>
       <div class="input-field col s12 m12 l12">
-        <input placeholder="Password *" id="password" type="password" name="password" class="validate" required [(ngModel)]="_password" #password="ngModel">
+        <input placeholder="Password (required)" id="password" type="password" name="password" class="validate" required [(ngModel)]="_password" #password="ngModel">
       </div>
     </div>
     <div clas="row">
@@ -23,8 +23,8 @@
       </div>
     </div>
     <div class="row">
-      <button type="submit" class="waves-effect waves-light btn btn-red col s5 offset-m5 m3" [class.disabled]="!loginForm.form.valid" (click)="signIn()">Login</button>
-      <button type="button" id="signup" class="waves-effect waves-light btn btn-red col s5 offset-s2 m3 offset-m1" routerLink="/signup">New here? Sign up now</button>
+      <button type="submit" class="waves-effect waves-light btn btn-red col s12 m5" [class.disabled]="!loginForm.form.valid" (click)="signIn()">Log in</button>
+      <button type="button" id="signup" class="waves-effect waves-light btn btn-red col s12 m7" routerLink="/signup">New? Sign up here</button>
       <img id="googleSignIn" (click)="googleSignIn()" (mouseover)='googleSignInHover()' (mouseout)="googleSignInUnhover()" [src]="googleSignInImageSource" alt="Sign in with Google"/>
     </div>
   </form>

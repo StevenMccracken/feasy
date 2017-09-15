@@ -34,6 +34,7 @@ npm-debug.log.*
 Thumbs.db
 
 # Secrets
+jwtSecret.json
 googleSecret.json
 bugsnagSecret.json
 secrets.tar

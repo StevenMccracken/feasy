@@ -10,35 +10,35 @@
     </div>
     <div class="row">
       <div class="input-field col s12 m6">
-        <input placeholder="First Name" type="text" class="validate" pattern="^[\a-zA-Z]{2,}[\s\w]*$" name="firstName" id="firstName" [(ngModel)]="user.firstName" #firstName="ngModel">
+        <input placeholder="First Name" type="text" class="validate" pattern="^[a-zA-Z]{2,}[\s\w]*$" name="firstName" id="firstName" [(ngModel)]="user.firstName" #firstName="ngModel">
       </div>
       <div class="input-field col s12 m6">
-        <input placeholder="Last Name" type="text" class="validate" pattern="^[\a-zA-Z]{2,}[\s\w]*$" name="lastName" id="lastName" [(ngModel)]="user.lastName" #lastName="ngModel">
+        <input placeholder="Last Name" type="text" class="validate" pattern="^[a-zA-Z]{2,}[\s\w]*$" name="lastName" id="lastName" [(ngModel)]="user.lastName" #lastName="ngModel">
       </div>
       <div class="input-field col s12 m12">
-        <input placeholder="Email address *" type="text" class="validate" pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$" name="email" id="email" required [(ngModel)]="user.email" #email="ngModel">
+        <input placeholder="Email address (required)" type="text" class="validate" pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$" name="email" id="email" required [(ngModel)]="user.email" #email="ngModel">
       </div>
       <div class="input-field col s12 m12">
-        <input placeholder="Username *" type="text" class="validate" pattern="^\w+([\.-]?\w+)*$" ondragover="" name="username" id="username" required [(ngModel)]="user.username" #username="ngModel">
+        <input placeholder="Username (required)" type="text" class="validate" pattern="^\w+([\.-]?\w+)*$" ondragover="" name="username" id="username" required [(ngModel)]="user.username" #username="ngModel">
       </div>
     </div>
     <div class="row">
       <div class="input-field col s12 m6">
-        <input placeholder="Password *" type="password" class="validate" name="password" id="password" required [(ngModel)]="user.password" #password="ngModel">
+        <input placeholder="Password (required)" type="password" class="validate" name="password" id="password" required [(ngModel)]="user.password" #password="ngModel">
       </div>
       <div class="input-field col s12 m6">
-        <input placeholder="Confirm password *" type="password" class="validate" name="repassword" id="repassword" [(ngModel)]="passwordValidator" required #repassword="ngModel">
+        <input placeholder="Confirm password (required)" type="password" class="validate" name="repassword" id="repassword" required [(ngModel)]="passwordValidator" #repassword="ngModel">
       </div>
     </div>
     <div clas="row">
       <div class="input-field col s12 m12 l12">
-        <input placeholder="Access code *" id="token" type="text" class="validate" pattern="^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$" name="token" [(ngModel)]="alphaCode" required #token="ngModel">
+        <input placeholder="Access code (required)" id="token" type="text" class="validate" pattern="^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$" name="token" [(ngModel)]="alphaCode" required #token="ngModel">
         <p>This access code is <b>required</b> to create an account and use our app. Once you have signed up, you do not need to enter the code to log in</p>
       </div>
     </div>
     <div class="row">
-      <button type="submit" id="signup" class="waves-effect waves-light btn btn-red col s5  m3 offset-m5" routerLink="/login">Already have an account? Return to login</button>
-      <button type="submit" id="signup" class="waves-effect waves-light btn btn-red col s5 offset-s7 m3 offset-m1" [class.disabled]="!signupForm.form.valid || (passwordValidator != user.password)" (click)="signup()">Create your account</button>
+      <button type="submit" id="signup" class="waves-effect waves-light btn btn-red col s12 m5" routerLink="/login">Return to login</button>
+      <button type="submit" id="signup" class="waves-effect waves-light btn btn-red col s12 m6" [class.disabled]="!signupForm.form.valid || (passwordValidator != user.password)" (click)="signup()">Create your account</button>
     </div>
   </form>
 </div>

@@ -1,27 +1,27 @@
-interface Serializable<T> {
-  deserialize(_input: Object): T;
-}
+// Import our files
+import { CommonUtilsService } from '../utils/common-utils.service';
 
-export class Error implements Serializable<Error> {
+export class Error {
   private id: string;
   private type: string;
   private message: string;
-  private statusCode: number;
-  private requestId: string;
   private localSource: string;
+  private customProperties: Object;
+  protected utils: CommonUtilsService;
 
-  /**
-   * Converts a JSON representing an error to an Error object
-   * @param {Object} [_input = {}] JSON containing error information
-   * @return {Error} error with the attributes from the JSON input
-   */
-  deserialize(_input: Object = {}): Error {
-    this.id = _input['id'];
-    this.type = _input['type'];
-    this.message = _input['message'];
+  constructor(localSource?: string) {
+    this.utils = new CommonUtilsService();
 
-    return this;
-  } // End deserialize()
+    // Set a unique ID for the error
+    const uuid = this.utils.uuid();
+    this.setId(uuid);
+
+    // Initialize the custom properties JSON
+    this.customProperties = {};
+
+    // Set the source of the error if it exists
+    if (this.utils.hasValue(localSource)) this.setLocalSource(localSource);
+  }
 
   getId(): string {
     return this.id;
@@ -35,17 +35,17 @@ export class Error implements Serializable<Error> {
     return this.message;
   } // End getMessage()
 
-  getStatusCode(): number {
-    return this.statusCode;
-  } // End getStatusCode()
-
-  getRequestId(): string {
-    return this.requestId;
-  } // End getStatusCode()
-
   getLocalSource(): string {
     return this.localSource;
   } // End getLocalSource()
+
+  getCustomProperties(): Object {
+    return this.customProperties;
+  } // End getCustomProperties()
+
+  getCustomProperty(_customPropertyName: string) {
+    return this.customProperties[_customPropertyName];
+  } // End getCustomProperty()
 
   setId(_id: string): void {
     this.id = _id;
@@ -59,15 +59,11 @@ export class Error implements Serializable<Error> {
     this.message = _message;
   } // End setMessage()
 
-  setStatusCode(_statusCode: number): void {
-    this.statusCode = _statusCode;
-  } // End setStatusCode()
-
-  setRequestId(_requestId: string): void {
-    this.requestId = _requestId;
-  } // End setRequestId()
-
   setLocalSource(_localSource: string): void {
     this.localSource = _localSource;
   } // End setLocalSource()
+
+  setCustomProperty(_customPropertyName: string, _value: any) {
+    this.customProperties[_customPropertyName] = _value;
+  } // End setCustomProperty()
 }

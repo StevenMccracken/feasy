@@ -1,6 +1,9 @@
 // Import angular packages
 import { Injectable } from '@angular/core';
 
+// Import 3rd-party libraries
+import { v4 as uuid } from 'uuid';
+
 /**
  * A utility class for common functions that are used in multiple components
  */
@@ -34,4 +37,12 @@ export class CommonUtilsService {
   stringify(_object: Object = {}): string {
     return JSON.stringify(_object);
   } // End stringify()
+
+  /**
+   * Generates a random UUID string
+   * @return {string} the random UUID
+   */
+  uuid(): string {
+    return uuid();
+  } // End newUuid()
 }

@@ -117,6 +117,7 @@ if (process.env.TEST) port = 3000;
 
 startupLog('Checking arguments...', true);
 const usedArgsOptions = {
+  env: false,
   port: false,
   prod: false,
   bugsnag: false,
@@ -140,6 +141,13 @@ process.argv.forEach((arg) => {
   const productionMatches = arg.match(/--prod/gi) || [];
   if (!usedArgsOptions.prod && productionMatches.length > 0) {
     startupLog('Production flag recognized. Configuring production settings...', true);
+
+    startupLog('Setting \'FEASY_ENV\' environment variable to \'prod\'...', true);
+    /* eslint-disable dot-notation */
+    process.env['FEASY_ENV'] = 'prod';
+    /* eslint-enable dot-notation */
+    usedArgsOptions.env = true;
+    startupLog('Set environment to \'prod\'');
 
     // Bugsnag error handler setup
     startupLog('Adding Bugsnag error handler...', true);

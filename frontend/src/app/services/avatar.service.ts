@@ -128,21 +128,34 @@ export class AvatarService {
     }
   }
 
+  /**
+   * Gets the default avatar image URL
+   * @return {string} the default avatar image URL
+   */
   getDefaultAvatarUrl(): string {
     return this.avatars['default'].url;
-  }
+  } // End getDefaultAvatarUrl()
 
+  /**
+   * Gets all the avatar JSONs
+   * @return {Object[]} the array of avatar JSONs
+   */
   getAllAvatars(): Object[] {
     return this.avatarsArray;
-  }
+  } // End getAllAvatars()
 
-  getAvatarUrl(_type: string = ''): string {
+  /**
+   * Gets an image URL for a specific avatar
+   * @param {string} [_name = ''] the name of the desired avatar
+   * @return {string} the image URL for the specific avatar
+   */
+  getAvatarUrl(_name: string = ''): string {
     let avatarUrl: string;
-    const avatarObject: Object = this.avatars[_type];
-    if (!this._utils.hasValue(avatarObject) || this._utils.isJsonEmpty(avatarObject)) {
+    const avatarInfo: Object = this.avatars[_name];
+    if (!this._utils.hasValue(avatarInfo) || this._utils.isJsonEmpty(avatarInfo)) {
       avatarUrl = this.avatars['default'].url;
-    } else avatarUrl = avatarObject['url'];
+    } else avatarUrl = avatarInfo['url'];
 
     return avatarUrl;
-  }
+  } // End getAvatarUrl()
 }

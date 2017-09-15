@@ -8,7 +8,7 @@ import {
 } from '@angular/http';
 import { Injectable } from '@angular/core';
 
-// Import 3rd party libraries
+// Import 3rd-party libraries
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/toPromise';
@@ -20,68 +20,72 @@ import { CommonUtilsService } from '../utils/common-utils.service';
 @Injectable()
 export class FeasyService {
   private baseUrl: string = 'http://localhost:8080'; // 'https://api.feasy-app.com';
-  private contentType_UrlEncoded: string = 'application/x-www-form-urlencoded';
-  private standardHeaders: Headers = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
+  private contentTypes: Object = {
+    json: 'application/json',
+    urlencoded: 'application/x-www-form-urlencoded',
+  };
+
+  private standardHeaders: Headers = new Headers({ 'Content-Type': this.contentTypes['urlencoded'] });
 
   constructor(private _http: Http, private _utils: CommonUtilsService) {}
 
   /**
    * Sends a POST request to the Feasy API
-   * @param {string = ''} _path the route within the API
-   * @param {Object = {}} _bodyParameters the request parameters to send with the request
-   * @param {Object = {}} _headers the header properties to send with the request
-   * @return {Promise<Response>} the API HTTP response
+   * @param {string} [_path = ''] the route within the API
+   * @param {Object} [_bodyParameters = {}] the request parameters to send with the request
+   * @param {Object} [_headers = {}] the header properties to send with the request
+   * @return {Promise<Response>} the HTTP response
    */
   post(_path: string = '', _bodyParameters: Object = {}, _headers: Object = {}): Promise<Response> {
     return this.sendRequest('post', _path, _bodyParameters, _headers)
       .then((successResponse: Response) => Promise.resolve(successResponse))
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
-  }
+  } // End post()
 
   /**
    * Sends a GET request to the Feasy API
-   * @param {string = ''} _path the route within the API
-   * @param {Object = {}} _headers the header properties to send with the request
-   * @return {Promise<Response>} the API HTTP response
+   * @param {string} [_path = ''] the route within the API
+   * @param {Object} [_headers = {}] the header properties to send with the request
+   * @return {Promise<Response>} the HTTP response
    */
   get(_path: string = '', _headers: Object = {}): Promise<Response> {
     return this.sendRequest('get', _path, {}, _headers)
       .then((successResponse: Response) => Promise.resolve(successResponse))
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
-  }
+  } // End get()
 
   /**
    * Sends a PUT request to the Feasy API
-   * @param {string = ''} _path the route within the API
-   * @param {Object = {}} _bodyParameters the request parameters to send with the request
-   * @param {Object = {}} _headers the header properties to send with the request
-   * @return {Promise<Response>} the API HTTP response
+   * @param {string} [_path = ''] the route within the API
+   * @param {Object} [_bodyParameters = {}] the request parameters to send with the request
+   * @param {Object} [_headers = {}] the header properties to send with the request
+   * @return {Promise<Response>} the HTTP response
    */
   put(_path: string = '', _bodyParameters: Object = {}, _headers: Object = {}): Promise<Response> {
     return this.sendRequest('put', _path, _bodyParameters, _headers)
       .then((successResponse: Response) => Promise.resolve(successResponse))
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
-  }
+  } // End put()
 
   /**
    * Sends a DELETE request to the Feasy API
-   * @param {string = ''} _path the route within the API
-   * @param {Object = {}} _headers the header properties to send with the request
-   * @return {Promise<Response>} the API HTTP response
+   * @param {string} [_path = ''] the route within the API
+   * @param {Object} [_headers = {}] the header properties to send with the request
+   * @return {Promise<Response>} the HTTP response
    */
   delete(_path: string = '', _headers: Object = {}): Promise<Response> {
     return this.sendRequest('delete', _path, {}, _headers)
       .then((successResponse: Response) => Promise.resolve(successResponse))
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
-  }
+  } // End delete()
 
   /**
    * Uses the Angular HTTP service to send a request to the Feasy REST API
-   * @param {string = ''} _requestType the type of HTTP request to send
-   * @param {string = ''} _path the route within the API
-   * @param {Object = {}} _bodyParameters the request parameters to send with the request
-   * @param {Object = {}} _headers the header properties to send with the request
-   * @return {Promise<Response>} the API HTTP response
+   * @param {string} [_requestType = ''] the type of HTTP request to send
+   * @param {string} [_path = ''] the route within the API
+   * @param {Object} [_bodyParameters = {}] the request parameters to send with the request
+   * @param {Object} [_headers = {}] the header properties to send with the request
+   * @return {Promise<Response>} the HTTP response
    */
   private sendRequest(
     _requestType: string = '',
@@ -99,7 +103,7 @@ export class FeasyService {
     let requestHeaders: Headers;
     if (this._utils.isJsonEmpty(_headers)) requestHeaders = this.standardHeaders;
     else {
-      requestHeaders = new Headers({ 'Content-Type': this.contentType_UrlEncoded });
+      requestHeaders = new Headers({ 'Content-Type': this.contentTypes['urlencoded'] });
       for (const headerKey in _headers) {
         if (_headers.hasOwnProperty(headerKey)) {
           requestHeaders.append(headerKey, _headers[headerKey]);
@@ -130,24 +134,25 @@ export class FeasyService {
     }
 
     // Send request
-    return httpRequest
+    const promise = httpRequest
       .then((successResponse: Response) => Promise.resolve(successResponse))
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
-  }
+
+    return promise;
+  } // End sendRequest()
 
   /**
    * Builds the full API URL to send a request to
-   * @param {string = ''} _path the route within the API
+   * @param {string} [_path = ''] the route within the API
    * @return {string} the fully-qualified API route to send a request to
    */
   private buildRequestUrl(_path: string = ''): string {
     return _path.length === 0 ? this.baseUrl : `${this.baseUrl}${_path}`;
-  }
+  } // End buildRequestUrl()
 
   /**
-   * Creates a request search parameters object to send
-   * for an application/x-www-form-urlencoded request
-   * @param {Object = {}} _parametersJson the request parameters to send with the request
+   * Creates a request search parameters object to send for an application/x-www-form-urlencoded request
+   * @param {Object} [_parametersJson = {}] the request parameters to send with the request
    * @return {URLSearchParams} the request search parameters
    */
   private buildSearchParameters(_parametersJson: Object = {}): URLSearchParams {
@@ -165,5 +170,5 @@ export class FeasyService {
     }
 
     return searchParameters;
-  }
+  } // End buildSearchParameters()
 }
