@@ -16,6 +16,10 @@
   1. [Email me](mailto:stevenamccracken@gmail.com) requesting access for our project's Bugsnag API
   2. I will email you a file called bugsnagSecret.json
   3. __Do not rename the file__. Place it in the `/backend/config` folder
+3. JSON Web Token secret
+  1. [Email me](mailto:stevenamccracken@gmail.com) requesting access for our project's JWT secret
+  2. I will email you a file called jwtSecret.json
+  3. __Do not rename the file__. Place it in the `/backend/config` folder
 
 ## Run
 1. Run _mongod_ in one tab/window to start the database server instance locally
