@@ -20,6 +20,12 @@
 		694FABFA1F6D943900DFF897 /* Feasy.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 694FABCC1F6B63A300DFF897 /* Feasy.xcdatamodeld */; };
 		694FABFC1F6DB94A00DFF897 /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 694FABFB1F6DB94A00DFF897 /* UserService.swift */; };
 		694FABFD1F6DB94A00DFF897 /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 694FABFB1F6DB94A00DFF897 /* UserService.swift */; };
+		69D6ECAC1F6EECA3009738A6 /* LoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D6ECAB1F6EECA3009738A6 /* LoginManager.swift */; };
+		69D6ECB01F6EF587009738A6 /* StorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D6ECAF1F6EF587009738A6 /* StorageManager.swift */; };
+		69D6ECB11F6F0030009738A6 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 694FABC71F6B63A300DFF897 /* ViewController.swift */; };
+		69D6ECB21F6F0033009738A6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 694FABC51F6B63A300DFF897 /* AppDelegate.swift */; };
+		69D6ECB31F6F0036009738A6 /* LoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D6ECAB1F6EECA3009738A6 /* LoginManager.swift */; };
+		69D6ECB41F6F0039009738A6 /* StorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D6ECAF1F6EF587009738A6 /* StorageManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,6 +62,8 @@
 		694FABEA1F6B63A300DFF897 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		694FABF71F6C67CC00DFF897 /* FeasyApi.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeasyApi.swift; sourceTree = "<group>"; };
 		694FABFB1F6DB94A00DFF897 /* UserService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
+		69D6ECAB1F6EECA3009738A6 /* LoginManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginManager.swift; sourceTree = "<group>"; };
+		69D6ECAF1F6EF587009738A6 /* StorageManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StorageManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +114,7 @@
 		694FABC41F6B63A300DFF897 /* Feasy */ = {
 			isa = PBXGroup;
 			children = (
+				69D6ECB51F6F00D8009738A6 /* Managers */,
 				694FABF61F6C676300DFF897 /* Services */,
 				694FABC51F6B63A300DFF897 /* AppDelegate.swift */,
 				694FABC71F6B63A300DFF897 /* ViewController.swift */,
@@ -143,6 +152,15 @@
 				694FABFB1F6DB94A00DFF897 /* UserService.swift */,
 			);
 			name = Services;
+			sourceTree = "<group>";
+		};
+		69D6ECB51F6F00D8009738A6 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				69D6ECAB1F6EECA3009738A6 /* LoginManager.swift */,
+				69D6ECAF1F6EF587009738A6 /* StorageManager.swift */,
+			);
+			name = Managers;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -283,10 +301,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				694FABC81F6B63A300DFF897 /* ViewController.swift in Sources */,
+				69D6ECB01F6EF587009738A6 /* StorageManager.swift in Sources */,
 				694FABFC1F6DB94A00DFF897 /* UserService.swift in Sources */,
 				694FABCE1F6B63A300DFF897 /* Feasy.xcdatamodeld in Sources */,
 				694FABC61F6B63A300DFF897 /* AppDelegate.swift in Sources */,
 				694FABF81F6C67CC00DFF897 /* FeasyApi.swift in Sources */,
+				69D6ECAC1F6EECA3009738A6 /* LoginManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -294,8 +314,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				69D6ECB21F6F0033009738A6 /* AppDelegate.swift in Sources */,
+				69D6ECB11F6F0030009738A6 /* ViewController.swift in Sources */,
+				69D6ECB31F6F0036009738A6 /* LoginManager.swift in Sources */,
 				694FABFD1F6DB94A00DFF897 /* UserService.swift in Sources */,
 				694FABDE1F6B63A300DFF897 /* FeasyTests.swift in Sources */,
+				69D6ECB41F6F0039009738A6 /* StorageManager.swift in Sources */,
 				694FABFA1F6D943900DFF897 /* Feasy.xcdatamodeld in Sources */,
 				694FABF91F6C67CC00DFF897 /* FeasyApi.swift in Sources */,
 			);
@@ -542,6 +566,7 @@
 				694FABEF1F6B63A300DFF897 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		694FABF01F6B63A300DFF897 /* Build configuration list for PBXNativeTarget "FeasyTests" */ = {
 			isa = XCConfigurationList;
@@ -550,6 +575,7 @@
 				694FABF21F6B63A300DFF897 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		694FABF31F6B63A300DFF897 /* Build configuration list for PBXNativeTarget "FeasyUITests" */ = {
 			isa = XCConfigurationList;
@@ -558,6 +584,7 @@
 				694FABF51F6B63A300DFF897 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 

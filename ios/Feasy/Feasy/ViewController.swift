@@ -10,13 +10,14 @@ import UIKit
 
 class ViewController: UIViewController {
     
-    let userService = UserService()
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
 
-        userService.login() { response, json in
+        LoginManager.setUsername(username: "test")
+        LoginManager.setPassword(password: "test")
+        
+        UserService.login() { response, json in
             print(json)
         }
     }

@@ -9,23 +9,38 @@
 import Foundation
 
 class FeasyApi {
-    let apiPath = "http://localhost:8080" //"https://api.feasy-app.com"
     
-    func post(path: String, parameters: [String: Any], completion: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
+    static let apiUrl = "http://localhost:8080" //"https://api.feasy-app.com"
+    
+    static func post(path: String, parameters: [String: Any], completion: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
         let postRequest: URLRequest = self.createPostRequest(path: path, requestParameters: parameters)
         self.sendRequest(request: postRequest) { response, json in
             completion(response, json)
         }
     }
     
-    func get(path: String, completion: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
+    static func get(path: String, completion: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
         let getRequest: URLRequest = self.createRequest(path: path)
         self.sendRequest(request: getRequest) { response, json in
             completion(response, json)
         }
     }
     
-    private func createPostRequest(path: String, requestParameters: [String: Any]) -> URLRequest {
+    static func put(path: String, parameters: [String: Any], completion: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
+        let putRequest: URLRequest = self.createPutRequest(path: path, requestParameters: parameters)
+        self.sendRequest(request: putRequest) { response, json in
+            completion(response, json)
+        }
+    }
+    
+    static func delete(path: String, parameters: [String: Any], completion: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
+        let deleteRequest: URLRequest = self.createDeleteRequest(path: path, requestParameters: parameters)
+        self.sendRequest(request: deleteRequest) { response, json in
+            completion(response, json)
+        }
+    }
+    
+    static func createPostRequest(path: String, requestParameters: [String: Any]) -> URLRequest {
         var postRequest: URLRequest = self.createRequest(path: path)
         postRequest.httpMethod = "POST"
         
@@ -35,29 +50,49 @@ class FeasyApi {
         return postRequest
     }
     
-    private func createGetRequest(path: String) -> URLRequest {
+    static func createGetRequest(path: String) -> URLRequest {
         var getRequest: URLRequest = self.createRequest(path: path)
         getRequest.httpMethod = "GET"
         
         return getRequest
     }
     
-    private func createRequest(path: String) -> URLRequest {
+    static func createPutRequest(path: String, requestParameters: [String: Any]) -> URLRequest {
+        var postRequest: URLRequest = self.createRequest(path: path)
+        postRequest.httpMethod = "PUT"
+        
+        let parameterString: String = self.urlEncodedString(fromParams: requestParameters)
+        postRequest.httpBody = parameterString.data(using: .utf8)
+        
+        return postRequest
+    }
+    
+    static func createDeleteRequest(path: String, requestParameters: [String: Any]) -> URLRequest {
+        var postRequest: URLRequest = self.createRequest(path: path)
+        postRequest.httpMethod = "DELETE"
+        
+        let parameterString: String = self.urlEncodedString(fromParams: requestParameters)
+        postRequest.httpBody = parameterString.data(using: .utf8)
+        
+        return postRequest
+    }
+    
+    private static func createRequest(path: String) -> URLRequest {
         // Create the URL request with the given path
-        let urlString: String = "\(self.apiPath)\(path)"
+        let urlString: String = "\(apiUrl)\(path)"
         let url: URL = URL(string: urlString)!
         var request: URLRequest = URLRequest(url: url)
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         
         // Add the token to the request
-        if let token = UserDefaults.standard.value(forKey: "token") {
-            request.addValue(token as! String, forHTTPHeaderField: "Authorization")
+        if let token = LoginManager.getToken() {
+            request.addValue(token, forHTTPHeaderField: "Authorization")
         }
         
         return request
     }
     
-    func sendRequest(request: URLRequest, completion: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
+    static func sendRequest(request: URLRequest, completion: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             var httpResponse = HTTPURLResponse()
             var responseJson = [String: Any]()
@@ -99,7 +134,7 @@ class FeasyApi {
         task.resume()
     }
     
-    private func urlEncodedString(fromParams: [String: Any]) -> String {
+    private static func urlEncodedString(fromParams: [String: Any]) -> String {
         var paramsAndValues: [String] = []
         for (key, value) in fromParams {
             let paramAndValue: String = "\(key)=\(value)"
