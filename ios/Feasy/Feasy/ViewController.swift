@@ -9,24 +9,24 @@
 import UIKit
 
 class ViewController: UIViewController {
+  
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    // Do any additional setup after loading the view, typically from a nib.
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-
-        LoginManager.setUsername(username: "test")
-        LoginManager.setPassword(password: "test")
-        
-        UserService.login() { response, json in
-            print(json)
-        }
+    LoginManager.setUsername(username: "test")
+    LoginManager.setPassword(password: "test")
+    
+    UserService.login() { response, json in
+      print(json)
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-
-
+  }
+  
+  override func didReceiveMemoryWarning() {
+    super.didReceiveMemoryWarning()
+    // Dispose of any resources that can be recreated.
+  }
+  
+  
 }
 

@@ -9,20 +9,20 @@
 import Foundation
 
 class UserService {
-    
-    static func login(resolve: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
-        let username: String = LoginManager.getUsername() ?? ""
-        let password: String = LoginManager.getPassword() ?? ""
-        let loginParams: [String: String] = ["username": username, "password": password]
-        FeasyApi.post(path: "/login", parameters: loginParams) { httpResponse, responseBodyJson in
-            resolve(httpResponse, responseBodyJson)
-        }
+  
+  static func login(resolve: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
+    let username: String = LoginManager.getUsername() ?? ""
+    let password: String = LoginManager.getPassword() ?? ""
+    let loginParams = ["username": username, "password": password]
+    FeasyApi.post(path: "/login", parameters: loginParams) { httpResponse, responseBodyJson in
+      resolve(httpResponse, responseBodyJson)
     }
-    
-    static func get(username: String, resolve: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
-        let getPath: String = "/users/\(username)"
-        FeasyApi.get(path: getPath) { httpResponse, responseBodyJson in
-            resolve(httpResponse, responseBodyJson)
-        }
+  }
+  
+  static func get(username: String, resolve: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
+    let getPath = "/users/\(username)"
+    FeasyApi.get(path: getPath) { httpResponse, responseBodyJson in
+      resolve(httpResponse, responseBodyJson)
     }
+  }
 }
