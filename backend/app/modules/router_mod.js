@@ -93,6 +93,12 @@ const routing = function routing(_router) {
       .catch(error => _response.json(error));
   });
 
+  router.route('/password/reset').post((_request, _response) => {
+    MIDDLEWARE.resetPassword(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
+
   /**
    * The POST route for creating a user. Sends an error
    * JSON or a JSON of the created user and an authentication

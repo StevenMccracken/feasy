@@ -501,6 +501,70 @@ const authenticateGoogle = function authenticateGoogle(_request, _response) {
   }); // End return promise
 }; // End authenticateGoogle()
 
+const resetPassword = function resetPassword(_request, _response) {
+  const SOURCE = 'resetPassword()';
+  log(SOURCE, _request);
+
+  const promise = new Promise((resolve, reject) => {
+    // Check request parameters
+    const invalidParams = [];
+    if (!VALIDATE.isValidEmail(_request.body.email)) invalidParams.push('email');
+
+    if (invalidParams.length > 0) {
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        `Invalid parameters: ${invalidParams.join()}`
+      );
+
+      reject(errorJson);
+    } else {
+      // Request parameters are valid. Check to see if a user with that email exists
+      USERS.getByEmail(_request.body.email, false)
+        .then((userInfo) => {
+          if (!UTIL.hasValue(userInfo)) {
+            // User with that email does not exist
+            const errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.RESOURCE_DNE_ERROR,
+              'A user with that email does not exist'
+            );
+
+            reject(errorJson);
+          } else {
+            const uuid = UTIL.newUuid();
+            AUTH.hash(uuid)
+              .then((randomHash) => {
+                CODES.createForgottenPasswordCode(randomHash)
+                  .then((code) => {
+                    const uniqueUrl = `https://www.feasy-app.com/#/passwordreset?code=${code.uuid}`;
+                    resolve(uniqueUrl);
+                  }) // End then(code)
+                  .catch((createCodeError) => {
+                    const errorJson = ERROR.codeError(SOURCE, _request, _response, createCodeError);
+                    reject(errorJson);
+                  }); // End CODES.createForgottenPasswordCode()
+              }) // End then(randomHash)
+              .catch((hashError) => {
+                const errorJson = ERROR.bcryptError(SOURCE, _request, _response, hashError);
+                reject(errorJson);
+              }); // End AUTH.hash()
+          }
+        }) // End then(userInfo)
+        .catch((getUserError) => {
+          const errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
+          reject(errorJson);
+        }); // End USERS.getByEmail()
+    }
+  }); // End create promise
+
+  return promise;
+}; // End resetPassword()
+
 /**
  * createUser - Adds a new user to the database and sends the client a web token
  * @param {Object} _request the HTTP request
@@ -2272,6 +2336,7 @@ module.exports = {
   getGoogleAuthUrl,
   exchangeGoogleAuthCode,
   authenticateGoogle,
+  resetPassword,
   createUser,
   retrieveUser,
   updateUserUsername,

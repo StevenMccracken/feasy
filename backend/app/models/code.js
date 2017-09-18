@@ -18,6 +18,11 @@ const CodeSchema = MONGOOSE.Schema({
     required: true,
     default: false,
   },
+  expirationDate: {
+    type: Date,
+    required: true,
+    default: Date.now,
+  },
 });
 
 module.exports = MONGOOSE.model('Code', CodeSchema);

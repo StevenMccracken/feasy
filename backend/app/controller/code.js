@@ -15,6 +15,26 @@ function log(_message) {
   LOG.log('Code Controller', _message);
 }
 
+const createForgottenPasswordCode = function createForgottenPasswordCode(_code) {
+  const SOURCE = 'createForgottenPasswordCode()';
+  log(SOURCE);
+
+  const promise = new Promise((resolve, reject) => {
+    const newCode = new CODE();
+
+    newCode.uuid = _code;
+    newCode.used = false;
+    const oneHourFromNow = (new Date()).getTime() + 3600000;
+    newCode.expirationDate = new Date(oneHourFromNow);
+
+    newCode.save()
+      .then(() => resolve(newCode)) // End then()
+      .catch(saveCodeError => reject(saveCodeError)); // End newCode.save()
+  }); // End create promise
+
+  return promise;
+}; // End createForgottenPasswordCode()
+
 /**
  * getByUuid - Retrieves a code by it's uuid
  * @param {String} _uuid the desired codes's uuid
@@ -70,6 +90,7 @@ const updateAttribute = function updateAttribute(_code, _attribute, _newValue) {
 }; // End updateAttribute()
 
 module.exports = {
+  createForgottenPasswordCode,
   getByUuid,
   update,
   updateAttribute,

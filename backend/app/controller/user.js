@@ -87,7 +87,7 @@ const getAllByAttribute = function getAllByAttribute(_attribute, _value, _projec
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
-    USER.findOne({ [_attribute]: _value }, _projection)
+    USER.find({ [_attribute]: _value }, _projection)
       .then(users => resolve(users)) // End then(users)
       .catch(findError => reject(findError)); // End USER.findOne()
   }); // End return promise
@@ -114,6 +114,23 @@ const getByUsername = function getByUsername(_username, _includePassword) {
       .catch(findError => reject(findError)); // End USER.findOne()
   }); // End return promise
 }; // End getByUsername()
+
+const getByEmail = function getByEmail(_email, _includePassword) {
+  const SOURCE = 'getByEmail()';
+  log(SOURCE);
+
+  const promise = new Promise((resolve, reject) => {
+    let projection;
+    if (_includePassword) projection = '_id googleId username password email firstName lastName avatar';
+    else projection = '_id googleId username email firstName lastName avatar';
+
+    USER.findOne({ email: _email }, projection)
+      .then(userInfo => resolve(userInfo)) // End then(userInfo)
+      .catch(findError => reject(findError)); // End USER.findOne()
+  }); // End create promise
+
+  return promise;
+}; // End getByEmail()
 
 /**
  * getByGoogleId - Retrieves a user by their google ID
@@ -236,6 +253,7 @@ module.exports = {
   getAllByAttribute,
   getAttribute,
   getByUsername,
+  getByEmail,
   getByGoogleId,
   update,
   updateAttribute,
