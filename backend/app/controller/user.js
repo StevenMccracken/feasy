@@ -94,6 +94,30 @@ const getAllByAttribute = function getAllByAttribute(_attribute, _value, _projec
 }; // End getAllByAttribute()
 
 /**
+ * getById - Retrieves a user by their id
+ * @param {String} _id the id of the user
+ * @param {Boolean} _includePassword includes or excludes
+ * the password with the user information from the database
+ * @return {Promise<User>} the Mongoose object
+ */
+const getById = function getByEmail(_id, _includePassword) {
+  const SOURCE = 'getById()';
+  log(SOURCE);
+
+  const promise = new Promise((resolve, reject) => {
+    let projection;
+    if (_includePassword) projection = '_id googleId username password email firstName lastName avatar';
+    else projection = '_id googleId username email firstName lastName avatar';
+
+    USER.findById(_id, projection)
+      .then(userInfo => resolve(userInfo)) // End then(userInfo)
+      .catch(findError => reject(findError)); // End USER.findOne()
+  }); // End create promise
+
+  return promise;
+}; // End getById()
+
+/**
  * getByUsername - Retrieves a user by their username
  * @param {String} _username the username of the user
  * @param {Boolean} _includePassword includes or excludes
@@ -115,6 +139,13 @@ const getByUsername = function getByUsername(_username, _includePassword) {
   }); // End return promise
 }; // End getByUsername()
 
+/**
+ * getByEmail - Retrieves a user by their email
+ * @param {String} _email the email of the user
+ * @param {Boolean} _includePassword includes or excludes
+ * the password with the user information from the database
+ * @return {Promise<User>} the Mongoose object
+ */
 const getByEmail = function getByEmail(_email, _includePassword) {
   const SOURCE = 'getByEmail()';
   log(SOURCE);
@@ -252,6 +283,7 @@ module.exports = {
   createGoogle,
   getAllByAttribute,
   getAttribute,
+  getById,
   getByUsername,
   getByEmail,
   getByGoogleId,

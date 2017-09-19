@@ -5,7 +5,7 @@
 const LOG = require('../modules/log_mod');
 const CODE = require('../models/code.js');
 
-const UNIVERSAL_PROJECTION = '_id code used';
+const UNIVERSAL_PROJECTION = '_id code used expirationDate userId';
 
 /**
  * log - Logs a message to the server console
@@ -15,7 +15,13 @@ function log(_message) {
   LOG.log('Code Controller', _message);
 }
 
-const createForgottenPasswordCode = function createForgottenPasswordCode(_code) {
+/**
+ * Creates a Code with an expiration date of 1 hour from the current date
+ * @param {User} [_userInfo = {}] the Mongoose object of the user
+ * @param {String} _code a unique identifier for the Code object
+ * @return {Promise<Code>} the Mongoose object
+ */
+const createForgottenPasswordCode = function createForgottenPasswordCode(_userInfo = {}, _code) {
   const SOURCE = 'createForgottenPasswordCode()';
   log(SOURCE);
 
@@ -24,6 +30,7 @@ const createForgottenPasswordCode = function createForgottenPasswordCode(_code) 
 
     newCode.uuid = _code;
     newCode.used = false;
+    newCode.userId = _userInfo._id;
     const oneHourFromNow = (new Date()).getTime() + 3600000;
     newCode.expirationDate = new Date(oneHourFromNow);
 

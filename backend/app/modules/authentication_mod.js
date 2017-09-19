@@ -81,6 +81,11 @@ const generateToken = function generateToken(_userInfo) {
   return JWT.sign(_userInfo, JWT_CONFIG.secret, { expiresIn: STANDARD_TOKEN_EXPIRATION_TIME });
 }; // End generateToken()
 
+/**
+ * Performs a one-way salted hash on a given value
+ * @param {String} _value the value to hash
+ * @return {Promise<String>} the hashed value
+ */
 const hash = function hash(_value) {
   const SOURCE = 'hash()';
   log(SOURCE);
