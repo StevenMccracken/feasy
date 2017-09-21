@@ -95,6 +95,41 @@ const routing = function routing(_router) {
   });
 
   /**
+   * The POST route for initiating the process of resetting a
+   * user's password. Sends an error JSON or a JSON indicating
+   * that a password reset link has been sent via email. This
+   * route does not require token authentication
+   */
+  router.route('/password/reset').post((_request, _response) => {
+    MIDDLEWARE.startPasswordReset(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
+
+  /**
+   * The GET route for retrieving details about a password reset
+   * process, like the username of the user trying to reset their
+   * password. Sends an error JSON or a JSON with the user's
+   * username. This route does not require token authentication
+   */
+  router.route('/password/reset/details').get((_request, _response) => {
+    MIDDLEWARE.getPasswordResetDetails(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
+
+  /**
+   * The POST route for updating a user's password without providing
+   * their existing password. Sends an error JSON or a JSON web token
+   * for authentication. This route does not require token authentication
+   */
+  router.route('/password/reset/callback').post((_request, _response) => {
+    MIDDLEWARE.finishPasswordReset(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
+
+  /**
    * The POST route for creating a user. Sends an error
    * JSON or a JSON of the created user and an authentication
    * token. This route does not require token authentication
