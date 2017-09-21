@@ -6,7 +6,7 @@ import {
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 
-// Import 3rd party libraries
+// Import 3rd-party libraries
 import { Subscription } from 'rxjs/Subscription';
 
 // Import our files
@@ -52,6 +52,12 @@ export class LayoutComponent implements OnInit {
   standardAvatarErrorMessage: string = 'We are unable to update your avatar at this time. Please contact us at feasyresponse@gmail.com to fix this issue';
   /* tslint:enable max-line-length */
 
+  loadNLearnError: boolean = false;
+  loadNLearnErrorMessage: string;
+  /* tslint:disable max-line-length */
+  standardLoadNLearnErrorMessage: string = 'We are unable to create those assignments at this time. Please contact us at feasyresponse@gmail.com to fix this issue';
+  /* tslint:enable max-line-length */
+
   constructor(
     private _router: Router,
     private _location: Location,
@@ -65,22 +71,26 @@ export class LayoutComponent implements OnInit {
   ) {}
 
   sendMessage(): void {
-    // send message to subscribers via observable subject
-    this._messageService.sendMessage('changed');
-  }
+    // Send message to subscribers via observable subject
+    this._messageService.sendMessage('layout.component', 'changed');
+  } // End sendMessage()
 
   clearMessage(): void {
     // clear message
     this._messageService.clearMessage();
-  }
+  } // End clearMessage()
 
   ngOnInit() {
     this.taskArray[0] = new Assignment();
-    $('#button-slide').sideNav();
-    if (this._storage.isValidItem('qsColor')) this.quickSettingColors = this._storage.getItem('qsColor') === 'true';
-    if (this._storage.isValidItem('qsDescription')) this.quickSettingDescription = this._storage.getItem('qsDescription') === 'true';
-    if (this._storage.isValidItem('qsLabel')) this.quickSettingLabel = this._storage.getItem('qsLabel') === 'true';
 
+    // Initialize the quick settings
+    this.quickSettingColors = this._storage.getItem('qsColor') === 'true';
+    this.quickSettingDescription = this._storage.getItem('qsDescription') === 'true';
+    this.quickSettingLabel = this._storage.getItem('qsLabel') === 'true';
+
+    $('#button-slide').sideNav();
+
+    // Save the username to the variable to use it inside the service call closure
     const currentUser: string = this._storage.getItem('currentUser');
     this._userService.get(currentUser)
       .then((userAccount: Account) => {
@@ -90,26 +100,29 @@ export class LayoutComponent implements OnInit {
         } else this.firstName = this.user.username;
 
         this.avatarUrl = this._avatarService.getAvatarUrl(this.user.avatar);
-      })
+      }) // End then(userAccount)
       .catch((getError: Response) => {
         if (getError.status === 400 || getError.status === 403) {
           this.firstName = 'User';
           console.error(getError);
         } else this.handleError(getError);
-      });
-  }
+      }); // End this._userService.get()
+  } // End ngOnInit()
 
   logout(): void {
+    // Clear the local storage information that allows for auto-login
     this._storage.deleteItem('token');
     this._storage.deleteItem('currentUser');
+
+    // Route back to the login page
     $('#button-slide').sideNav('destroy');
     this._router.navigate(['login']);
-  }
+  } // End logout()
 
   closeNav(link: string): void {
     $('#button-slide').sideNav('hide');
     if (link === '/main/calendar') this._router.navigate([link]);
-  }
+  } // End closeNav()
 
   toggleSettings(_type: string): void {
     switch (_type) {
@@ -125,16 +138,16 @@ export class LayoutComponent implements OnInit {
       default:
         console.log('Can\'t toggle unknown settings type \'%s\'', _type);
     }
-  }
+  } // End toggleSettings()
 
   addMore(): void {
     const size = this.taskArray.length;
     this.taskArray[size] = new Assignment();
-  }
+  } // End addMore()
 
   deleteCurrent(i: number): void {
     this.taskArray.splice(i, 1);
-  }
+  } // End deleteCurrent()
 
   changeAvatar(): void {
     // Populate all the possible avatars
@@ -146,7 +159,7 @@ export class LayoutComponent implements OnInit {
 
     // Open the avatar selction screen
     $('#avatarSelect').modal('open');
-  }
+  } // End changeAvatar()
 
   updateAvatar(_url: string, _type: string): void {
     if (_url === this.avatarUrl) {
@@ -162,7 +175,7 @@ export class LayoutComponent implements OnInit {
         .then(() => {
           this.avatarUrl = _url;
           $('#avatarSelect').modal('close');
-        })
+        }) // End then()
         .catch((updateError: any) => {
           // Scroll to top of modal to make error message visible
           $('#avatarSelect').scrollTop(0);
@@ -176,9 +189,9 @@ export class LayoutComponent implements OnInit {
             this.avatarError = true;
             this.avatarErrorMessage = this.standardAvatarErrorMessage;
           }
-        });
+        }); // End this._userService.updateAvatar()
     }
-  }
+  } // End updateAvatar()
 
   /**
    * Handles error that comes during an update API call
@@ -200,25 +213,52 @@ export class LayoutComponent implements OnInit {
         console.error('New %s was invalid in some way', _attribute);
         this.avatarErrorMessage = this.standardAvatarErrorMessage;
     }
-  }
+  } // End handleUpdateError()
 
   openLoadLearn(): void {
     $('#loadLearn').modal('open');
-  }
+  } // End openLoadLearn()
 
   addAllTask(): void {
-    $('#loadLearn').modal('close');
-    this._assignmentService.multipleCreate(this.taskArray)
-      .then((res: Assignment[]) => {
+    // Clear any previous error messages
+    this.loadNLearnError = false;
+    this.loadNLearnErrorMessage = '';
+
+    // Correct the date format for the assignments from the form
+    const assignments: Assignment[] = this.taskArray.map((assignment) => {
+      // Set the time to be at 12 pm on the given day for the due date
+      const unixMillis = Date.parse(String(assignment.dueDate));
+      assignment.dueDate = new Date(unixMillis + 43200000);
+
+      return assignment;
+    });
+
+    // Create the assignments all at once
+    this._assignmentService.bulkCreate(assignments)
+      .then((createdAssignments: Assignment[]) => {
+        $('#loadLearn').modal('close');
+
+        // Clear any previous messages for the message service
         this.clearMessage();
-        this.sendMessage();
-        this._loadLearn.setTaskArray(this.taskArray);
+
+        // Add the saved assignments to the load n learn service
+        this._loadLearn.setTaskArray(createdAssignments);
+
+        // Reset the task array
         this.taskArray = [];
         this.taskArray[0] = new Assignment();
-      })
-      .catch((err: any) => {
-        console.error(err);
-      });
+
+        // Notify all listeners that the load n learn service has the created assignments
+        this.sendMessage();
+
+        // Navigate back to the calendar component
+        this.closeNav('/main/calendar');
+      }) // End then(createdAssignments)
+      .catch((bulkCreateError: any) => {
+        this.loadNLearnError = true;
+        this.loadNLearnErrorMessage = this.standardLoadNLearnErrorMessage;
+        console.error(bulkCreateError);
+      }); // End this._assignmentService.bulkCreate()
   }
 
   /**
@@ -241,9 +281,9 @@ export class LayoutComponent implements OnInit {
       // API error, server could be down/crashed
       console.error(_error);
     }
-  }
+  } // End handleError()
 
   debug(): void {
     console.log(this._storage.getItem('qsDescription'));
-  }
+  } // End debug()
 }

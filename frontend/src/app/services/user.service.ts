@@ -6,7 +6,7 @@ import {
 import { Router } from '@angular/router';
 import { Response } from '@angular/http';
 
-// Import 3rd party libraries
+// Import 3rd-party libraries
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/toPromise';
@@ -16,13 +16,18 @@ import { GoogleAuthService } from 'ng-gapi/lib/GoogleAuthService';
 import { User } from '../objects/user';
 import { Account } from '../objects/account';
 import { FeasyService } from './feasy.service';
+import { ErrorService } from './error.service';
+import { LocalError } from '../objects/local-error';
+import { RemoteError } from '../objects/remote-error';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
+import { InvalidRequestError } from '../objects/invalid-request-error';
 
 @Injectable()
 export class UserService {
   constructor(
     private _router: Router,
+    private _error: ErrorService,
     private _feasyApi: FeasyService,
     private _utils: CommonUtilsService,
     private _storage: LocalStorageService,
@@ -31,8 +36,8 @@ export class UserService {
 
   /**
    * Sends a request to create a new user
-   * @param {User = new User()} _user the user object
-   * @param {string} _alphaCode the special access alpha code
+   * @param {User} [_user = new User()] the user object
+   * @param {string} [_alphaCode = ''] the special access alpha code
    * @return {Promise<string>} the authentication token for the newly created user
    */
   create(_user: User = new User(), _alphaCode: string = ''): Promise<string> {
@@ -57,43 +62,52 @@ export class UserService {
       requestParams['avatar'] = _user.avatar;
     }
 
-    return this._feasyApi.post(createUserPath, requestParams)
+    const promise = this._feasyApi.post(createUserPath, requestParams)
       .then((successResponse: Response) => {
         // Extract the token from the response body
         const responseBody = successResponse.json();
         const token: string = responseBody && responseBody.success && responseBody.success.token;
-        return Promise.resolve(this._utils.hasValue(token) ? token : null);
-      })
+
+        if (this._utils.hasValue(token)) return Promise.resolve(token);
+        else {
+          const error: LocalError = new LocalError('user.service.create');
+          error.setType('null_token');
+          error.setMessage('No token was returned when creating the user succeeded');
+
+          return Promise.reject(error);
+        }
+      }) // End then(successResponse)
       .catch((errorResponse: Response) => {
-        const responseBody = errorResponse.json();
-        const errorMessage: string = responseBody && responseBody.error && responseBody.error.message;
+        if (errorResponse instanceof Response) {
+          const error: RemoteError = this._error.getRemoteError(errorResponse);
 
-        /*
-         * Return detailed errors for invalid request error or
-         * resource errors. Otherwise, return the response object
-         */
-        if (errorResponse.status === 400) {
-          // The request contains invalid/malformed parameters from the user's attributes
-          let commaSeparatedParams: string;
-          if (!this._utils.hasValue(errorMessage)) commaSeparatedParams = '';
-          else commaSeparatedParams = errorMessage.split('Invalid parameters: ')[1];
+          if (this._error.isInvalidRequestError(error)) {
+            // The request contains invalid/malformed parameters from the user's attributes
+            const invalidParameters: string[] = this._error.getInvalidParameters(error);
 
-          // Comma separated params should be something like username,email,firstName
-          const invalidParameters = commaSeparatedParams.split(',');
-          return Promise.reject(invalidParameters);
-        } else if (errorResponse.status === 403) {
-          // A user with either the username or email already exists
-          let duplicateParameter = '';
-          if (this._utils.hasValue(errorMessage)) {
-            if (errorMessage.indexOf('username') !== -1) duplicateParameter = 'username';
-            else if (errorMessage.indexOf('email') !== -1) duplicateParameter = 'email';
-            else if (errorMessage.indexOf('alpha') !== -1) duplicateParameter = 'alpha';
+            // Add the invalid parameters to the error object
+            error.setCustomProperty('invalidParameters', invalidParameters);
+          } else if (this._error.isResourceError(error)) {
+            // A user with either the username, email, or access code already exists
+            let duplicateParameter: string;
+            const errorMessage: string = error.getMessage();
+            if (this._utils.hasValue(errorMessage)) {
+              if (errorMessage.indexOf('username') !== -1) duplicateParameter = 'username';
+              else if (errorMessage.indexOf('email') !== -1) duplicateParameter = 'email';
+              else if (errorMessage.indexOf('alpha') !== -1) duplicateParameter = 'alphaCode';
+              else duplicateParameter = '';
+            }
+
+            // Add the duplicate parameter to the error object
+            error.setCustomProperty('duplicateParameter', duplicateParameter);
           }
 
-          return Promise.reject(duplicateParameter);
+          return Promise.reject(error);
         } else return Promise.reject(errorResponse);
-      });
-  }
+      }); // End this._feasyApi.post()
+
+    return promise;
+  } // End create()
 
   /**
    * Sends a request to get a user's profile
@@ -107,13 +121,21 @@ export class UserService {
     const headersOptions = { Authorization: token };
 
     // Send request
-    return this._feasyApi.get(getUserPath, headersOptions)
+    const promise = this._feasyApi.get(getUserPath, headersOptions)
       .then((successResponse: Response) => {
         const responseBody = successResponse.json();
-        return Promise.resolve(new Account().deserialize(responseBody));
-      })
-      .catch((errorResponse: Response) => Promise.reject(errorResponse));
-  }
+        const userAccount = new Account().deserialize(responseBody);
+        return Promise.resolve(userAccount);
+      }) // End then(successResponse)
+      .catch((errorResponse: Response) => {
+        const error: RemoteError = this._error.getRemoteError(errorResponse);
+        if (this._error.isInvalidRequestError(error)) error.setCustomProperty('invalidParameter', 'username');
+
+        return Promise.reject(error);
+      }); // End this._feasyApi.get()
+
+    return promise;
+  } // End get()
 
   /**
    * Sends a request to update an attribute for the current user
@@ -133,27 +155,26 @@ export class UserService {
     const requestParams = { [`new${capitalizedAttribute}`]: _newValue };
 
     // Send request
-    return this._feasyApi.put(updatePath, requestParams, headersOptions)
+    const promise = this._feasyApi.put(updatePath, requestParams, headersOptions)
       .then((successResponse: Response) => Promise.resolve(successResponse))
       .catch((updateError: Response) => {
-        // Return detailed errors for invalid request error. Otherwise, return the response object
-        if (updateError.status === 400) {
-          const responseBody = updateError.json();
-          const errorMessage: string = (responseBody &&
-            responseBody.error &&
-            responseBody.error.message) ||
-            '';
+        const error: RemoteError = this._error.getRemoteError(updateError);
 
-          // The request contains invalid/malformed parameters from the assignment's attributes
-          let errorReason;
-          if (/[iI]nvalid/.test(errorMessage)) errorReason = 'invalid';
-          else if (/[uU]nchanged/.test(errorMessage)) errorReason = 'unchanged';
-          else errorReason = 'unknown';
+        if (this._error.isInvalidRequestError(error)) {
+          const invalidRequestError: InvalidRequestError = new InvalidRequestError(error);
+          return Promise.reject(invalidRequestError);
+        } else if (this._error.isResourceError()) {
+          const errorMessage: string = error.getMessage() || '';
+          if (/another/gi.test(errorMessage)) error.setCustomProperty('reason', 'updating_different_user');
+          else if (/google/gi.test(errorMessage)) error.setCustomProperty('reason', 'google_user');
+          else error.setCustomProperty('reason', 'unknown');
 
-          return Promise.reject(errorReason);
-        } else return Promise.reject(updateError);
-      });
-  }
+          return Promise.reject(error);
+        } else return promise.reject(error);
+      }); // End this._feasyApi.put()
+
+    return promise;
+  } // End update()
 
   /**
    * Sends a request to update a user's avatar
@@ -161,10 +182,12 @@ export class UserService {
    * @return {Promise<any>} an empty resolved promise
    */
   updateAvatar(_newAvatar: string): Promise<any> {
-    return this.update('avatar', _newAvatar)
+    const promise = this.update('avatar', _newAvatar)
       .then((successResponse: Response) => Promise.resolve())
-      .catch((updateError: any) => Promise.reject(updateError));
-  }
+      .catch((updateError: RemoteError) => Promise.reject(updateError));
+
+    return promise;
+  } // End updateAvatar()
 
   /**
    * Sends a username and password to the /login API route to retrieve a token
@@ -172,7 +195,7 @@ export class UserService {
    * @param {string} _password the desired user's password
    * @return {Promise<string>} the token to authenticate subsequent requests
    */
-  validate(_username: string, _password: string): Promise<string> {
+  getAuthToken(_username: string, _password: string): Promise<string> {
     // Create request information
     const loginPath = '/login';
     const requestParams = {
@@ -181,14 +204,41 @@ export class UserService {
     };
 
     // Send request
-    return this._feasyApi.post(loginPath, requestParams)
+    const promise = this._feasyApi.post(loginPath, requestParams)
       .then((successResponse: Response) => {
+        // Extract the token from the response body
         const responseBody = successResponse.json();
         const token: string = responseBody && responseBody.success && responseBody.success.token;
-        return Promise.resolve(this._utils.hasValue(token) ? token : null);
-      })
-      .catch((errorResponse: Response) => Promise.reject(errorResponse));
-  }
+
+        if (this._utils.hasValue(token)) return Promise.resolve(token);
+        else {
+          const error: LocalError = new LocalError('user.service.getAuthToken');
+          error.setType('null_token');
+          error.setMessage('No token was returned when logging in the user succeeded');
+
+          return Promise.reject(error);
+        }
+      }) // End then(successResponse)
+      .catch((errorResponse: Response) => {
+        if (errorResponse instanceof Response) {
+          const error: RemoteError = this._error.getRemoteError(errorResponse);
+
+          if (this._error.isInvalidRequestError(error)) {
+            // The request contains invalid/malformed parameters from the username or password
+            const invalidParameters: string[] = this._error.getInvalidParameters(error);
+
+            // Add the invalid parameters to the error object
+            error.setCustomProperty('invalidParameters', invalidParameters);
+          } else if (this._error.isResourceError(error)) {
+            // A Google user tried to log in with a username and password
+          }
+
+          return Promise.reject(error);
+        } else return Promise.reject(errorResponse);
+      }); // End this._feasyApi.post()
+
+    return promise;
+  } // End getAuthToken()
 
   /**
    * Sends an existing token from local storage to the /login/refresh API route to refresh the token
@@ -201,14 +251,30 @@ export class UserService {
     const headersOptions = { Authorization: token };
 
     // Send request
-    return this._feasyApi.get(refreshTokenPath, headersOptions)
+    const promise = this._feasyApi.get(refreshTokenPath, headersOptions)
       .then((successResponse: Response) => {
+        // Extract the token from the response body
         const responseBody = successResponse.json();
-        const newToken: string = responseBody && responseBody.success && responseBody.success.token;
-        return Promise.resolve(this._utils.hasValue(newToken) ? newToken : null);
-      })
-      .catch((errorResponse: Response) => Promise.reject(errorResponse));
-  }
+        const newtoken: string = responseBody && responseBody.success && responseBody.success.token;
+
+        if (this._utils.hasValue(newtoken)) return Promise.resolve(newtoken);
+        else {
+          const error: LocalError = new LocalError('user.service.refreshAuthToken');
+          error.setType('null_token');
+          error.setMessage('No token was returned when refreshing the token succeeded');
+
+          return Promise.reject(error);
+        }
+      }) // End then(successResponse)
+      .catch((errorResponse: Response) => {
+        if (errorResponse instanceof Response) {
+          const error: RemoteError = this._error.getRemoteError(errorResponse);
+          return Promise.reject(error);
+        } else return Promise.reject(errorResponse);
+      }); // End this._feasyApi.get()
+
+    return promise;
+  } // End refreshAuthToken()
 
   /**
    * Retrieves the Feasy-specific Google OAuth2.0 URL for authenticating offline access
@@ -219,14 +285,16 @@ export class UserService {
     const getAuthPath = '/auth/googleUrl';
 
     // Send request
-    return this._feasyApi.get(getAuthPath)
+    const promise = this._feasyApi.get(getAuthPath)
       .then((successResponse: Response) => {
         const responseBody = successResponse.json();
         const authUrl: string = responseBody && responseBody.success && responseBody.success.authUrl;
         return Promise.resolve(this._utils.hasValue(authUrl) ? authUrl : null);
-      })
-      .catch((errorResponse: Response) => Promise.reject(errorResponse));
-  }
+      }) // End then(successResponse)
+      .catch((errorResponse: Response) => Promise.reject(errorResponse)); // End this._feasyApi.get()
+
+    return promise;
+  } // End getAuthorizationUrl()
 
   /**
    * Retrieves authentication info to login the user once
@@ -239,7 +307,7 @@ export class UserService {
     const authenticatePath = `/auth/google/await?alphaCode=${_alphaCode}`;
 
     // Send request
-    return this._feasyApi.get(authenticatePath)
+    const promise = this._feasyApi.get(authenticatePath)
       .then((successResponse: Response) => {
         const responseBody = successResponse.json();
         const token: string = responseBody && responseBody.success && responseBody.success.token;
@@ -251,7 +319,121 @@ export class UserService {
         };
 
         return Promise.resolve(authInfo);
-      })
-      .catch((errorResponse: Response) => Promise.reject(errorResponse));
+      }) // End then(successResponse)
+      .catch((errorResponse: Response) => Promise.reject(errorResponse)); // End this._feasyApi.get()
+
+    return promise;
   }
+
+  sendPasswordResetEmail(_email: string): Promise<any> {
+    // Create request information
+    const resetEmailPath: string = `/password/reset`;
+    const requestParams: Object = { email: _email };
+
+    // Send request
+    const promise = this._feasyApi.post(resetEmailPath, requestParams)
+      .then((successResponse: Response) => Promise.resolve()) // End then(successResponse)
+      .catch((errorResponse: Response) => {
+        let error;
+        switch (errorResponse.status) {
+          case 400:
+            error = 'email_invalid';
+            break;
+          case 404:
+            error = 'email_dne';
+            break;
+          default:
+            error = 'unknown';
+        }
+
+        return Promise.reject(error);
+      }); // End this._feasyApi.post()
+
+    return promise;
+  } // End sendPasswordResetEmail()
+
+  getPasswordResetDetails(_resetCode: string): Promise<Object> {
+    // Create request information
+    const resetDetailsPath: string = `/password/reset/details?code=${_resetCode}`;
+
+    // Send request
+    const promise = this._feasyApi.get(resetDetailsPath)
+      .then((successResponse: Response) => {
+        const responseBody = successResponse.json();
+        const userDetails: Object = (responseBody && responseBody.success) || {};
+
+        return Promise.resolve(userDetails);
+      }) // End then(successResponse)
+      .catch((errorResponse: Response) => {
+        let error: string;
+        const responseBody = errorResponse.json();
+        const errorMessage: string = (responseBody && responseBody.error && responseBody.error.message) || 'unknown';
+
+        switch (errorResponse.status) {
+          case 400:
+            error = 'code_invalid';
+            break;
+          case 403:
+            if (errorMessage.indexOf('expired') !== -1) error = 'code_expired';
+            else if (errorMessage.indexOf('already') !== -1) error = 'code_used';
+            else error = errorMessage;
+
+            break;
+          case 404:
+            error = 'code_dne';
+            break;
+          default:
+            error = errorMessage;
+        }
+
+        return Promise.reject(error);
+      }); // End this._feasyApi.get()
+
+    return promise;
+  } // End getPasswordResetDetails()
+
+  resetPassword(_resetCode: string, _userId: string, _password: string): Promise<any> {
+    // Create request information
+    const resetPasswordPath: string = '/password/reset/callback';
+    const requestParams: Object = {
+      resetCode: _resetCode,
+      userId: _userId,
+      newPassword: _password,
+    };
+
+    // Send request
+    const promise = this._feasyApi.post(resetPasswordPath, requestParams)
+      .then((successResponse: Response) => Promise.resolve()) // End then(successResponse)
+      .catch((errorResponse: Response) => {
+        let error;
+        const responseBody = errorResponse.json();
+        const errorMessage: string = (responseBody && responseBody.error && responseBody.error.message) || '';
+
+        switch (errorResponse.status) {
+          case 400:
+            const errorMessageParts: string[] = errorMessage.split('Invalid parameters: ');
+            const invalidParamsString: string = errorMessageParts.length > 1 ? errorMessageParts[1] : '';
+            const invalidParams: string[] = invalidParamsString.split(',');
+            error = invalidParams;
+
+            break;
+          case 403:
+            if (errorMessage.indexOf('expired') !== -1) error = 'code_expired';
+            else if (errorMessage.indexOf('already') !== -1) error = 'code_used';
+            else if (errorMessage.indexOf('match') !== -1) error = 'code_mismatch';
+            else error = errorMessage;
+
+            break;
+          case 404:
+            error = 'code_dne';
+            break;
+          default:
+            error = errorMessage;
+        }
+
+        return Promise.reject(error);
+      }); // End this._feasyApi.post()
+
+    return promise;
+  } // End resetPassword()
 }

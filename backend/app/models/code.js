@@ -2,10 +2,9 @@
  * code - Mongoose database model for a Code
  */
 
-const MONGOOSE = require('mongoose');
+const DATABASE = require('../../config/database');
 
-MONGOOSE.Promise = require('bluebird');
-
+const MONGOOSE = DATABASE.driver;
 const CodeSchema = MONGOOSE.Schema({
   uuid: {
     trim: true,
@@ -17,6 +16,15 @@ const CodeSchema = MONGOOSE.Schema({
     type: Boolean,
     required: true,
     default: false,
+  },
+  userId: {
+    trim: true,
+    type: String,
+  },
+  expirationDate: {
+    type: Date,
+    required: true,
+    default: Date.now,
   },
 });
 

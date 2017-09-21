@@ -11,11 +11,25 @@ import { CommonModule } from '@angular/common';
 import { AuthGuard } from '../router-guard/auth.guard';
 import { LoginComponent } from '../login/login.component';
 import { SignupComponent } from '../signup/signup.component';
+import { PasswordResetComponent } from '../password-reset/password-reset.component';
 
 const routes: Routes = [
-  { path: '', component: LoginComponent },
-  { path: 'login', component: LoginComponent },
-  { path: 'signup', component: SignupComponent },
+  {
+    path: '',
+    component: LoginComponent,
+  },
+  {
+    path: 'login',
+    component: LoginComponent,
+  },
+  {
+    path: 'signup',
+    component: SignupComponent,
+  },
+  {
+    path: 'passwordreset',
+    component: PasswordResetComponent,
+  },
   {
     path: 'main',
     canLoad: [AuthGuard],

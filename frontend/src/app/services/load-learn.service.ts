@@ -10,7 +10,7 @@ export class LoadLearnService {
   _assignmentComplete: Assignment[] = [];
   _assignmentIncomplete: Assignment[] = [];
 
-  constructor() { }
+  constructor() {}
 
   getTaskArray(): Assignment[] {
     return this._assignments;

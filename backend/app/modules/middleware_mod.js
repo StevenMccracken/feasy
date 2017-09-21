@@ -14,6 +14,7 @@ const AUTH = require('./authentication_mod');
 const VALIDATE = require('./validation_mod');
 const GOOGLE_API = require('./googleApi_mod');
 const ICLOUD_API = require('./icloudApi_mod');
+const SENDGRID_API = require('./sendGridApi_mod');
 const ASSIGNMENTS = require('../controller/assignment');
 
 const eventEmitter = new EVENTS.EventEmitter();
@@ -503,6 +504,370 @@ const authenticateGoogle = function authenticateGoogle(_request, _response) {
 }; // End authenticateGoogle()
 
 /**
+ * Initiates the process of resetting a user's password when they do not know the password
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+const startPasswordReset = function startPasswordReset(_request, _response) {
+  const SOURCE = 'startPasswordReset()';
+  log(SOURCE, _request);
+
+  const promise = new Promise((resolve, reject) => {
+    // Check request parameters
+    const invalidParams = [];
+    if (!VALIDATE.isValidEmail(_request.body.email)) invalidParams.push('email');
+
+    if (invalidParams.length > 0) {
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        `Invalid parameters: ${invalidParams.join()}`
+      );
+
+      reject(errorJson);
+    } else {
+      // Request parameters are valid. Check to see if a user with that email exists
+      USERS.getByEmail(_request.body.email, false)
+        .then((userInfo) => {
+          if (!UTIL.hasValue(userInfo)) {
+            // User with that email does not exist
+            const errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.RESOURCE_DNE_ERROR,
+              'A user with that email does not exist'
+            );
+
+            reject(errorJson);
+          } else {
+            // Create a random token and hash it
+            const uuid = UTIL.newUuid();
+            AUTH.hash(uuid)
+              .then((randomHash) => {
+                // Create a code and attach the random hashed token for the user
+                CODES.createForgottenPasswordCode(userInfo, randomHash)
+                  .then((code) => {
+                    // Send the unique url with the hashed random token to the user via email
+                    const uniqueUrl = `https://www.feasy-app.com/#/passwordreset?code=${code.uuid}`;
+                    SENDGRID_API.sendPasswordReset(userInfo, uniqueUrl)
+                      .then((sendResult) => {
+                        const successJson = {
+                          success: {
+                            message: 'Password reset email successfully sent',
+                            url: uniqueUrl,
+                          },
+                        };
+
+                        resolve(successJson);
+                      }) // End then(sendResult)
+                      .catch((sendEmailError) => {
+                        const errorJson = ERROR.sendGridError(
+                          SOURCE,
+                          _request,
+                          _response,
+                          sendEmailError
+                        );
+
+                        reject(errorJson);
+                      }); // End SENDGRID_API.sendPasswordReset()
+                  }) // End then(code)
+                  .catch((createCodeError) => {
+                    const errorJson = ERROR.codeError(SOURCE, _request, _response, createCodeError);
+                    reject(errorJson);
+                  }); // End CODES.createForgottenPasswordCode()
+              }) // End then(randomHash)
+              .catch((hashError) => {
+                const errorJson = ERROR.bcryptError(SOURCE, _request, _response, hashError);
+                reject(errorJson);
+              }); // End AUTH.hash()
+          }
+        }) // End then(userInfo)
+        .catch((getUserError) => {
+          const errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
+          reject(errorJson);
+        }); // End USERS.getByEmail()
+    }
+  }); // End create promise
+
+  return promise;
+}; // End startPasswordReset()
+
+/**
+ * Retrieves necessary details about a password reset code, like the username for the reset code
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+const getPasswordResetDetails = function getPasswordResetDetails(_request, _response) {
+  const SOURCE = 'getPasswordResetDetails()';
+  log(SOURCE);
+
+  const promise = new Promise((resolve, reject) => {
+    // Check request parameters
+    const invalidParams = [];
+    if (!VALIDATE.isValidString(_request.query.code)) invalidParams.push('code');
+
+    if (invalidParams.length > 0) {
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        `Invalid parameters: ${invalidParams.join()}`
+      );
+
+      reject(errorJson);
+    } else {
+      // Request parameters are valid. Check if the password reset code exists
+      CODES.getByUuid(_request.query.code)
+        .then((passwordResetCode) => {
+          if (!UTIL.hasValue(passwordResetCode)) {
+            const errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.RESOURCE_DNE_ERROR,
+              'That password reset code does not exist'
+            );
+
+            reject(errorJson);
+          } else {
+            // The code exists. Check if it is expired
+            const expirationDate = passwordResetCode.expirationDate;
+            const now = new Date();
+
+            if (expirationDate < now) {
+              // The reset code has expired
+              const errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.RESOURCE_ERROR,
+                'That password reset code has expired'
+              );
+
+              reject(errorJson);
+            } else if (passwordResetCode.used) {
+              // The reset code has already been used
+              const errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.RESOURCE_ERROR,
+                'That password reset code has already been used'
+              );
+
+              reject(errorJson);
+            } else {
+              // Get the user details for the user that the code belongs to
+              USERS.getById(passwordResetCode.userId)
+                .then((userInfo) => {
+                  if (!UTIL.hasValue(userInfo)) {
+                    const errorJson = ERROR.error(
+                      SOURCE,
+                      _request,
+                      _response,
+                      ERROR.CODE.API_ERROR,
+                      null,
+                      `${passwordResetCode.userId} could not be found for password reset code ${passwordResetCode.uuid}`
+                    );
+
+                    reject(errorJson);
+                  } else {
+                    // Retrieved the user info for the user id linked to the password reset code
+                    const successJson = {
+                      success: {
+                        userId: userInfo._id,
+                        username: userInfo.username,
+                      },
+                    };
+
+                    // Add the first name and last name if they exist
+                    if (UTIL.hasValue(userInfo.firstName)) {
+                      successJson.success.firstName = userInfo.firstName;
+                    }
+
+                    if (UTIL.hasValue(userInfo.lastName)) {
+                      successJson.success.lastName = userInfo.lastName;
+                    }
+
+                    resolve(successJson);
+                  }
+                }) // End then(userInfo)
+                .catch((getUserError) => {
+                  const errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
+                  reject(errorJson);
+                }); // End USERS.getById()
+            }
+          }
+        }) // End then(passwordResetCode)
+        .catch((getCodeError) => {
+          const errorJson = ERROR.codeError(SOURCE, _request, _response, getCodeError);
+          reject(errorJson);
+        }); // End CODES.getByUuid()
+    }
+  }); // End create promise
+
+  return promise;
+}; // End getPasswordResetDetails()
+
+/**
+ * Concludes the process of resetting a user's password when they do not know the password
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+const finishPasswordReset = function finishPasswordReset(_request, _response) {
+  const SOURCE = 'finishPasswordReset()';
+  log(SOURCE, _request);
+
+  const promise = new Promise((resolve, reject) => {
+    // Check request parameters
+    const invalidParams = [];
+    if (!VALIDATE.isValidString(_request.body.resetCode)) invalidParams.push('resetCode');
+    if (!VALIDATE.isValidObjectId(_request.body.userId)) invalidParams.push('userId');
+    if (!VALIDATE.isValidPassword(_request.body.newPassword)) invalidParams.push('newPassword');
+
+    if (invalidParams.length > 0) {
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        `Invalid parameters: ${invalidParams.join()}`
+      );
+
+      reject(errorJson);
+    } else {
+      // Request parameters are valid. Check if the password reset code exists
+      CODES.getByUuid(_request.body.resetCode)
+        .then((passwordResetCode) => {
+          if (!UTIL.hasValue(passwordResetCode)) {
+            const errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.RESOURCE_DNE_ERROR,
+              'That password reset code does not exist'
+            );
+
+            reject(errorJson);
+          } else {
+            // The code exists. Check if it is expired
+            const expirationDate = passwordResetCode.expirationDate;
+            const now = new Date();
+
+            if (expirationDate < now) {
+              // The reset code has expired
+              const errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.RESOURCE_ERROR,
+                'That password reset code has expired'
+              );
+
+              reject(errorJson);
+            } else if (passwordResetCode.used) {
+              // The reset code has already been used
+              const errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.RESOURCE_ERROR,
+                'That password reset code has already been used'
+              );
+
+              reject(errorJson);
+            } else {
+              // Get the user details for the user that the code belongs to
+              USERS.getById(passwordResetCode.userId)
+                .then((userInfo) => {
+                  if (!UTIL.hasValue(userInfo)) {
+                    const errorJson = ERROR.error(
+                      SOURCE,
+                      _request,
+                      _response,
+                      ERROR.CODE.API_ERROR,
+                      null,
+                      `${passwordResetCode.userId} could not be found for password reset code ${passwordResetCode.uuid}`
+                    );
+
+                    reject(errorJson);
+                  } else if (String(userInfo._id) !== _request.body.userId) {
+                    // The username in the request body does not match the user for the code
+                    const errorJson = ERROR.error(
+                      SOURCE,
+                      _request,
+                      _response,
+                      ERROR.CODE.RESOURCE_ERROR,
+                      'The user ID you provided does not match the user ID for the password reset code'
+                    );
+
+                    reject(errorJson);
+                  } else {
+                    // All request body info is valid. Update the password
+                    USERS.updateAttribute(userInfo, 'password', _request.body.newPassword)
+                      .then((updatedUserInfo) => {
+                        // Password was updated. Try and set the reset password code as used
+                        const successJson = {
+                          success: {
+                            message: 'Successfully updated password',
+                          },
+                        };
+
+                        // Mark the password reset code as used
+                        CODES.updateAttribute(passwordResetCode, 'used', true)
+                          .then(updatedCode => resolve(successJson)) // End then(updatedCode)
+                          .catch((updateCodeError) => {
+                            log(
+                              `Password reset code '${passwordResetCode._id}' not marked as used but password was successfully updated`,
+                              _request
+                            );
+
+                            ERROR.codeError(SOURCE, _request, _response, updateCodeError);
+
+                            /*
+                             * Still send success to the user. Not 100%
+                             * secure, but the code will eventually expire
+                             */
+                            resolve(successJson);
+                          }); // End CODES.updateAttribute()
+                      }) // End then(updatedUserInfo)
+                      .catch((updateError) => {
+                        const errorJson = ERROR.userError(
+                          SOURCE,
+                          _request,
+                          _response,
+                          updateError
+                        );
+
+                        reject(errorJson);
+                      }); // End USERS.updateAttribute()
+                  }
+                }) // End then(userInfo)
+                .catch((getUserError) => {
+                  const errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
+                  reject(errorJson);
+                }); // End USERS.getById()
+            }
+          }
+        }) // End then(passwordResetCode)
+        .catch((getCodeError) => {
+          const errorJson = ERROR.codeError(SOURCE, _request, _response, getCodeError);
+          reject(errorJson);
+        }); // End CODES.getByUuid()
+    }
+  }); // End create promise
+
+  return promise;
+}; // End finishPasswordReset()
+
+/**
  * createUser - Adds a new user to the database and sends the client a web token
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
@@ -518,6 +883,8 @@ const createUser = function createUser(_request, _response) {
     if (!VALIDATE.isValidUsername(_request.body.username)) invalidParams.push('username');
     if (!VALIDATE.isValidPassword(_request.body.password)) invalidParams.push('password');
     if (!VALIDATE.isValidEmail(_request.body.email)) invalidParams.push('email');
+
+    // TODO: DELETE THIS WHEN ALPHA IS OVER
     if (!VALIDATE.isValidString(_request.body.alphaCode)) invalidParams.push('alphaCode');
 
     // First name and last name are optional parameters
@@ -551,6 +918,7 @@ const createUser = function createUser(_request, _response) {
       reject(errorJson);
     } else {
       // Parameters are valid, so check if the alpha code has been used
+      // TODO: DELETE THIS WHEN ALPHA IS OVER
       CODES.getByUuid(_request.body.alphaCode)
         .then((code) => {
           if (!UTIL.hasValue(code)) {
@@ -579,6 +947,7 @@ const createUser = function createUser(_request, _response) {
             reject(errorJson);
           } else {
             // Valid code. Update the code to be used
+            // TODO: DELETE THIS WHEN ALPHA IS OVER
             CODES.updateAttribute(code, 'used', true)
               /* eslint-disable no-unused-vars */
               .then((updatedCode) => {
@@ -612,6 +981,7 @@ const createUser = function createUser(_request, _response) {
                     reject(errorJson);
 
                     // Unregister the alpha code
+                    // TODO: DELETE THIS WHEN ALPHA IS OVER
                     CODES.updateAttribute(code, 'used', false)
                       .catch((updateCodeError) => {
                         log(
@@ -1237,123 +1607,302 @@ const deleteUser = function deleteUser(_request, _response) {
 
 /**
  * createAssignment - Creates a new assignment for a user and returns the created assignment
+ * @param {Object} _client the authenticated client information
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
  * @return {Promise<Object>} a success JSON or error JSON
  */
-const createAssignment = function createAssignment(_request, _response) {
+const createAssignment = function createAssignment(_client, _request, _response) {
   const SOURCE = 'createAssignment()';
   log(SOURCE, _request);
 
-  return new Promise((resolve, reject) => {
-    AUTH.verifyToken(_request, _response)
-      .then((client) => {
-        // Token is valid. Check if client is requesting themself
-        if (client.username !== _request.params.username) {
-          // Client attempted to create an assignment for another user
-          const errorJson = ERROR.error(
-            SOURCE,
-            _request,
-            _response,
-            ERROR.CODE.RESOURCE_ERROR,
-            'You cannot create another user\'s assignments',
-            `${client.username} tried to create an assignment for ${_request.params.username}`
-          );
+  const promise = new Promise((resolve, reject) => {
+    // Check if client is requesting themself
+    if (_client.username !== _request.params.username) {
+      // Client attempted to create an assignment for another user
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.RESOURCE_ERROR,
+        'You cannot create another user\'s assignments',
+        `${_client.username} tried to create an assignment for ${_request.params.username}`
+      );
 
-          reject(errorJson);
-        } else if (!VALIDATE.isValidUsername(_request.params.username)) {
+      reject(errorJson);
+    } else if (!VALIDATE.isValidUsername(_request.params.username)) {
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        'Invalid parameters: username'
+      );
+
+      reject(errorJson);
+    } else {
+      // Check request body parameters. Start with required parameters
+      const invalidParams = [];
+      if (!VALIDATE.isValidString(_request.body.title)) invalidParams.push('title');
+      if (!VALIDATE.isValidInteger(_request.body.dueDate)) invalidParams.push('dueDate');
+
+      // Check optional parameters
+      let hasValidClass = false;
+      if (UTIL.hasValue(_request.body.class)) {
+        if (!VALIDATE.isValidString(_request.body.class)) invalidParams.push('class');
+        else hasValidClass = true;
+      }
+
+      let hasValidType = false;
+      if (UTIL.hasValue(_request.body.type)) {
+        if (!VALIDATE.isValidString(_request.body.type)) invalidParams.push('type');
+        else hasValidType = true;
+      }
+
+      let hasValidDescription = false;
+      if (UTIL.hasValue(_request.body.description)) {
+        if (!VALIDATE.isValidString(_request.body.description)) invalidParams.push('description');
+        else hasValidDescription = true;
+      }
+
+      let hasValidCompleted = false;
+      if (UTIL.hasValue(_request.body.completed)) {
+        if (_request.body.completed !== 'true' && _request.body.completed !== 'false') {
+          invalidParams.push('completed');
+        } else hasValidCompleted = true;
+      }
+
+      if (invalidParams.length > 0) {
+        const errorJson = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          `Invalid parameters: ${invalidParams.join()}`
+        );
+
+        reject(errorJson);
+      } else {
+        // All request parameters are valid. First add required parameters
+        const assignmentInfo = {
+          userId: _client._id.toString(),
+          title: _request.body.title,
+          dueDate: new Date(parseInt(_request.body.dueDate, 10) * 1000),
+        };
+
+        // Add completed boolean value to assignment
+        assignmentInfo.completed = _request.body.completed === 'true';
+
+        // Add optional parameters
+        if (hasValidClass) assignmentInfo.class = _request.body.class;
+        if (hasValidType) assignmentInfo.type = _request.body.type;
+        if (hasValidDescription) assignmentInfo.description = _request.body.description;
+
+        // Save assignment to database
+        ASSIGNMENTS.create(assignmentInfo)
+          .then(createdAssignment => resolve(createdAssignment)) // End then(createdAssignment)
+          .catch((createError) => {
+            const errorJson = ERROR.assignmentError(SOURCE, _request, _response, createError);
+            reject(errorJson);
+          }); // End ASSIGNMENTS.create()
+      }
+    }
+  }); // End create promise
+
+  return promise;
+}; // End createAssignment()
+
+/**
+ * createAssignments - Creates new assignments in
+ * batch for a user and returns the created assignments
+ * @param {Object} _client the authenticated client information
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+const createAssignments = function createAssignments(_client, _request, _response) {
+  const SOURCE = 'createAssignments()';
+  log(SOURCE, _request);
+
+  const promise = new Promise((resolve, reject) => {
+    // Token is valid. Check if client is requesting themself
+    if (_client.username !== _request.params.username) {
+      // Client attempted to create assignments for another user
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.RESOURCE_ERROR,
+        'You cannot create another user\'s assignments',
+        `${_client.username} tried to create assignments for ${_request.params.username}`
+      );
+
+      reject(errorJson);
+    } else if (!VALIDATE.isValidUsername(_request.params.username)) {
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        'Invalid parameters: username'
+      );
+
+      reject(errorJson);
+    } else {
+      /**
+       * Check request body assignments parameter to make sure it is
+       * a non-empty array with valid stringified assignment JSONs
+       */
+      const assignmentsStringArray = _request.body.assignments;
+      if (
+        !UTIL.hasValue(assignmentsStringArray) ||
+        !Array.isArray(assignmentsStringArray) ||
+        assignmentsStringArray.length === 0
+      ) {
+        const errorJson = ERROR.error(
+          SOURCE,
+          _request,
+          _response,
+          ERROR.CODE.INVALID_REQUEST_ERROR,
+          'Invalid parameters: assignments'
+        );
+
+        reject(errorJson);
+      } else {
+        const assignments = [];
+        const invalidParams = [];
+
+        // Iterate over all JSON strings and attempt to parse them
+        let counter = 0;
+        assignmentsStringArray.forEach((assignmentString) => {
+          try {
+            // If the parse works, inspect it's properties to determine if it's valid
+            const assignmentJson = JSON.parse(assignmentString);
+
+            const invalidDetails = [];
+            if (!VALIDATE.isValidString(assignmentJson.title)) invalidDetails.push('title');
+            if (!VALIDATE.isValidInteger(assignmentJson.dueDate)) {
+              invalidDetails.push('dueDate');
+            }
+
+            // Check optional parameters
+            let hasValidClass = false;
+            if (UTIL.hasValue(assignmentJson.class)) {
+              if (!VALIDATE.isValidString(assignmentJson.class)) invalidDetails.push('class');
+              else hasValidClass = true;
+            }
+
+            let hasValidType = false;
+            if (UTIL.hasValue(assignmentJson.type)) {
+              if (!VALIDATE.isValidString(assignmentJson.type)) invalidDetails.push('type');
+              else hasValidType = true;
+            }
+
+            let hasValidDescription = false;
+            if (UTIL.hasValue(assignmentJson.description)) {
+              if (!VALIDATE.isValidString(assignmentJson.description)) {
+                invalidDetails.push('description');
+              } else hasValidDescription = true;
+            }
+
+            if (UTIL.hasValue(assignmentJson.completed)) {
+              if (assignmentJson.completed !== 'true' && assignmentJson.completed !== 'false') {
+                invalidDetails.push('completed');
+              }
+            }
+
+            if (invalidDetails.length > 0) {
+              const errorDetails = `${counter}: ${invalidDetails.join('.')}`;
+              invalidParams.push(errorDetails);
+            } else {
+              // All request parameters are valid. First add required parameters
+              const assignmentInfo = {
+                userId: _client._id.toString(),
+                title: assignmentJson.title,
+                dueDate: new Date(parseInt(assignmentJson.dueDate, 10) * 1000),
+              };
+
+              // Add completed boolean value to assignment
+              assignmentInfo.completed = assignmentJson.completed === 'true';
+
+              // Add optional parameters
+              if (hasValidClass) assignmentInfo.class = assignmentJson.class;
+              if (hasValidType) assignmentInfo.type = assignmentJson.type;
+              if (hasValidDescription) assignmentInfo.description = assignmentJson.description;
+
+              const assignment = ASSIGNMENTS.createLocal(assignmentInfo);
+              assignments.push(assignment);
+            }
+          } catch (jsonParseError) {
+            // The assignment is not a valid JSON string
+            const errorDetails = `${counter}: invalid_json`;
+            invalidParams.push(errorDetails);
+          }
+
+          counter++;
+        });
+
+        if (invalidParams.length > 0) {
           const errorJson = ERROR.error(
             SOURCE,
             _request,
             _response,
             ERROR.CODE.INVALID_REQUEST_ERROR,
-            'Invalid parameters: username'
+            `Invalid parameters: ${invalidParams.join()}`
           );
 
           reject(errorJson);
         } else {
-          // Check request body parameters. Start with required parameters
-          const invalidParams = [];
-          if (!VALIDATE.isValidString(_request.body.title)) invalidParams.push('title');
-          if (!VALIDATE.isValidInteger(_request.body.dueDate)) invalidParams.push('dueDate');
-
-          // Check optional parameters
-          let hasValidClass = false;
-          if (UTIL.hasValue(_request.body.class)) {
-            if (!VALIDATE.isValidString(_request.body.class)) invalidParams.push('class');
-            else hasValidClass = true;
-          }
-
-          let hasValidType = false;
-          if (UTIL.hasValue(_request.body.type)) {
-            if (!VALIDATE.isValidString(_request.body.type)) invalidParams.push('type');
-            else hasValidType = true;
-          }
-
-          let hasValidDescription = false;
-          if (UTIL.hasValue(_request.body.description)) {
-            if (!VALIDATE.isValidString(_request.body.description)) invalidParams.push('description');
-            else hasValidDescription = true;
-          }
-
-          let hasValidCompleted = false;
-          if (UTIL.hasValue(_request.body.completed)) {
-            if (_request.body.completed !== 'true' && _request.body.completed !== 'false') {
-              invalidParams.push('completed');
-            } else hasValidCompleted = true;
-          }
-
-          if (invalidParams.length > 0) {
-            const errorJson = ERROR.error(
-              SOURCE,
-              _request,
-              _response,
-              ERROR.CODE.INVALID_REQUEST_ERROR,
-              `Invalid parameters: ${invalidParams.join()}`
-            );
-
-            reject(errorJson);
-          } else {
-            // All request parameters are valid. First add required parameters
-            const assignmentInfo = {
-              userId: client._id.toString(),
-              title: _request.body.title,
-              dueDate: new Date(parseInt(_request.body.dueDate, 10) * 1000),
-            };
-
-            // Add completed boolean value to assignment
-            if (hasValidCompleted && _request.body.completed === 'true') {
-              assignmentInfo.completed = true;
-            } else if (hasValidCompleted && _request.body.completed === 'false') {
-              assignmentInfo.completed = false;
-            } else assignmentInfo.completed = false;
-
-            // Add optional parameters
-            if (hasValidClass) assignmentInfo.class = _request.body.class;
-            if (hasValidType) assignmentInfo.type = _request.body.type;
-            if (hasValidDescription) assignmentInfo.description = _request.body.description;
-
-            // Save assignment to database
-            ASSIGNMENTS.create(assignmentInfo)
-              .then(createdAssignment => resolve(createdAssignment)) // End then(createdAssignment)
-              .catch((createError) => {
-                const errorJson = ERROR.assignmentError(SOURCE, _request, _response, createError);
-                reject(errorJson);
-              }); // End ASSIGNMENTS.create()
-          }
+          ASSIGNMENTS.bulkSave(assignments)
+            .then(savedAssignments => resolve(savedAssignments)) // End then(savedAssignments)
+            .catch((saveError) => {
+              const errorJson = ERROR.assignmentError(SOURCE, _request, _response, saveError);
+              reject(errorJson);
+            }); // End ASSIGNMENTS.bulkSave()
         }
+      }
+    }
+  }); // End create promise
+
+  return promise;
+}; // End createAssignments()
+
+/**
+ * createAssignmentsHandler - Determines which create assignment function
+ * to call based on the presence of multiple assignments in the request body
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+const createAssignmentsHandler = function createAssignmentsHandler(_request, _response) {
+  const SOURCE = 'createAssignmentsHandler()';
+  log(SOURCE, _request);
+
+  const promise = new Promise((resolve, reject) => {
+    AUTH.verifyToken(_request, _response)
+      .then((client) => {
+        let createFunction;
+        if (UTIL.hasValue(_request.body.assignments)) createFunction = createAssignments;
+        else createFunction = createAssignment;
+
+        createFunction(client, _request, _response)
+          .then(createResult => resolve(createResult)) // End then(createResult)
+          .catch(createError => reject(createError)); // End createFunction()
       }) // End then(client)
       .catch((authError) => {
         const errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
       }); // End AUTH.verifyToken()
-  }); // End return promise
-}; // End createAssignment()
+  }); // End create promise
+
+  return promise;
+}; // End createAssignmentsHandler()
 
 /**
  * parseSchedule - Parses a pdf schedule for assignment due dates
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
  */
 const parseSchedule = function parseSchedule(_request, _response) {
   const SOURCE = 'parseSchedule()';
@@ -1372,6 +1921,13 @@ const parseSchedule = function parseSchedule(_request, _response) {
             // Check request parameters
             const invalidParams = [];
             if (!UTIL.hasValue(_request.file)) invalidParams.push('pdf');
+
+            // Check optional parameters
+            let hasValidClass = false;
+            if (UTIL.hasValue(_request.body.class)) {
+              if (!VALIDATE.isValidString(_request.body.class)) invalidParams.push('class');
+              else hasValidClass = true;
+            }
 
             if (invalidParams.length > 0) {
               const errorJson = ERROR.error(
@@ -1410,24 +1966,81 @@ const parseSchedule = function parseSchedule(_request, _response) {
               // Parse the PDF schedule
               MEDIA.parsePdf(_request.file.path)
                 .then((pdfText) => {
-                  resolve(pdfText);
+                  // Send text content to python script
+                  MEDIA.pythonParse(pdfText)
+                    .then((pythonResult) => {
+                      // Parse the python JSON string. TODO: Wrap parse call in a try/catch block
+                      const resultsJson = JSON.parse(pythonResult.toString('utf8'));
+                      const currentYear = UTIL.moment().year();
+
+                      // Define inline function to map python date result to a Mongoose assignment
+                      const convertPythonEvent = function convertPythonEvent(date = '') {
+                        /**
+                         * Create a valid moment object for the current year,
+                         * at 12 pm each day, for the assignment's due date
+                         */
+                        let moment;
+                        try {
+                          moment = UTIL.moment(date);
+                          moment.hour(12);
+                          moment.year(currentYear);
+                        } catch (momentError) {
+                          moment = UTIL.moment();
+                        }
+
+                        // Get the description for the date
+                        const description = UTIL.hasValue(resultsJson[date]) ? String(resultsJson[date]) : '';
+
+                        // Get the length of the description, or the first 20 indices of the string
+                        const endIndex = Math.min(20, description.length);
+
+                        /**
+                         * Create the title from the description. If the description is blank,
+                         * use the assignment's due date in a pretty string format. If the
+                         * desription is not blank, but longer than 20 characters, use the
+                         * first 20 characters of the description with an ellipsis at the end
+                         */
+                        const titleEnd = description.length > endIndex ? '...' : '';
+                        let title;
+                        if (endIndex === 0) title = moment.format('dddd, MMMM Do YYYY, h:mm:ss a');
+                        else title = `${description.substring(0, endIndex).trim()}${titleEnd}`;
+
+                        // Create the assignment info
+                        const assignmentInfo = {
+                          title,
+                          userId: client._id,
+                          dueDate: moment.toDate(),
+                          completed: false,
+                          class: hasValidClass ? _request.body.class : '',
+                          description,
+                        };
+
+                        // Create the local assignment object
+                        const localAssignment = ASSIGNMENTS.createLocal(assignmentInfo);
+                        return localAssignment;
+                      };
+
+                      // Create Assignment objects for the date keys from the PDF-parsed JSON
+                      const dateKeys = Object.keys(resultsJson);
+                      const assignments = dateKeys.map(convertPythonEvent);
+
+                      // Sort the assignments in ascending order by due date
+                      ASSIGNMENTS.sort(assignments);
+                      resolve(assignments);
+                    }) // End then(pythonResult)
+                    .catch((pythonError) => {
+                      const errorJson = ERROR.pythonError(SOURCE, _request, _response, pythonError);
+                      reject(errorJson);
+                    }); // End MEDIA.pythonParse()
                 })
                 .catch((parseError) => {
-                  const errorJson = ERROR.error(
-                    SOURCE,
-                    _request,
-                    _response,
-                    ERROR.CODE.API_ERROR,
-                    null,
-                    parseError
-                  );
-
+                  const errorJson = ERROR.mediaError(SOURCE, _request, _response, parseError);
                   reject(errorJson);
                 }); // End MEDIA.parsePdf()
             }
           }
-        });
-      })
+        }); // End getPdf()
+      }) // End then(client)
       .catch((authError) => {
         const errorJson = ERROR.authenticationError(SOURCE, _request, _response, authError);
         reject(errorJson);
@@ -1435,6 +2048,12 @@ const parseSchedule = function parseSchedule(_request, _response) {
   }); // End return promise
 }; // End parseSchedule()
 
+/**
+ * syncGoogleCalendar - Syncs a Google user's Google Calendar to create Feasy-specific assignments
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
 const syncGoogleCalendar = function syncGoogleCalendar(_request, _response) {
   const SOURCE = 'syncGoogleCalendar()';
   log(SOURCE, _request);
@@ -1721,15 +2340,7 @@ const getAssignments = function getAssignments(_request, _response) {
         } else {
           // Request is valid. Retrieve assignments from the database
           ASSIGNMENTS.getAll(client._id)
-            .then((assignments) => {
-              // Convert assignments array to JSON
-              const assignmentsJson = {};
-              assignments.forEach((assignment) => {
-                assignmentsJson[assignment._id] = assignment;
-              });
-
-              resolve(assignmentsJson);
-            }) // End then(assignments)
+            .then(assignments => resolve(assignments)) // End then(assignments)
             .catch((getError) => {
               const errorJson = ERROR.assignmentError(SOURCE, _request, _response, getError);
               reject(errorJson);
@@ -2355,6 +2966,9 @@ module.exports = {
   getGoogleAuthUrl,
   exchangeGoogleAuthCode,
   authenticateGoogle,
+  startPasswordReset,
+  getPasswordResetDetails,
+  finishPasswordReset,
   createUser,
   retrieveUser,
   updateUserUsername,
@@ -2365,6 +2979,8 @@ module.exports = {
   updateUserAvatar,
   deleteUser,
   createAssignment,
+  createAssignments,
+  createAssignmentsHandler,
   parseSchedule,
   syncGoogleCalendar,
   syncIcloudCalendar,

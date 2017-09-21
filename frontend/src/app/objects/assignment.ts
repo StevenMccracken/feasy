@@ -20,7 +20,7 @@ export class Assignment implements Serializable<Assignment> {
 
   /**
    * Converts a JSON representing an assignment to an Assignment object
-   * @param {Object = {}} _input JSON containing assignment information
+   * @param {Object} [_input = {}] JSON containing assignment information
    * @return {Assignment} assignment with the attributes from the JSON input
    */
   deserialize(_input: Object = {}): Assignment {
@@ -36,5 +36,85 @@ export class Assignment implements Serializable<Assignment> {
     this.editModeTitle = false;
 
     return this;
-  }
+  } // End deserialize()
+
+  getId(): string {
+    return this._id;
+  } // End getId()
+
+  getTitle(): string {
+    return this.title;
+  } // End getTitle()
+
+  getDueDate(): Date {
+    return this.dueDate;
+  } // End getDueDate()
+
+  getCompleted(): boolean {
+    return this.completed;
+  } // End getCompleted()
+
+  getClass(): string {
+    return this.class;
+  } // End getClass()
+
+  getDateCreated(): Date {
+    return this.dateCreated;
+  } // End getDateCreated()
+
+  getType(): string {
+    return this.type;
+  } // End getType()
+
+  getDescription(): string {
+    return this.description;
+  } // End getDescription()
+
+  getEditModeDescription(): boolean {
+    return this.editModeDescription;
+  } // End getEditModeDescription()
+
+  getEditModeTitle(): boolean {
+    return this.editModeTitle;
+  } // End getEditModeTitle()
+
+  setId(_id: string): void {
+    this._id = _id;
+  } // End setId()
+
+  setTitle(_title: string): void {
+    this.title = _title;
+  } // End setTitle()
+
+  setDueDate(_dueDate: Date): void {
+    this.dueDate = _dueDate;
+  } // End setDueDate()
+
+  setCompleted(_completed: boolean): void {
+    this.completed = _completed;
+  } // End setCompleted()
+
+  setClass(_class: string): void {
+    this.class = _class;
+  } // End setClass()
+
+  setDateCreated(_dateCreated: Date): void {
+    this.dateCreated = _dateCreated;
+  } // End setDateCreated()
+
+  setType(_type: string): void {
+    this.type = _type;
+  } // End setType()
+
+  setDescription(_description: string): void {
+    this.description = _description;
+  } // End setDescription()
+
+  setEditModeDescription(_editModeDescription: boolean): void {
+    this.editModeDescription = _editModeDescription;
+  } // End setEditModeDescription()
+
+  setEditModeTitle(_editModeTitle: boolean): void {
+    this.editModeTitle = _editModeTitle;
+  } // End setEditModeTitle()
 }

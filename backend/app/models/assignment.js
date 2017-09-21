@@ -2,10 +2,9 @@
  * assignment - Mongoose database model for an Assignment
  */
 
-const MONGOOSE = require('mongoose');
+const DATABASE = require('../../config/database');
 
-MONGOOSE.Promise = require('bluebird');
-
+const MONGOOSE = DATABASE.driver;
 const AssignmentSchema = MONGOOSE.Schema({
   title: {
     trim: true,

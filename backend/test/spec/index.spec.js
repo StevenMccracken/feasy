@@ -4,6 +4,9 @@ const UuidV4 = require('uuid/v4');
 const REQUEST = require('request');
 const SERVER = require('../../server');
 
+// TODO: DELETE THIS WHEN ALPHA IS OVER
+const CODES = require('../../app/controller/code');
+
 // Server will check for TEST env variable and adjust the port according to the environment
 let baseUrl = 'http://localhost:8080';
 if (process.env.TEST) baseUrl = 'http://localhost:3000';
@@ -47,17 +50,26 @@ describe('Start server', () => {
     });
 
     it('creates a new user and returns status code 201', (done) => {
-      REQUEST.post(requestParams, (error, response, body) => {
-        expect(response.statusCode).toBe(201);
-        LOG(createUser1, body);
+      // TODO: DELETE THIS WHEN ALPHA IS OVER
+      CODES.createRandom()
+        .then((alphaCode) => {
+          requestParams.form.alphaCode = alphaCode.uuid;
+          REQUEST.post(requestParams, (error, response, body) => {
+            expect(response.statusCode).toBe(201);
+            LOG(createUser1, body);
 
-        // Parse JSON response for the token
-        const data = JSON.parse(body);
-        expect(data.success).toBeDefined();
-        expect(data.success.token).toBeDefined();
-        user1Token = data.success.token;
-        done();
-      });
+            // Parse JSON response for the token
+            const data = JSON.parse(body);
+            expect(data.success).toBeDefined();
+            expect(data.success.token).toBeDefined();
+            user1Token = data.success.token;
+            done();
+          });
+        }) // End then(alphaCode)
+        .catch((createCodeError) => {
+          LOG(createUser1, createCodeError);
+          done();
+        }); // End CODES.createRandom()
     });
   }); // End create user 1
 
@@ -77,17 +89,26 @@ describe('Start server', () => {
     });
 
     it('creates a new user and returns status code 201', (done) => {
-      REQUEST.post(requestParams, (error, response, body) => {
-        expect(response.statusCode).toBe(201);
-        LOG(createUser2, body);
+      // TODO: DELETE THIS WHEN ALPHA IS OVER
+      CODES.createRandom()
+        .then((alphaCode) => {
+          requestParams.form.alphaCode = alphaCode.uuid;
+          REQUEST.post(requestParams, (error, response, body) => {
+            expect(response.statusCode).toBe(201);
+            LOG(createUser1, body);
 
-        // Parse JSON response for the token
-        const data = JSON.parse(body);
-        expect(data.success).toBeDefined();
-        expect(data.success.token).toBeDefined();
-        user2Token = data.success.token;
-        done();
-      });
+            // Parse JSON response for the token
+            const data = JSON.parse(body);
+            expect(data.success).toBeDefined();
+            expect(data.success.token).toBeDefined();
+            user2Token = data.success.token;
+            done();
+          });
+        }) // End then(alphaCode)
+        .catch((createCodeError) => {
+          LOG(createUser2, createCodeError);
+          done();
+        }); // End CODES.createRandom()
     });
   }); // End create user 2
 
@@ -165,6 +186,31 @@ describe('Start server', () => {
       });
     });
   }); // End googleOAuthUrl
+
+  // Request password reset
+  const requestPasswordReset = 'Request password reset';
+  describe(requestPasswordReset, () => {
+    let requestParams;
+    beforeEach(() => {
+      requestParams = {
+        url: `${baseUrl}/password/reset`,
+        form: {
+          email: `${user2Name}@grunttest.com`,
+        },
+      };
+    });
+
+    it(
+      'requests for a password reset link to be sent via email and returns status code 200',
+      (done) => {
+        REQUEST.post(requestParams, (error, response, body) => {
+          expect(response.statusCode).toBe(200);
+          LOG(requestPasswordReset, body);
+          done();
+        });
+      }
+    );
+  }); // End request password reset
 
   // Get user 1's information
   const getUser1Info = 'Get user 1\'s information';
@@ -376,6 +422,48 @@ describe('Start server', () => {
     });
   }); // End create assignment 1
 
+  // Create multiple assignments
+  const createMultipleAssignments = 'Create multiple assignments';
+  describe(createMultipleAssignments, () => {
+    let requestParams;
+    beforeEach(() => {
+      const assignments = [
+        {
+          title: 'multiple assignments 1',
+          dueDate: nowUnixSeconds,
+        },
+        {
+          title: 'multiple assignments 2',
+          dueDate: nowUnixSeconds,
+        },
+        {
+          title: 'multiple assignments 3',
+          dueDate: nowUnixSeconds,
+        },
+      ];
+
+      requestParams = {
+        url: `${baseUrl}/users/${user1Name}/assignments`,
+        headers: { Authorization: user1Token },
+        form: {
+          assignments: assignments.map(assignment => JSON.stringify(assignment)),
+        },
+      };
+    });
+
+    it('creates multiple assignments and returns status code 201', (done) => {
+      REQUEST.post(requestParams, (error, response, body) => {
+        expect(response.statusCode).toBe(201);
+
+        // Parse JSON response for the assignments
+        const data = JSON.parse(body);
+        expect(Array.isArray(data)).toBe(true);
+        LOG(createMultipleAssignments, `Count = ${data.length}`);
+        done();
+      });
+    });
+  }); // End create multiple assignments
+
   // Upload pdf
   const uploadPdf = 'Upload pdf';
   describe(uploadPdf, () => {
@@ -384,14 +472,21 @@ describe('Start server', () => {
       requestParams = {
         url: `${baseUrl}/users/${user1Name}/assignments/pdf`,
         headers: { Authorization: user1Token },
-        formData: { pdf: FS.createReadStream('./test/files/test_pdf_001.pdf') },
+        formData: {
+          class: 'test',
+          pdf: FS.createReadStream('./test/files/test_pdf_002.pdf'),
+        },
       };
     });
 
     it('uploads a pdf and returns status code 200', (done) => {
-      REQUEST.post(requestParams, (error, response) => {
+      REQUEST.post(requestParams, (error, response, body) => {
         expect(response.statusCode).toBe(200);
-        LOG(uploadPdf);
+
+        // Parse JSON response for the assignments
+        const data = JSON.parse(body);
+        expect(Array.isArray(data)).toBe(true);
+        LOG(uploadPdf, `Number of assignments found in PDF = ${data.length}`);
         done();
       });
     });
@@ -402,7 +497,6 @@ describe('Start server', () => {
   /* eslint-disable no-unused-vars */
   let assignment2Id;
   /* eslint-enable no-unused-vars */
-
   describe(createAssignment2, () => {
     let requestParams;
     beforeEach(() => {
@@ -451,7 +545,8 @@ describe('Start server', () => {
 
         // Parse JSON response for the assignments
         const data = JSON.parse(body);
-        LOG(getUser1Assignments, `Count = ${Object.keys(data).length}`);
+        expect(Array.isArray(data)).toBe(true);
+        LOG(getUser1Assignments, `Count = ${data.length}`);
         done();
       });
     });

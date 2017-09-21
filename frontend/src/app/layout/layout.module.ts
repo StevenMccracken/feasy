@@ -33,8 +33,8 @@ import { CalendarComponent } from './calendar/calendar.component';
   ],
   providers: [
     AuthGuard,
-    LoadLearnService,
     DragulaService,
+    LoadLearnService,
   ],
 })
 export class LayoutModule {}

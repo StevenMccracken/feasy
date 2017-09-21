@@ -12,7 +12,7 @@ const EXTRACTJWT = PassportJWT.ExtractJwt;
 
 /**
  * exports - Defines how to generate and validate JSON web tokens
- * @param {Object} [passport={}] a passport object, usually from 'require(passport)'
+ * @param {Object} [passport = {}] a passport object, usually from 'require(passport)'
  */
 module.exports = function passport(_passport = {}) {
   // JSON containing criteria used to compare incoming JWTs to existing JWTs

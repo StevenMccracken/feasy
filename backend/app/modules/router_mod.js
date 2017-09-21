@@ -2,9 +2,9 @@
  * router_mod - @module for HTTP request routing
  */
 
-const UTIL = require('./utility_mod');
 const LOG = require('./log_mod');
 const MEDIA = require('./media_mod');
+const UTIL = require('./utility_mod');
 const MIDDLEWARE = require('./middleware_mod');
 
 /**
@@ -27,7 +27,8 @@ const routing = function routing(_router) {
     /* eslint-disable no-param-reassign */
     _request.headers.requestId = uniqueRequestId;
     /* eslint-enable no-param-reassign */
-    _response.header('requestId', uniqueRequestId);
+    _response.set('requestId', uniqueRequestId);
+    _response.set('Access-Control-Expose-Headers', 'requestId');
 
     log(`${_request.method} ${_request.url}`, _request);
     _next();
@@ -89,6 +90,41 @@ const routing = function routing(_router) {
    */
   router.route('/auth/google/await').get((_request, _response) => {
     MIDDLEWARE.authenticateGoogle(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
+
+  /**
+   * The POST route for initiating the process of resetting a
+   * user's password. Sends an error JSON or a JSON indicating
+   * that a password reset link has been sent via email. This
+   * route does not require token authentication
+   */
+  router.route('/password/reset').post((_request, _response) => {
+    MIDDLEWARE.startPasswordReset(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
+
+  /**
+   * The GET route for retrieving details about a password reset
+   * process, like the username of the user trying to reset their
+   * password. Sends an error JSON or a JSON with the user's
+   * username. This route does not require token authentication
+   */
+  router.route('/password/reset/details').get((_request, _response) => {
+    MIDDLEWARE.getPasswordResetDetails(_request, _response)
+      .then(result => _response.json(result))
+      .catch(error => _response.json(error));
+  });
+
+  /**
+   * The POST route for updating a user's password without providing
+   * their existing password. Sends an error JSON or a JSON web token
+   * for authentication. This route does not require token authentication
+   */
+  router.route('/password/reset/callback').post((_request, _response) => {
+    MIDDLEWARE.finishPasswordReset(_request, _response)
       .then(result => _response.json(result))
       .catch(error => _response.json(error));
   });
@@ -189,11 +225,11 @@ const routing = function routing(_router) {
   });
 
   /**
-   * The POST route for creating an assignment. Sends an error JSON or a
-   * JSON of the created assignment. This route requires token authentication
+   * The POST route for creating an assignment(s). Sends an error JSON or a
+   * JSON of the created assignment(s). This route requires token authentication
    */
   router.route('/users/:username/assignments').post((_request, _response) => {
-    MIDDLEWARE.createAssignment(_request, _response)
+    MIDDLEWARE.createAssignmentsHandler(_request, _response)
       .then((result) => {
         _response.status(201);
         _response.json(result);
