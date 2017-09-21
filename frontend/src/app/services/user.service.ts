@@ -254,4 +254,116 @@ export class UserService {
       })
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
   }
+
+  sendPasswordResetEmail(_email: string): Promise<any> {
+    // Create request information
+    const resetEmailPath: string = `/password/reset`;
+    const requestParams: Object = { email: _email };
+
+    // Send request
+    const promise = this._feasyApi.post(resetEmailPath, requestParams)
+      .then((successResponse: Response) => Promise.resolve()) // End then(successResponse)
+      .catch((errorResponse: Response) => {
+        let error;
+        switch (errorResponse.status) {
+          case 400:
+            error = 'email_invalid';
+            break;
+          case 404:
+            error = 'email_dne';
+            break;
+          default:
+            error = 'unknown';
+        }
+
+        return Promise.reject(error);
+      }); // End this._feasyApi.post()
+
+    return promise;
+  } // End sendPasswordResetEmail()
+
+  getPasswordResetDetails(_resetCode: string): Promise<Object> {
+    // Create request information
+    const resetDetailsPath: string = `/password/reset/details?code=${_resetCode}`;
+
+    // Send request
+    const promise = this._feasyApi.get(resetDetailsPath)
+      .then((successResponse: Response) => {
+        const responseBody = successResponse.json();
+        const userDetails: Object = (responseBody && responseBody.success) || {};
+
+        return Promise.resolve(userDetails);
+      }) // End then(successResponse)
+      .catch((errorResponse: Response) => {
+        let error: string;
+        const responseBody = errorResponse.json();
+        const errorMessage: string = (responseBody && responseBody.error && responseBody.error.message) || 'unknown';
+
+        switch (errorResponse.status) {
+          case 400:
+            error = 'code_invalid';
+            break;
+          case 403:
+            if (errorMessage.indexOf('expired') !== -1) error = 'code_expired';
+            else if (errorMessage.indexOf('already') !== -1) error = 'code_used';
+            else error = errorMessage;
+
+            break;
+          case 404:
+            error = 'code_dne';
+            break;
+          default:
+            error = errorMessage;
+        }
+
+        return Promise.reject(error);
+      }); // End this._feasyApi.get()
+
+    return promise;
+  } // End getPasswordResetDetails()
+
+  resetPassword(_resetCode: string, _userId: string, _password: string): Promise<any> {
+    // Create request information
+    const resetPasswordPath: string = '/password/reset/callback';
+    const requestParams: Object = {
+      resetCode: _resetCode,
+      userId: _userId,
+      newPassword: _password,
+    };
+
+    // Send request
+    const promise = this._feasyApi.post(resetPasswordPath, requestParams)
+      .then((successResponse: Response) => Promise.resolve()) // End then(successResponse)
+      .catch((errorResponse: Response) => {
+        let error;
+        const responseBody = errorResponse.json();
+        const errorMessage: string = (responseBody && responseBody.error && responseBody.error.message) || '';
+
+        switch (errorResponse.status) {
+          case 400:
+            const errorMessageParts: string[] = errorMessage.split('Invalid parameters: ');
+            const invalidParamsString: string = errorMessageParts.length > 1 ? errorMessageParts[1] : '';
+            const invalidParams: string[] = invalidParamsString.split(',');
+            error = invalidParams;
+
+            break;
+          case 403:
+            if (errorMessage.indexOf('expired') !== -1) error = 'code_expired';
+            else if (errorMessage.indexOf('already') !== -1) error = 'code_used';
+            else if (errorMessage.indexOf('match') !== -1) error = 'code_mismatch';
+            else error = errorMessage;
+
+            break;
+          case 404:
+            error = 'code_dne';
+            break;
+          default:
+            error = errorMessage;
+        }
+
+        return Promise.reject(error);
+      }); // End this._feasyApi.post()
+
+    return promise;
+  } // End resetPassword()
 }

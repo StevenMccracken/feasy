@@ -166,6 +166,31 @@ describe('Start server', () => {
     });
   }); // End googleOAuthUrl
 
+  // Request password reset
+  const requestPasswordReset = 'Request password reset';
+  describe(requestPasswordReset, () => {
+    let requestParams;
+    beforeEach(() => {
+      requestParams = {
+        url: `${baseUrl}/password/reset`,
+        form: {
+          email: `${user2Name}@grunttest.com`,
+        },
+      };
+    });
+
+    it(
+      'requests for a password reset link to be sent via email and returns status code 200',
+      (done) => {
+        REQUEST.post(requestParams, (error, response, body) => {
+          expect(response.statusCode).toBe(200);
+          LOG(requestPasswordReset, body);
+          done();
+        });
+      }
+    );
+  }); // End request password reset
+
   // Get user 1's information
   const getUser1Info = 'Get user 1\'s information';
   describe(getUser1Info, () => {
