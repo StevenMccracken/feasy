@@ -21,8 +21,8 @@ function log(_message) {
 /**
  * Sends pure text content in an email message
  * @param {String} _to the email address to send the email message to
- * @param {[type]} [_subject = ''] the subject line of the email message
- * @param {[type]} [_text = ''] the text content for the email message to contain
+ * @param {String} [_subject = ''] the subject line of the email message
+ * @param {String} [_text = ''] the text content for the email message to contain
  * @return {Promise<any>} the result of the email that was sent
  */
 const sendText = function sendText(_to, _subject = '', _text = '') {
@@ -45,6 +45,12 @@ const sendText = function sendText(_to, _subject = '', _text = '') {
   return promise;
 }; // End sendText()
 
+/**
+ * Sends a password reset email with a unique link to reset a user's password
+ * @param {Object} [_userInfo = {}] the Mongoose object for the desired user
+ * @param {String} [_passwordResetUrl = ''] the unique link
+ * to be added to the email for the user to navigate to
+ */
 const sendPasswordReset = function sendPasswordReset(_userInfo = {}, _passwordResetUrl = '') {
   const SOURCE = 'sendPasswordReset()';
   log(SOURCE);
