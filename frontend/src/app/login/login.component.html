@@ -26,6 +26,8 @@
       <button type="button" id="signup" class="waves-effect waves-light btn col s5 offset-s2 m3 offset-m1" routerLink="/signup">Signup</button>
       <img id="googleSignIn" (click)="googleSignIn()" (mouseover)='googleSignInHover()' (mouseout)="googleSignInUnhover()" [src]="googleSignInImageSource" alt="Sign in with Google"/>
     </div>
-    <p>The access code is only required when <b>singing up</b> to use our app (even if you use a Google account). Once you have signed up, you do not need to enter a code to log in</p>
+    <p>The access code is only required when <b>signing up</b> to use our app (even if you use a Google account). Once you have signed up, you do not need to enter a code to log in</p>
   </form>
+
+  <p class="col s12 m10 offset-m1 l4 offset-l4">Forgot your password? Click <a [routerLink]="['/passwordreset']">here</a> to recover it</p>
 </div>

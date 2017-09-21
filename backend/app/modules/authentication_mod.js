@@ -81,8 +81,31 @@ const generateToken = function generateToken(_userInfo) {
   return JWT.sign(_userInfo, JWT_CONFIG.secret, { expiresIn: STANDARD_TOKEN_EXPIRATION_TIME });
 }; // End generateToken()
 
+/**
+ * Performs a one-way salted hash on a given value
+ * @param {String} _value the value to hash
+ * @return {Promise<String>} the hashed value
+ */
+const hash = function hash(_value) {
+  const SOURCE = 'hash()';
+  log(SOURCE);
+
+  const promise = new Promise((resolve, reject) => {
+    BCRYPT.genSalt(5)
+      .then((salt) => {
+        BCRYPT.hash(_value, salt)
+          .then(hashedValue => resolve(hashedValue)) // End then(hashedValue)
+          .catch(hashError => reject(hashError)); // End BCRYPT.hash()
+      }) // End then(salt)
+      .catch(genSaltError => reject(genSaltError)); // End BCRYPT.genSalt()
+  }); // End create promise
+
+  return promise;
+}; // End hash()
+
 module.exports = {
   validatePasswords,
   verifyToken,
   generateToken,
+  hash,
 };

@@ -13,6 +13,7 @@ const USERS = require('../controller/user');
 const AUTH = require('./authentication_mod');
 const VALIDATE = require('./validation_mod');
 const GOOGLE_API = require('./googleApi_mod');
+const SENDGRID_API = require('./sendGridApi_mod');
 const ASSIGNMENTS = require('../controller/assignment');
 
 const eventEmitter = new EVENTS.EventEmitter();
@@ -500,6 +501,370 @@ const authenticateGoogle = function authenticateGoogle(_request, _response) {
     }); // End eventEmitter.once()
   }); // End return promise
 }; // End authenticateGoogle()
+
+/**
+ * Initiates the process of resetting a user's password when they do not know the password
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+const startPasswordReset = function startPasswordReset(_request, _response) {
+  const SOURCE = 'startPasswordReset()';
+  log(SOURCE, _request);
+
+  const promise = new Promise((resolve, reject) => {
+    // Check request parameters
+    const invalidParams = [];
+    if (!VALIDATE.isValidEmail(_request.body.email)) invalidParams.push('email');
+
+    if (invalidParams.length > 0) {
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        `Invalid parameters: ${invalidParams.join()}`
+      );
+
+      reject(errorJson);
+    } else {
+      // Request parameters are valid. Check to see if a user with that email exists
+      USERS.getByEmail(_request.body.email, false)
+        .then((userInfo) => {
+          if (!UTIL.hasValue(userInfo)) {
+            // User with that email does not exist
+            const errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.RESOURCE_DNE_ERROR,
+              'A user with that email does not exist'
+            );
+
+            reject(errorJson);
+          } else {
+            // Create a random token and hash it
+            const uuid = UTIL.newUuid();
+            AUTH.hash(uuid)
+              .then((randomHash) => {
+                // Create a code and attach the random hashed token for the user
+                CODES.createForgottenPasswordCode(userInfo, randomHash)
+                  .then((code) => {
+                    // Send the unique url with the hashed random token to the user via email
+                    const uniqueUrl = `https://www.feasy-app.com/#/passwordreset?code=${code.uuid}`;
+                    SENDGRID_API.sendPasswordReset(userInfo, uniqueUrl)
+                      .then((sendResult) => {
+                        const successJson = {
+                          success: {
+                            message: 'Password reset email successfully sent',
+                            url: uniqueUrl,
+                          },
+                        };
+
+                        resolve(successJson);
+                      }) // End then(sendResult)
+                      .catch((sendEmailError) => {
+                        const errorJson = ERROR.sendGridError(
+                          SOURCE,
+                          _request,
+                          _response,
+                          sendEmailError
+                        );
+
+                        reject(errorJson);
+                      }); // End SENDGRID_API.sendPasswordReset()
+                  }) // End then(code)
+                  .catch((createCodeError) => {
+                    const errorJson = ERROR.codeError(SOURCE, _request, _response, createCodeError);
+                    reject(errorJson);
+                  }); // End CODES.createForgottenPasswordCode()
+              }) // End then(randomHash)
+              .catch((hashError) => {
+                const errorJson = ERROR.bcryptError(SOURCE, _request, _response, hashError);
+                reject(errorJson);
+              }); // End AUTH.hash()
+          }
+        }) // End then(userInfo)
+        .catch((getUserError) => {
+          const errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
+          reject(errorJson);
+        }); // End USERS.getByEmail()
+    }
+  }); // End create promise
+
+  return promise;
+}; // End startPasswordReset()
+
+/**
+ * Retrieves necessary details about a password reset code, like the username for the reset code
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+const getPasswordResetDetails = function getPasswordResetDetails(_request, _response) {
+  const SOURCE = 'getPasswordResetDetails()';
+  log(SOURCE);
+
+  const promise = new Promise((resolve, reject) => {
+    // Check request parameters
+    const invalidParams = [];
+    if (!VALIDATE.isValidString(_request.query.code)) invalidParams.push('code');
+
+    if (invalidParams.length > 0) {
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        `Invalid parameters: ${invalidParams.join()}`
+      );
+
+      reject(errorJson);
+    } else {
+      // Request parameters are valid. Check if the password reset code exists
+      CODES.getByUuid(_request.query.code)
+        .then((passwordResetCode) => {
+          if (!UTIL.hasValue(passwordResetCode)) {
+            const errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.RESOURCE_DNE_ERROR,
+              'That password reset code does not exist'
+            );
+
+            reject(errorJson);
+          } else {
+            // The code exists. Check if it is expired
+            const expirationDate = passwordResetCode.expirationDate;
+            const now = new Date();
+
+            if (expirationDate < now) {
+              // The reset code has expired
+              const errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.RESOURCE_ERROR,
+                'That password reset code has expired'
+              );
+
+              reject(errorJson);
+            } else if (passwordResetCode.used) {
+              // The reset code has already been used
+              const errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.RESOURCE_ERROR,
+                'That password reset code has already been used'
+              );
+
+              reject(errorJson);
+            } else {
+              // Get the user details for the user that the code belongs to
+              USERS.getById(passwordResetCode.userId)
+                .then((userInfo) => {
+                  if (!UTIL.hasValue(userInfo)) {
+                    const errorJson = ERROR.error(
+                      SOURCE,
+                      _request,
+                      _response,
+                      ERROR.CODE.API_ERROR,
+                      null,
+                      `${passwordResetCode.userId} could not be found for password reset code ${passwordResetCode.uuid}`
+                    );
+
+                    reject(errorJson);
+                  } else {
+                    // Retrieved the user info for the user id linked to the password reset code
+                    const successJson = {
+                      success: {
+                        userId: userInfo._id,
+                        username: userInfo.username,
+                      },
+                    };
+
+                    // Add the first name and last name if they exist
+                    if (UTIL.hasValue(userInfo.firstName)) {
+                      successJson.success.firstName = userInfo.firstName;
+                    }
+
+                    if (UTIL.hasValue(userInfo.lastName)) {
+                      successJson.success.lastName = userInfo.lastName;
+                    }
+
+                    resolve(successJson);
+                  }
+                }) // End then(userInfo)
+                .catch((getUserError) => {
+                  const errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
+                  reject(errorJson);
+                }); // End USERS.getById()
+            }
+          }
+        }) // End then(passwordResetCode)
+        .catch((getCodeError) => {
+          const errorJson = ERROR.codeError(SOURCE, _request, _response, getCodeError);
+          reject(errorJson);
+        }); // End CODES.getByUuid()
+    }
+  }); // End create promise
+
+  return promise;
+}; // End getPasswordResetDetails()
+
+/**
+ * Concludes the process of resetting a user's password when they do not know the password
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @return {Promise<Object>} a success JSON or error JSON
+ */
+const finishPasswordReset = function finishPasswordReset(_request, _response) {
+  const SOURCE = 'finishPasswordReset()';
+  log(SOURCE, _request);
+
+  const promise = new Promise((resolve, reject) => {
+    // Check request parameters
+    const invalidParams = [];
+    if (!VALIDATE.isValidString(_request.body.resetCode)) invalidParams.push('resetCode');
+    if (!VALIDATE.isValidObjectId(_request.body.userId)) invalidParams.push('userId');
+    if (!VALIDATE.isValidPassword(_request.body.newPassword)) invalidParams.push('newPassword');
+
+    if (invalidParams.length > 0) {
+      const errorJson = ERROR.error(
+        SOURCE,
+        _request,
+        _response,
+        ERROR.CODE.INVALID_REQUEST_ERROR,
+        `Invalid parameters: ${invalidParams.join()}`
+      );
+
+      reject(errorJson);
+    } else {
+      // Request parameters are valid. Check if the password reset code exists
+      CODES.getByUuid(_request.body.resetCode)
+        .then((passwordResetCode) => {
+          if (!UTIL.hasValue(passwordResetCode)) {
+            const errorJson = ERROR.error(
+              SOURCE,
+              _request,
+              _response,
+              ERROR.CODE.RESOURCE_DNE_ERROR,
+              'That password reset code does not exist'
+            );
+
+            reject(errorJson);
+          } else {
+            // The code exists. Check if it is expired
+            const expirationDate = passwordResetCode.expirationDate;
+            const now = new Date();
+
+            if (expirationDate < now) {
+              // The reset code has expired
+              const errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.RESOURCE_ERROR,
+                'That password reset code has expired'
+              );
+
+              reject(errorJson);
+            } else if (passwordResetCode.used) {
+              // The reset code has already been used
+              const errorJson = ERROR.error(
+                SOURCE,
+                _request,
+                _response,
+                ERROR.CODE.RESOURCE_ERROR,
+                'That password reset code has already been used'
+              );
+
+              reject(errorJson);
+            } else {
+              // Get the user details for the user that the code belongs to
+              USERS.getById(passwordResetCode.userId)
+                .then((userInfo) => {
+                  if (!UTIL.hasValue(userInfo)) {
+                    const errorJson = ERROR.error(
+                      SOURCE,
+                      _request,
+                      _response,
+                      ERROR.CODE.API_ERROR,
+                      null,
+                      `${passwordResetCode.userId} could not be found for password reset code ${passwordResetCode.uuid}`
+                    );
+
+                    reject(errorJson);
+                  } else if (String(userInfo._id) !== _request.body.userId) {
+                    // The username in the request body does not match the user for the code
+                    const errorJson = ERROR.error(
+                      SOURCE,
+                      _request,
+                      _response,
+                      ERROR.CODE.RESOURCE_ERROR,
+                      'The user ID you provided does not match the user ID for the password reset code'
+                    );
+
+                    reject(errorJson);
+                  } else {
+                    // All request body info is valid. Update the password
+                    USERS.updateAttribute(userInfo, 'password', _request.body.newPassword)
+                      .then((updatedUserInfo) => {
+                        // Password was updated. Try and set the reset password code as used
+                        const successJson = {
+                          success: {
+                            message: 'Successfully updated password',
+                          },
+                        };
+
+                        // Mark the password reset code as used
+                        CODES.updateAttribute(passwordResetCode, 'used', true)
+                          .then(updatedCode => resolve(successJson)) // End then(updatedCode)
+                          .catch((updateCodeError) => {
+                            log(
+                              `Password reset code '${passwordResetCode._id}' not marked as used but password was successfully updated`,
+                              _request
+                            );
+
+                            ERROR.codeError(SOURCE, _request, _response, updateCodeError);
+
+                            /*
+                             * Still send success to the user. Not 100%
+                             * secure, but the code will eventually expire
+                             */
+                            resolve(successJson);
+                          }); // End CODES.updateAttribute()
+                      }) // End then(updatedUserInfo)
+                      .catch((updateError) => {
+                        const errorJson = ERROR.userError(
+                          SOURCE,
+                          _request,
+                          _response,
+                          updateError
+                        );
+
+                        reject(errorJson);
+                      }); // End USERS.updateAttribute()
+                  }
+                }) // End then(userInfo)
+                .catch((getUserError) => {
+                  const errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
+                  reject(errorJson);
+                }); // End USERS.getById()
+            }
+          }
+        }) // End then(passwordResetCode)
+        .catch((getCodeError) => {
+          const errorJson = ERROR.codeError(SOURCE, _request, _response, getCodeError);
+          reject(errorJson);
+        }); // End CODES.getByUuid()
+    }
+  }); // End create promise
+
+  return promise;
+}; // End finishPasswordReset()
 
 /**
  * createUser - Adds a new user to the database and sends the client a web token
@@ -2272,6 +2637,9 @@ module.exports = {
   getGoogleAuthUrl,
   exchangeGoogleAuthCode,
   authenticateGoogle,
+  startPasswordReset,
+  getPasswordResetDetails,
+  finishPasswordReset,
   createUser,
   retrieveUser,
   updateUserUsername,
