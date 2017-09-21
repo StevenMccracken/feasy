@@ -681,8 +681,18 @@ const getPasswordResetDetails = function getPasswordResetDetails(_request, _resp
                     const successJson = {
                       success: {
                         userId: userInfo._id,
+                        username: userInfo.username,
                       },
                     };
+
+                    // Add the first name and last name if they exist
+                    if (UTIL.hasValue(userInfo.firstName)) {
+                      successJson.success.firstName = userInfo.firstName;
+                    }
+
+                    if (UTIL.hasValue(userInfo.lastName)) {
+                      successJson.success.lastName = userInfo.lastName;
+                    }
 
                     resolve(successJson);
                   }

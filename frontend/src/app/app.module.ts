@@ -31,6 +31,7 @@ import { AssignmentService } from './services/assignment.service';
 import { CommonUtilsService } from './utils/common-utils.service';
 import { LocalStorageService } from './utils/local-storage.service';
 import { AppRoutingModule } from './app-routing/app-routing.module';
+import { PasswordResetComponent } from './password-reset/password-reset.component';
 
 // Configure client side Google API service
 const gapiClientConfig: ClientConfig = {
@@ -49,6 +50,7 @@ const gapiClientConfig: ClientConfig = {
     AppComponent,
     LoginComponent,
     SignupComponent,
+    PasswordResetComponent,
   ],
   imports: [
     HttpModule,
