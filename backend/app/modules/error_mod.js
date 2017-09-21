@@ -495,6 +495,31 @@ const codeError = function codeError(_source, _request, _response, _error) {
   return errorJson;
 }; // End codeError()
 
+/**
+ * sendGridError - Determines the correct error JSON for a SendGrid API error
+ * @param {String} _source the function where the error occurred
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ * @param {Object} _error the SendGrid API error
+ * @return {Object} a formalized error JSON
+ */
+const sendGridError = function sendGridError(_source, _request, _response, _error) {
+  let errorJson;
+  switch (_error) {
+    default:
+      errorJson = error(
+        _source,
+        _request,
+        _response,
+        ERROR_CODE.API_ERROR,
+        null,
+        _error
+      );
+  } // End switch (_error)
+
+  return errorJson;
+}; // End sendGridError()
+
 module.exports = {
   error,
   CODE: ERROR_CODE,
@@ -504,6 +529,7 @@ module.exports = {
   bcryptError,
   multerError,
   pythonError,
+  sendGridError,
   googleApiError,
   assignmentError,
   authenticationError,

@@ -37,4 +37,5 @@ Thumbs.db
 jwtSecret.json
 googleSecret.json
 bugsnagSecret.json
+sendGridSecret.json
 secrets.tar

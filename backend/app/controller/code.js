@@ -6,7 +6,7 @@ const LOG = require('../modules/log_mod');
 const CODE = require('../models/code.js');
 const UTIL = require('../modules/utility_mod');
 
-const UNIVERSAL_PROJECTION = '_id code used';
+const UNIVERSAL_PROJECTION = '_id code used expirationDate userId';
 
 /**
  * log - Logs a message to the server console
@@ -37,6 +37,33 @@ const createRandom = function createRandom() {
       .catch(saveError => reject(saveError)); // End code.save()
   }); // End return promise
 }; // End createRandom()
+
+/*
+ * Creates a Code with an expiration date of 1 hour from the current date
+ * @param {User} [_userInfo = {}] the Mongoose object of the user
+ * @param {String} _code a unique identifier for the Code object
+ * @return {Promise<Code>} the Mongoose object
+ */
+const createForgottenPasswordCode = function createForgottenPasswordCode(_userInfo = {}, _code) {
+  const SOURCE = 'createForgottenPasswordCode()';
+  log(SOURCE);
+
+  const promise = new Promise((resolve, reject) => {
+    const newCode = new CODE();
+
+    newCode.uuid = _code;
+    newCode.used = false;
+    newCode.userId = _userInfo._id;
+    const oneHourFromNow = (new Date()).getTime() + 3600000;
+    newCode.expirationDate = new Date(oneHourFromNow);
+
+    newCode.save()
+      .then(() => resolve(newCode)) // End then()
+      .catch(saveCodeError => reject(saveCodeError)); // End newCode.save()
+  }); // End create promise
+
+  return promise;
+}; // End createForgottenPasswordCode()
 
 /**
  * getByUuid - Retrieves a code by it's uuid
@@ -94,6 +121,7 @@ const updateAttribute = function updateAttribute(_code, _attribute, _newValue) {
 
 module.exports = {
   createRandom,
+  createForgottenPasswordCode,
   getByUuid,
   update,
   updateAttribute,
