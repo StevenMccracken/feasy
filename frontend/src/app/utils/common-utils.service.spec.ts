@@ -1,5 +1,10 @@
-import { TestBed, inject } from '@angular/core/testing';
+// Import angular packages
+import {
+  inject,
+  TestBed,
+} from '@angular/core/testing';
 
+// Import our files
 import { CommonUtilsService } from './common-utils.service';
 
 describe('CommonUtilsService', () => {

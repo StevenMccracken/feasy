@@ -16,13 +16,14 @@ export class LocalStorageService {
   }
 
   /**
-   * Determines if local storage capabilities are enabled for the current user-agent
+   * Determines if local storage capabilities
+   * are enabled for the current user-agent
    * @return {boolean} the existence of local storage
    */
   private localStorageExists(): boolean {
-    const testKey = 'test';
-    const testValue = 'test';
-    let localStorageExists = true;
+    const testKey: string = 'test';
+    const testValue: string = 'test';
+    let localStorageExists: boolean = true;
 
     try {
       localStorage.setItem(testKey, testValue);
@@ -37,7 +38,8 @@ export class LocalStorageService {
   /**
    * Determines if a specific local storage item contains any meaningful data
    * @param {string} _itemKey the key of the local storage item
-   * @return {boolean} whether or not the key is not null, not undefined, and not an empty string
+   * @return {boolean} whether or not the key is not
+   * null, not undefined, and not an empty string
    */
   isValidItem(_itemKey: string): boolean {
     const storageItem: string = this.storage.getItem(_itemKey);
@@ -74,7 +76,8 @@ export class LocalStorageService {
   } // End clearItem()
 
   /**
-   * Removes a specific item from local storage. _itemKey and the associated value will be removed.
+   * Removes a specific item from local storage.
+   * _itemKey and the associated value will be removed.
    * @param {string} _itemKey the key of the local storage item
    */
   deleteItem(_itemKey: string): void {

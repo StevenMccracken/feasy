@@ -6,13 +6,16 @@ import {
 import { Router } from '@angular/router';
 
 // Import our files
+import { Error } from '../objects/error';
+import { RemoteError } from '../objects/remote-error';
 import { UserService } from '../services/user.service';
+import { ErrorService } from '../services/error.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 
 @Component({
   selector: 'app-password-reset',
   templateUrl: './password-reset.component.html',
-  styleUrls: ['./password-reset.component.css']
+  styleUrls: ['./password-reset.component.css'],
 })
 export class PasswordResetComponent implements OnInit {
   _emailAddress: string;
@@ -37,9 +40,16 @@ export class PasswordResetComponent implements OnInit {
   finalResetError: boolean;
   finalResetErrorMessage: string;
 
+  /* tslint:disable max-line-length */
   defaultErrorMessage: string = 'We apologize, but we are unable to help you reset your password right now. Please email us at feasyresponse@gmail.com to resolve this issue';
+  /* tslint:enable max-line-length */
 
-  constructor(private ROUTER: Router, private UTILS: CommonUtilsService, private USER_SERVICE: UserService) {}
+  constructor(
+    private ROUTER: Router,
+    private ERROR: ErrorService,
+    private UTILS: CommonUtilsService,
+    private USER_SERVICE: UserService,
+  ) {}
 
   ngOnInit() {
     const passwordResetCode = this.parseUrlForResetCode(this.ROUTER.url);
@@ -59,22 +69,33 @@ export class PasswordResetComponent implements OnInit {
           this.displayName = nameMessage;
           this.showFinalResetForm = true;
         }) // End then(userId)
-        .catch((errorMessage: string) => {
+        .catch((errorMessage: Error) => {
           this.passwordResetDetailsError = true;
-          this.passwordResetDetailsErrorMessage = errorMessage;
+
+          if (typeof errorMessage !== 'string') {
+            this.passwordResetDetailsErrorMessage = this.defaultErrorMessage;
+            console.error(errorMessage);
+          } else this.passwordResetDetailsErrorMessage = errorMessage;
+
           this.passwordResetDetailsErrorMessage += '. You will be redirected to send another reset email shortly'
 
+          // Display the initial reset form after 5 seconds
+          /* tslint:disable align */
           setTimeout(() => {
-            this.passwordResetDetailsError = false;
-            this.passwordResetDetailsErrorMessage = '';
-            this.showInitialResetForm = true;
-          }, 5000);
+              this.passwordResetDetailsError = false;
+              this.passwordResetDetailsErrorMessage = '';
+              this.showInitialResetForm = true;
+            }, 5000);
+            /* tslint:enable align */
         }); // End this.getPasswordResetDetails()
-    } else {
-      this.showInitialResetForm = true;
-    }
-  }
+    } else this.showInitialResetForm = true;
+  } // End ngOnInit()
 
+  /**
+   * Parses a given URL string for a password reset code
+   * @param {string} [_url = ''] the URL string
+   * @return {string} the password reset code in the URL string
+   */
   parseUrlForResetCode(_url: string = ''): string {
     let resetCode;
 
@@ -98,81 +119,120 @@ export class PasswordResetComponent implements OnInit {
     return resetCode;
   }
 
+  /**
+   * Sends a request to the API to send a password reset
+   * email to the email the user entered in the form
+   */
   sendResetEmail(): void {
     const promise = this.USER_SERVICE.sendPasswordResetEmail(this._emailAddress)
       .then(() => {
         this.showInitialResetForm = false;
         this.showEmailSentMessage = true;
       }) // End then()
-      .catch((errorMessage: string) => {
+      .catch((sendEmailError: RemoteError) => {
         this.initialPasswordResetError = true;
-        if (errorMessage === 'email_invalid') this.initialPasswordResetErrorMessage = 'That email address is invalid';
-        else if (errorMessage === 'email_dne') this.initialPasswordResetErrorMessage = 'That email address does not exist';
-        else this.initialPasswordResetErrorMessage = this.defaultErrorMessage;
+        if (this.ERROR.isInvalidRequestError(sendEmailError)) {
+          this.initialPasswordResetErrorMessage = 'That email address is invalid';
+        } else if (this.ERROR.isResourceDneError(sendEmailError)) {
+          this.initialPasswordResetErrorMessage = 'That email address does not exist';
+        } else this.initialPasswordResetErrorMessage = this.defaultErrorMessage
       }); // End this.USER_SERVICE.sendPasswordResetEmail()
   } // End sendResetEmail()
 
-  getPasswordResetDetails(_code: string = ''): Promise<string> {
+  /**
+   * Retrieves user details for a given password reset
+   * code in order to later update the user's password
+   * @param {string} [_code = ''] the password reset code
+   * @return {Promise<Object>} JSON of the user details like
+   * userId and username, and possibly first name & last name
+   */
+  getPasswordResetDetails(_code: string = ''): Promise<Object> {
     const promise = this.USER_SERVICE.getPasswordResetDetails(_code)
-      .then((userId: string) => {
-        if (this.UTILS.hasValue(userId)) return Promise.resolve(userId);
-        else return Promise.reject(null);
-      }) // End then(userId)
-      .catch((getDetailsError: string) => {
+      .then((userDetails: Object) => Promise.resolve(userDetails)) // End then(userDetails)
+      .catch((getDetailsError: Error) => {
         let errorMessage: string;
-        if (typeof getDetailsError === 'string') {
-          const firstPart: string = 'The password reset code in the URL';
-          if (getDetailsError === 'code_invalid') errorMessage = `${firstPart} is invalid`;
-          else if (getDetailsError === 'code_dne') errorMessage = `${firstPart} does not exist`;
-          else if (getDetailsError === 'code_expired') errorMessage = `${firstPart} has expired`;
-          else if (getDetailsError === 'code_used') errorMessage = `${firstPart} has already been used`;
-          else errorMessage = this.defaultErrorMessage;
-        } else errorMessage = this.defaultErrorMessage;
+        let unknownError: boolean = false;
 
-        return Promise.reject(errorMessage);
+        if (this.ERROR.isRemoteError(getDetailsError as RemoteError)) {
+          const remoteError: RemoteError = getDetailsError as RemoteError;
+          const firstPart: string = 'The password reset code in the URL';
+
+          if (this.ERROR.isInvalidRequestError(remoteError)) errorMessage = `${firstPart} is invalid`;
+          else if (this.ERROR.isResourceDneError(remoteError)) errorMessage = `${firstPart} does not exist`;
+          else if (this.ERROR.isResourceError(remoteError)) {
+            const invalidResourceReason: string = remoteError.getCustomProperty('invalidResourceReason') || '';
+
+            if (invalidResourceReason === 'expired') errorMessage = `${firstPart} has expired`;
+            else if (invalidResourceReason === 'used') errorMessage = `${firstPart} has already been used`;
+            else unknownError = true;
+          } else unknownError = true;
+        } else unknownError = true;
+
+        if (unknownError) return Promise.reject(getDetailsError);
+        else return Promise.reject(errorMessage);
       }); // End this.USER_SERVICE.getPasswordResetDetails()
 
     return promise;
   } // End getPasswordResetDetails()
 
+  /**
+   * Sends a request to the API with password entered in the HTML form,
+   * the user ID, and the password reset code to reset the user's password
+   */
   resetPassword(): void {
     const promise = this.USER_SERVICE.resetPassword(this.escapedResetCode, this.userId, this._newPassword)
       .then(() => {
+        // Show the success info and route back to the login screen after 5 seconds
         this.showFinalResetForm = false;
         this.showSuccess = true;
         setTimeout(() => this.ROUTER.navigate(['/login']), 5000);
       }) // End then()
-      .catch((resetPasswordError: any) => {
+      .catch((resetPasswordError: RemoteError) => {
         this.finalResetError = true;
 
         let errorMessage: string;
-        if (typeof resetPasswordError === 'string') {
-          const firstPart: string = 'The password reset code in the URL';
-          if (resetPasswordError === 'code_expired') errorMessage = `${firstPart} has expired`;
-          else if (resetPasswordError === 'code_dne') errorMessage = `${firstPart} does not exist`;
-          else if (resetPasswordError === 'code_used') errorMessage = `${firstPart} has already been used`;
-          else if (resetPasswordError === 'code_mismatch') {
-            errorMessage = this.defaultErrorMessage;
-            console.error(resetPasswordError);
-          } else errorMessage = this.defaultErrorMessage;
-        } else if (Array.isArray(resetPasswordError)) {
-          let invalidPassword: boolean = false;
+        let unknownError: boolean = false;
+        const firstPart: string = 'The password reset code in the URL';
+
+        if (this.ERROR.isInvalidRequestError(resetPasswordError)) {
+          // Get the invalid params
+          const invalidParams: string[] = resetPasswordError.getCustomProperty('invalidParameters') || [];
+
           let invalidUserId: boolean = false;
+          let invalidPassword: boolean = false;
           let invalidResetCode: boolean = false;
 
-          resetPasswordError.forEach((invalidParam) => {
+          // Check for each invalid parameter existence in the invalidParams array
+          invalidParams.forEach((invalidParam) => {
             if (invalidParam === 'newPassword') invalidPassword = true;
             else if (invalidParam === 'userId') invalidUserId = true;
             else if (invalidParam === 'resetCode') invalidResetCode = true;
-            else console.error('Invalid param while resetting password: %s', invalidParam);
+            else console.error('Invalid parameter while resetting password: %s', invalidParam);
           });
 
+          /*
+           * If the new password is invalid but something else
+           * isn't, log it but display default error to the user
+           */
           if (invalidPassword) errorMessage = 'Your new password is invalid. Please try again';
           if (invalidUserId) console.error('Invalid user ID while resetting password');
           if (invalidResetCode) console.error('Invalid reset code while resetting password');
 
-          if (!invalidPassword) errorMessage = this.defaultErrorMessage;
-        } else errorMessage = this.defaultErrorMessage;
+          // If something besides the new password is invalid, that's weird
+          unknownError = !invalidPassword;
+        } else if (this.ERROR.isResourceDneError(resetPasswordError)) errorMessage = `${firstPart} does not exist`;
+        else if (this.ERROR.isResourceError(resetPasswordError)) {
+          const invalidResourceReason: string = resetPasswordError.getCustomProperty('invalidResourceReason') || '';
+
+          if (invalidResourceReason === 'expired') errorMessage = `${firstPart} has expired`;
+          else if (invalidResourceReason === 'used') errorMessage = `${firstPart} has already been used`;
+          else unknownError = true;
+        } else unknownError = true;
+
+        if (unknownError) {
+          errorMessage = this.defaultErrorMessage;
+          console.error(resetPasswordError);
+        }
 
         this.finalResetErrorMessage = errorMessage;
       }); // End this.USER_SERVICE.resetPassword()

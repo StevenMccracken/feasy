@@ -12,6 +12,15 @@ export class CommonUtilsService {
   constructor() {}
 
   /**
+   * Determines whether a value is a string or not
+   * @param {any} _value any value to test
+   * @return {boolean} whether or not the value is a string
+   */
+  isString(_value: any): boolean {
+    return typeof _value === 'string';
+  } // End isString()
+
+  /**
    * Determines whether a JSON is empty or not
    * @param {Object} [_json = {}] the JSON to test
    * @return {boolean} whether or not the JSON is empty

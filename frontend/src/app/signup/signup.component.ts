@@ -25,13 +25,17 @@ import { LocalStorageService } from '../utils/local-storage.service';
   styleUrls: ['./signup.component.css'],
 })
 export class SignupComponent {
-  // TODO: Do we need all of these class variables?
+  // Variables from the signup form
   user: User = new User();
-  alphaCode: string;
-  passwordValidator: string;
+  _alphaCode: string;
+  _passwordConfirm: string;
+
+  // Variables to update the form to display errors
   error: boolean = false;
   errorMessage: string = '';
   private standardErrorMessage: string = 'Something bad happened. Please try signing up again';
+
+  // An JSON mapping variable names to more formal english words
   private varToWordMap: Object = {
     username: 'username',
     password: 'password',
@@ -42,11 +46,11 @@ export class SignupComponent {
   };
 
   constructor(
-    private _router: Router,
-    private _error: ErrorService,
-    private _userService: UserService,
-    private _utils: CommonUtilsService,
-    private _storage: LocalStorageService,
+    private ROUTER: Router,
+    private ERROR: ErrorService,
+    private USER_SERVICE: UserService,
+    private UTILS: CommonUtilsService,
+    private STORAGE: LocalStorageService,
   ) {}
 
   /**
@@ -60,57 +64,63 @@ export class SignupComponent {
       this.errorMessage = '';
     }
 
-    if (!this.user) return;
+    /*
+     * If the user object has a value, send it's
+     * information to create a user through the API
+     */
+    if (this.UTILS.hasValue(this.user)) {
+      // Send the user data to the API to create the user
+      this.USER_SERVICE.create(this.user, this._alphaCode)
+        .then((token: string) => {
+          // Add token and username info to browser local storage
+          this.STORAGE.setItem('token', token);
+          this.STORAGE.setItem('currentUser', this.user.username);
 
-    // Send the user data to the API to create the user
-    this._userService.create(this.user, this.alphaCode)
-      .then((token: string) => {
-        // Add token and username info to browser local storage
-        this._storage.setItem('token', token);
-        this._storage.setItem('currentUser', this.user.username);
+          // Route the user into the app
+          this.ROUTER.navigate(['/main']);
+        }) // End then(token)
+        .catch((createUserError: Error) => {
+          this.error = true;
+          let unknownError: boolean = false;
 
-        // Route the user into the app
-        this._router.navigate(['/main']);
-      }) // End then(token)
-      .catch((createUserError: Error) => {
-        this.error = true;
-        let unknownError = false;
-
-        if (this._error.isLocalError(createUserError)) {
-          if (createUserError.getType() === 'null_token') {
-            /* tslint:disable max-line-length */
-            this.errorMessage = 'Congratulations on creating your account! Unfortunately, there was a problem signing you in. Please go to the login page to sign in. We apologize for this inconvenience';
-            /* tslint:enable max-line-length */
-          } else unknownError = true;
-        } else if (this._error.isRemoteError(createUserError)) {
-          if (this._error.isResourceError(createUserError as RemoteError)) {
-            // Another user exists with one of these attributes from the form
-            const duplicateValue = createUserError.getCustomProperty('duplicateParameter');
-            const officialName = this.varToWordMap[duplicateValue] || duplicateValue;
-            if (duplicateValue === 'username' || duplicateValue === 'email') {
-              this.errorMessage = `That ${officialName} is already taken`;
-            } else if (duplicateValue === 'alphaCode') {
-              this.errorMessage = `That ${officialName} has already been used`;
+          if (this.ERROR.isLocalError(createUserError)) {
+            if (createUserError.getType() === 'null_token') {
+              /* tslint:disable max-line-length */
+              this.errorMessage = 'Congratulations on creating your account! Unfortunately, there was a problem signing you in. Please go to the login page to sign in. We apologize for this inconvenience';
+              /* tslint:enable max-line-length */
             } else unknownError = true;
-          } else if (this._error.isInvalidRequestError(createUserError as RemoteError)) {
-            this.errorMessage = this.handleInvalidRequestError(createUserError as RemoteError);
-          } else if (this._error.isResourceDneError(createUserError as RemoteError)) {
-            const officialName = this.varToWordMap['alphaCode'] || 'access code';
-            this.errorMessage = `That ${officialName} is not valid`;
-          } else unknownError = true;
-        } else unknownError = true;
+          } else if (this.ERROR.isRemoteError(createUserError)) {
+            if (this.ERROR.isResourceError(createUserError as RemoteError)) {
+              // Another user exists with one of these attributes from the form
+              const duplicateValue: string = createUserError.getCustomProperty('duplicateParameter');
+              const officialName: string = this.varToWordMap[duplicateValue] || duplicateValue;
 
-        if (unknownError) this.handleUnknownError(createUserError);
-      }); // End this._userService.create()
+              if (duplicateValue === 'username' || duplicateValue === 'email') this.errorMessage = `That ${officialName} is already taken`;
+              else if (duplicateValue === 'alphaCode') this.errorMessage = `That ${officialName} has already been used`;
+              else unknownError = true;
+            } else if (this.ERROR.isInvalidRequestError(createUserError as RemoteError)) {
+              this.errorMessage = this.handleInvalidRequestError(createUserError as RemoteError);
+            } else if (this.ERROR.isResourceDneError(createUserError as RemoteError)) {
+              const officialName = this.varToWordMap['alphaCode'] || 'access code';
+              this.errorMessage = `That ${officialName} does not exist`;
+            } else unknownError = true;
+          } else unknownError = true;
+
+          if (unknownError) this.handleUnknownError(createUserError);
+        }); // End this.USER_SERVICE.create()
+    }
   } // End signup()
 
   /**
-   * Determines the error message to display for an invalid request error after trying to submit the signup form
-   * @param {RemoteError} [_error =  = new RemoteError()] the error of type invalid_request_error
-   * @return {string} the appropriate error message for the incorrect fields in the form
+   * Determines the error message to display for an invalid
+   * request error after trying to submit the signup form
+   * @param {RemoteError} [_error = new RemoteError()]
+   * the error of type invalid_request_error
+   * @return {string} the appropriate error
+   * message for the incorrect fields in the form
    */
   private handleInvalidRequestError(_error: RemoteError = new RemoteError()): string {
-    let errorMessage;
+    let errorMessage: string;
     const invalidParams: string[] = _error.getCustomProperty('invalidParameters') || [];
 
     // If there are no invalid parameters in the error object, use the standard error message
@@ -144,7 +154,8 @@ export class SignupComponent {
   } // End handleInvalidRequestError()
 
   /**
-   * Handles unexpected error types by displaying the standard error message and logging the error
+   * Handles unexpected error types by displaying
+   * the standard error message and logging the error
    * @param {Error} _error the error of an unknown type
    */
   private handleUnknownError(_error: Error): void {

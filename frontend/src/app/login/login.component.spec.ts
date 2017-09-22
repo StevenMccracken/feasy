@@ -1,5 +1,11 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+// Import angular packages
+import {
+  async,
+  TestBed,
+  ComponentFixture,
+} from '@angular/core/testing';
 
+// Import our files
 import { LoginComponent } from './login.component';
 
 describe('LoginComponent', () => {
