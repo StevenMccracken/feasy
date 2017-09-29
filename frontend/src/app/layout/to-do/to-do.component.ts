@@ -132,9 +132,13 @@ export class ToDoComponent implements OnInit {
           storage.setItem('dueDate', (new Date(context.select)).toString());
           // this.assignment.dueDate = new Date(context.select);
         },
+        min: new Date(1970, 0, 1), // Set the min selectable date as 01/01/1970
+        max: false, // Max date is not constrained
         selectMonths: true, // Creates a dropdown to control month
-        selectYears: 15, // Creates a dropdown of 15 years to control year,
-        formatSubmit: 'yyyy/mm/dd',
+        selectYears: 25, // Creates a dropdown of 25 years to control year
+        format: 'dddd, mmmm d, yyyy', // Display format once a date has been selected
+        formatSubmit: 'yyyy/mm/dd', // Date format that is provided
+        hiddenName: true, // Ensures that submitted format is used, not regular format
       });
     });
   }
@@ -159,21 +163,6 @@ export class ToDoComponent implements OnInit {
   updateArray(assignment: Assignment): void {
     this.incompleteAssignments.push(assignment);
     this.sortAssignments();
-
-    // Capture local storage service variable for closure created by jQuery
-    const storage: LocalStorageService = this._storage;
-    $(document).ready(function () {
-      $('.datepicker').pickadate({
-        onSet: (context) => {
-          console.log(context);
-          storage.setItem('dueDate', (new Date(context.select)).toString());
-          // this.assignment.dueDate = new Date(context.select);
-        },
-        selectMonths: true, // Creates a dropdown to control month
-        selectYears: 15, // Creates a dropdown of 15 years to control year
-        formatSubmit: 'yyyy/mm/dd',
-      });
-    });
   }
 
   getTypeLabel(): boolean {

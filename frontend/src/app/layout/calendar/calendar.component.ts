@@ -34,7 +34,7 @@ import { COLORS } from '../../objects/colors';
 import { Assignment } from '../../objects/assignment';
 import { LayoutComponent } from '../layout.component';
 import { MessageService } from '../../services/message.service';
-import { LoadLearnService } from '../../services/load-learn.service';
+import { QuickAddService } from '../../services/quick-add.service';
 import { AssignmentService } from '../../services/assignment.service';
 import { CommonUtilsService } from '../../utils/common-utils.service';
 import { LocalStorageService } from '../../utils/local-storage.service';
@@ -129,7 +129,7 @@ export class CalendarComponent implements OnInit {
   constructor(
     private _router: Router,
     private _utils: CommonUtilsService,
-    private _loadLearn: LoadLearnService,
+    private _quickAdd: QuickAddService,
     private _storage: LocalStorageService,
     private _messageService: MessageService,
     private _assignmentService: AssignmentService,
@@ -148,8 +148,15 @@ export class CalendarComponent implements OnInit {
   ngOnInit() {
     this.subscription = this._messageService.getMessage()
       .subscribe((message) => {
-        const temp = this._loadLearn.getTaskArray();
-        this.populateAfter(temp);
+        if (this._utils.hasValue(message)) {
+          if (message.source === 'layout.component.addTasksInBulk()') {
+            const temp = this._quickAdd.getTaskArray();
+            this.populateAfter(temp);
+          } else {
+            console.log('calendar.component.ngOnInit() received unexpected message');
+            console.log(message);
+          }
+        } else console.log('calendar.component received clear message');
       });
 
     $('#viewEvent').modal({

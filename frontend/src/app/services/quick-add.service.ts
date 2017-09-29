@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 import { Assignment } from '../objects/assignment';
 
 @Injectable()
-export class LoadLearnService {
+export class QuickAddService {
   _assignments: Assignment[] = [];
   _assignmentComplete: Assignment[] = [];
   _assignmentIncomplete: Assignment[] = [];

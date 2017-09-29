@@ -48,9 +48,9 @@ export class LoginComponent implements OnInit {
 
   // Image URLs for the Google sign-in button (depending on it's state)
   googleSignInImageSource: string;
-  private googleSignInImageSourceDefault: string = '../../assets/btn_google_signin_light_normal_web@2x.png';
-  private googleSignInImageSourceHovered: string = '../../assets/btn_google_signin_light_focus_web@2x.png';
-  private googleSignInImageSourcePressed: string = '../../assets/btn_google_signin_light_pressed_web@2x.png';
+  private googleSignInImageSourceDefault: string = '../../assets/buttons/btn_google_signin_light_normal_web@2x.png';
+  private googleSignInImageSourceHovered: string = '../../assets/buttons/btn_google_signin_light_focus_web@2x.png';
+  private googleSignInImageSourcePressed: string = '../../assets/buttons/btn_google_signin_light_pressed_web@2x.png';
 
   constructor(
     private ROUTER: Router,

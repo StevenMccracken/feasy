@@ -4,7 +4,17 @@
   text-align: center;
 }
 
-.error-message .card-content {
+.success-message {
+  background-color: #44C751;
+  color: white;
+  text-align: center;
+}
+
+.success-message:hover {
+  cursor: pointer;
+}
+
+.error-message .card-content, .success-message .card-content {
   padding: 5px;
 }
 

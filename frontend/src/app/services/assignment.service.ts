@@ -21,10 +21,10 @@ import { LocalStorageService } from '../utils/local-storage.service';
 @Injectable()
 export class AssignmentService {
   constructor(
-    private _router: Router,
-    private _feasyApi: FeasyService,
-    private _utils: CommonUtilsService,
-    private _storage: LocalStorageService,
+    private ROUTER: Router,
+    private FEASY_API: FeasyService,
+    private UTILS: CommonUtilsService,
+    private STORAGE: LocalStorageService,
   ) {}
 
   /**
@@ -34,34 +34,34 @@ export class AssignmentService {
    */
   create(_assignment: Assignment = new Assignment()): Promise<Assignment> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const createPath: string = `/users/${username}/assignments`;
     const headersOptions: Object = { Authorization: token };
 
     // Check required assignment attributes
     const invalidParams: string[] = [];
-    if (!this._utils.hasValue(_assignment.title)) invalidParams.push('title');
-    if (!this._utils.hasValue(_assignment.dueDate)) _assignment.dueDate = new Date();
+    if (!this.UTILS.hasValue(_assignment.title)) invalidParams.push('title');
+    if (!this.UTILS.hasValue(_assignment.dueDate)) _assignment.dueDate = new Date();
 
     // Reject if there are invalid required assignment parameters
     if (invalidParams.length > 0) Promise.reject(invalidParams);
     else {
       // Add required assignment attributes
-      const dateUnixSeconds: Number = Math.round(_assignment.dueDate.getTime() / 1000);
+      const dateUnixSeconds: number = _assignment.getDueDateInUnixSeconds();
       const requestParams: Object = {
         title: _assignment.title,
         dueDate: dateUnixSeconds,
       };
 
       // Add optional assignment attributes
-      if (this._utils.hasValue(_assignment.class)) requestParams['class'] = _assignment.class;
-      if (this._utils.hasValue(_assignment.type)) requestParams['type'] = _assignment.type;
-      if (this._utils.hasValue(_assignment.description)) requestParams['description'] = _assignment.description;
-      if (this._utils.hasValue(_assignment.completed)) requestParams['completed'] = _assignment.completed;
+      if (this.UTILS.hasValue(_assignment.class)) requestParams['class'] = _assignment.class;
+      if (this.UTILS.hasValue(_assignment.type)) requestParams['type'] = _assignment.type;
+      if (this.UTILS.hasValue(_assignment.description)) requestParams['description'] = _assignment.description;
+      if (this.UTILS.hasValue(_assignment.completed)) requestParams['completed'] = _assignment.completed;
 
       // Send request
-      const promise = this._feasyApi.post(createPath, requestParams, headersOptions)
+      const promise = this.FEASY_API.post(createPath, requestParams, headersOptions)
         .then((successResponse: Response) => {
           const responseBody = successResponse.json();
 
@@ -83,7 +83,7 @@ export class AssignmentService {
             const invalidParameters = commaSeparatedParams.split(',');
             return Promise.reject(invalidParameters);
           } else return Promise.reject(errorResponse);
-        }); // End this._feasyApi.post()
+        }); // End this.FEASY_API.post()
 
       return promise;
     }
@@ -96,8 +96,8 @@ export class AssignmentService {
    */
   bulkCreate(_assignments: Assignment[] = []): Promise<Assignment[]> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const createPath: string = `/users/${username}/assignments`;
     const headersOptions: Object = { Authorization: token };
 
@@ -106,8 +106,8 @@ export class AssignmentService {
     const formattedAssignments: Object[] = [];
     for (let i = 0; i < _assignments.length; i++) {
       const invalidParams = [];
-      if (!this._utils.hasValue(_assignments[i].title)) invalidParams.push('title');
-      if (!this._utils.hasValue(_assignments[i].dueDate)) invalidParams.push('dueDate');
+      if (!this.UTILS.hasValue(_assignments[i].title)) invalidParams.push('title');
+      if (!this.UTILS.hasValue(_assignments[i].dueDate)) invalidParams.push('dueDate');
 
       if (invalidParams.length > 0) invalidAssignments[String(i)] = invalidParams;
       else {
@@ -119,22 +119,22 @@ export class AssignmentService {
         };
 
         // Add optional assignment attributes
-        if (this._utils.hasValue(_assignments[i].class)) assignmentAttributes['class'] = _assignments[i].class;
-        if (this._utils.hasValue(_assignments[i].type)) assignmentAttributes['type'] = _assignments[i].type;
-        if (this._utils.hasValue(_assignments[i].description)) assignmentAttributes['description'] = _assignments[i].description;
-        if (this._utils.hasValue(_assignments[i].completed)) assignmentAttributes['completed'] = _assignments[i].completed;
+        if (this.UTILS.hasValue(_assignments[i].class)) assignmentAttributes['class'] = _assignments[i].class;
+        if (this.UTILS.hasValue(_assignments[i].type)) assignmentAttributes['type'] = _assignments[i].type;
+        if (this.UTILS.hasValue(_assignments[i].description)) assignmentAttributes['description'] = _assignments[i].description;
+        if (this.UTILS.hasValue(_assignments[i].completed)) assignmentAttributes['completed'] = _assignments[i].completed;
 
         formattedAssignments.push(assignmentAttributes);
       }
     }
 
-    if (!this._utils.isJsonEmpty(invalidAssignments)) return Promise.reject(invalidAssignments);
+    if (!this.UTILS.isJsonEmpty(invalidAssignments)) return Promise.reject(invalidAssignments);
     else {
       // Create request parameters from assignment array
-      const requestParams: Object = { assignments: formattedAssignments.map(this._utils.stringify) };
+      const requestParams: Object = { assignments: formattedAssignments.map(this.UTILS.stringify) };
 
       // Send request
-      const promise = this._feasyApi.post(createPath, requestParams, headersOptions)
+      const promise = this.FEASY_API.post(createPath, requestParams, headersOptions)
         .then((successResponse: Response) => {
           const apiAssignments = successResponse.json();
 
@@ -155,7 +155,7 @@ export class AssignmentService {
             const invalidParameters = commaSeparatedParams.split(',');
             return Promise.reject(invalidParameters);
           } else return Promise.reject(errorResponse);
-        }); // End this._feasyApi.post()
+        }); // End this.FEASY_API.post()
 
       return promise;
     }
@@ -168,13 +168,13 @@ export class AssignmentService {
    */
   get(_id: string): Promise<Assignment> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const getPath: string = `/users/${username}/assignments/${_id}`;
     const headersOptions: Object = { Authorization: token };
 
     // Send request
-    const promise = this._feasyApi.get(getPath, headersOptions)
+    const promise = this.FEASY_API.get(getPath, headersOptions)
       .then((successResponse: Response) => {
         const responseBody = successResponse.json();
 
@@ -182,7 +182,7 @@ export class AssignmentService {
         const assignment = new Assignment().deserialize(responseBody);
         return Promise.resolve(assignment);
       }) // End then(successResponse)
-      .catch((errorResponse: Response) => Promise.reject(errorResponse)); // End this._feasyApi.get()
+      .catch((errorResponse: Response) => Promise.reject(errorResponse)); // End this.FEASY_API.get()
 
     return promise;
   } // End get()
@@ -193,13 +193,13 @@ export class AssignmentService {
    */
   getAll(): Promise<Assignment[]> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const getPath: string = `/users/${username}/assignments`;
     const headersOptions: Object = { Authorization: token };
 
     // Send request
-    const promise = this._feasyApi.get(getPath, headersOptions)
+    const promise = this.FEASY_API.get(getPath, headersOptions)
       .then((successResponse: Response) => {
         const apiAssignments = successResponse.json();
 
@@ -207,7 +207,7 @@ export class AssignmentService {
         const assignments: Assignment[] = apiAssignments.map(this.convertAssignmentJson);
         return Promise.resolve(assignments);
       }) // End then(successResponse)
-      .catch((errorResponse: Response) => Promise.reject(errorResponse)); // End this._feasyApi.get()
+      .catch((errorResponse: Response) => Promise.reject(errorResponse)); // End this.FEASY_API.get()
 
     return promise;
   } // End getAll()
@@ -221,8 +221,8 @@ export class AssignmentService {
    */
   private update(_id: string, _attribute: string, _newValue: any): Promise<any> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const updatePath: string = `/users/${username}/assignments/${_id}/${_attribute}`;
     const headersOptions: Object = { Authorization: token };
 
@@ -231,7 +231,7 @@ export class AssignmentService {
     const requestParams = { [`new${capitalizedAttribute}`]: _newValue };
 
     // Send request
-    const promise = this._feasyApi.put(updatePath, requestParams, headersOptions)
+    const promise = this.FEASY_API.put(updatePath, requestParams, headersOptions)
       .then((successResponse: Response) => Promise.resolve(successResponse))
       .catch((updateError: Response) => {
         // Return detailed errors for invalid request error. Otherwise, return the response object
@@ -247,7 +247,7 @@ export class AssignmentService {
 
           return Promise.reject(errorReason);
         } else return Promise.reject(updateError);
-      }); // End this._feasyApi.put()
+      }); // End this.FEASY_API.put()
 
     return promise;
   } // End update()
@@ -332,13 +332,13 @@ export class AssignmentService {
    */
   delete(_id: string): Promise<any> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const deletePath: string = `/users/${username}/assignments/${_id}`;
     const headersOptions: Object = { Authorization: token };
 
     // Send request
-    return this._feasyApi.delete(deletePath, headersOptions)
+    return this.FEASY_API.delete(deletePath, headersOptions)
       .then((successResponse: Response) => Promise.resolve())
       .catch((deleteError: any) => Promise.reject(deleteError));
   } // End delete()

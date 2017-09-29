@@ -78,6 +78,14 @@ export class Assignment implements Serializable<Assignment> {
     return this.editModeTitle;
   } // End getEditModeTitle()
 
+  getDueDateInUnixMilliseconds(): number {
+    return this.dueDate.getTime();
+  } // End getDueDateInUnixMilliseconds()
+
+  getDueDateInUnixSeconds(): number {
+    return Math.round(this.getDueDateInUnixMilliseconds() / 1000);
+  } // End getDueDateInUnixSeconds()
+
   setId(_id: string): void {
     this._id = _id;
   } // End setId()

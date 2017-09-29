@@ -174,33 +174,55 @@ export class ErrorService {
   }
 
   /**
-   * Returns the object type that a given Error could be (like Error, RemoteError, LocalError, unknown, etc)
+   * Returns the object type that a given Error could be
+   * (like Error, RemoteError, LocalError, unknown, etc)
    * @param {Error} _error the error to determine the object type of
    * @return {string} the object type of the Error
    */
   getErrorObjectType(_error: Error): string {
-    let errorType;
-    if (!this._utils.hasValue(_error)) errorType = 'unknown';
-    else if (_error.constructor.name === 'Error') errorType = 'Error';
-    else if (_error.constructor.name === 'LocalError') errorType = 'LocalError';
-    else if (_error.constructor.name === 'RemoteError') errorType = 'RemoteError';
-    else errorType = 'unknown';
+    let errorType = 'unknown';
+    if (this._utils.hasValue(_error)) {
+      if (_error.constructor.name === 'Error') errorType = 'Error';
+      else if (_error.constructor.name === 'LocalError') errorType = 'LocalError';
+      else if (_error.constructor.name === 'RemoteError') errorType = 'RemoteError';
+    }
 
     return errorType;
   } // End getErrorObjectType()
 
+  /**
+   * Determines whether a given Feasy error is a Feasy object of type Error
+   * @param {Error} _error the error object to test
+   * @return {boolean} whether the given error is an Error object
+   */
   isRegularError(_error: Error): boolean {
     return this.getErrorObjectType(_error) === 'Error';
   }
 
+  /**
+   * Determines whether a given Feasy error is a Feasy object of type LocalError
+   * @param {Error} _error the error object to test
+   * @return {boolean} whether the given error is a LocalError object
+   */
   isLocalError(_error: Error): boolean {
     return this.getErrorObjectType(_error) === 'LocalError';
   }
 
+  /**
+   * Determines whether a given Feasy error is a Feasy object of type RemoteError
+   * @param {Error} _error the error object to test
+   * @return {boolean} whether the given error is a RemoteError object
+   */
   isRemoteError(_error: Error): boolean {
     return this.getErrorObjectType(_error) === 'RemoteError';
   }
 
+  /**
+   * Determines whether a given Feasy error is
+   * a Feasy object of type InvalidRequestError
+   * @param {Error} _error the error object to test
+   * @return {boolean} whether the given error is a InvalidRequestError object
+   */
   isInvalidRequestErrorObject(_error: Error): boolean {
     return this.getErrorObjectType(_error) === 'InvalidRequestError';
   }
