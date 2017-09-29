@@ -140,7 +140,7 @@ export class LayoutComponent implements OnInit {
 
   ngOnDestroy() {
     // Unsubscribe to ensure no memory leaks or duplicate messages
-    this.subscription.unsubscribe();
+    if (this.UTILS.hasValue(this.subscription)) this.subscription.unsubscribe();
     this.MESSAGES.clearMessage();
   } // End ngOnDestroy()
 

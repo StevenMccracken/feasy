@@ -141,8 +141,8 @@ export class CalendarComponent implements OnInit {
   }
 
   ngOnDestroy() {
-    // unsubscribe to ensure no memory leaks
-    this.subscription.unsubscribe();
+    // Unsubscribe to ensure no memory leaks
+    if (this._utils.hasValue(this.subscription)) this.subscription.unsubscribe();
   }
 
   ngOnInit() {
