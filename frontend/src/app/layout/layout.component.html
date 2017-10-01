@@ -143,13 +143,13 @@
         </thead>
         <br><br><br>
         <tbody *ngFor="let task of taskArray; let i = index" style="margin-top: 100px;">
-            <tr>
-              <td class="tableContent center"><input type="text" placeholder="Click to select a date" class="form-control quickAddDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="task.dueDate | date: 'fullDate'" (click)="broadcastIndexToDatePicker(i)"></td>
-              <td class="tableContent center"><input type="text" placeholder="Task name" class="form-control taskName" [(ngModel)]="task.title"></td>
-              <td class="material-icons" style="padding-right: 20px;" (click)="removeFromTasks(i)">delete_sweep</td>
-              <td class="material-icons" *ngIf="i === taskArray.length - 1" (click)="incrementTaskArraySize()">control_point</td>
-            </tr>
-          </tbody>
+          <tr>
+            <td class="tableContent center"><input type="text" placeholder="Click to select a date" class="form-control quickAddDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="task.dueDate | date: 'fullDate'" (click)="publishDatePick(task, i)"></td>
+            <td class="tableContent center"><input type="text" placeholder="Task name" class="form-control taskName" [(ngModel)]="task.title"></td>
+            <td class="material-icons" style="padding-right: 20px;" (click)="removeFromTasks(i)">delete_sweep</td>
+            <td class="material-icons" *ngIf="i === taskArray.length - 1" (click)="incrementTaskArraySize()">control_point</td>
+          </tr>
+        </tbody>
       </table>
     </div>
     <div class="modal-footer">

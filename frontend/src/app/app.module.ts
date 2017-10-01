@@ -12,8 +12,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 // Import 3rd-party libraries
 import {
   ClientConfig,
-  GoogleApiModule,
   NG_GAPI_CONFIG,
+  GoogleApiModule,
 } from 'ng-gapi';
 import 'hammerjs';
 
@@ -27,7 +27,7 @@ import { LoginComponent } from './login/login.component';
 import { AvatarService } from './services/avatar.service';
 import { SignupComponent } from './signup/signup.component';
 import { LayoutComponent } from './layout/layout.component';
-import { MessageService } from './services/message.service';
+import { MessagingService } from './services/messaging.service';
 import { AssignmentService } from './services/assignment.service';
 import { CommonUtilsService } from './utils/common-utils.service';
 import { LocalStorageService } from './utils/local-storage.service';
@@ -72,7 +72,7 @@ const gapiClientConfig: ClientConfig = {
     FeasyService,
     ErrorService,
     AvatarService,
-    MessageService,
+    MessagingService,
     AssignmentService,
     CommonUtilsService,
     LocalStorageService,

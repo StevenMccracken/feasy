@@ -16,11 +16,12 @@ import { RemoteError } from '../objects/remote-error';
 import { UserService } from '../services/user.service';
 import { ErrorService } from '../services/error.service';
 import { AvatarService } from '../services/avatar.service';
-import { MessageService } from '../services/message.service';
-import { QuickAddService } from '../services/quick-add.service';
+import { MessagingService } from '../services/messaging.service';
 import { AssignmentService } from '../services/assignment.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
+import { TaskDatePicked } from '../objects/messages/task-date-picked';
+import { QuickAddAssignmentsCreated } from '../objects/messages/quick-add-assignments-created';
 
 // jQuery definition
 declare var $: any;
@@ -68,7 +69,8 @@ export class LayoutComponent implements OnInit {
   quickAddSuccessMessage: string;
   standardQuickAddSuccessMessage: string = 'All your tasks have been added to your calendar';
 
-  subscription: Subscription;
+  // Subscription used to receive messages about when a row in the quick add modal is clicked
+  quickAddModalRowSelectedSubscription: Subscription;
 
   constructor(
     private ROUTER: Router,
@@ -76,25 +78,11 @@ export class LayoutComponent implements OnInit {
     private USERS: UserService,
     private ERROR: ErrorService,
     private UTILS: CommonUtilsService,
-    private QUICK_ADD: QuickAddService,
     private STORAGE: LocalStorageService,
     private AVATARS: AvatarService,
-    private MESSAGES: MessageService,
+    private MESSAGING: MessagingService,
     private ASSIGNMENTS: AssignmentService,
   ) {}
-
-  sendMessage(source?: string, message?: any): void {
-    // Send message to subscribers via observable subject
-    const actualSource = this.UTILS.hasValue(source) ? source : 'layout.component.?';
-    const actualMessage = this.UTILS.hasValue(message) ? message : '';
-
-    // Send the message to all subscribers
-    this.MESSAGES.sendMessage(actualSource, actualMessage);
-  } // End sendMessage()
-
-  clearMessage(): void {
-    this.MESSAGES.clearMessage();
-  } // End clearMessage()
 
   ngOnInit() {
     // Initialize the first assignment in the task array so it isn't null for Quick Add
@@ -140,8 +128,7 @@ export class LayoutComponent implements OnInit {
 
   ngOnDestroy() {
     // Unsubscribe to ensure no memory leaks or duplicate messages
-    if (this.UTILS.hasValue(this.subscription)) this.subscription.unsubscribe();
-    this.MESSAGES.clearMessage();
+    if (this.UTILS.hasValue(this.quickAddModalRowSelectedSubscription)) this.quickAddModalRowSelectedSubscription.unsubscribe();
   } // End ngOnDestroy()
 
   /**
@@ -314,13 +301,14 @@ export class LayoutComponent implements OnInit {
   } // End openQuickAdd()
 
   /**
-   * Sends a message to the date picker (who is subscribed for
-   * messages) about the row in the quick add modal that was selected
-   * @param {number} index the index of the row in
-   * the quick add modal representing the assignment
+   * Sends a message to subscribers about the assignment
+   * and row that was chosen in the quick add modal
+   * @param {Assignment} _task the assignment for the given row that was clicked
+   * @param {number} _index the 0-based index representing the row
+   * that was clicked on in the row of tasks in the quick add modal
    */
-  broadcastIndexToDatePicker(index: number): void {
-    this.sendMessage('layout.component.broadcastIndexToDatePicker()', index);
+  publishDatePick(_task: Assignment, _index: number): void {
+    this.MESSAGING.publish(new TaskDatePicked(_task, _index));
   }
 
   /**
@@ -328,16 +316,10 @@ export class LayoutComponent implements OnInit {
    * the quick add modal's current set of rows
    */
   quickAddFormInit(): void {
-    // Capture service variables for closure created by jQuery
-    const messages: MessageService = this.MESSAGES;
-    const utils: CommonUtilsService = this.UTILS;
-    const taskArray: Assignment[] = this.taskArray;
+    const self = this;
     $(document).ready(function () {
-      /*
-       * Create a variable to hold the eventual message that
-       * will be sent when the date field for a row is selected
-       */
-      let messageAboutSelectedIndex;
+      // Create a variable to hold the message that will be sent when the date field for a row is selected
+      let quickAddRowMessage;
 
       // Configure the Materialize date picker
       $('.quickAddDatePicker').pickadate({
@@ -347,53 +329,45 @@ export class LayoutComponent implements OnInit {
            * When the date picker opens, subscribe to receive a message
            * about which index was clicked on to open the date picker
            */
-          this.subscription = messages.getMessage()
-            .subscribe((message) => {
-              if (utils.hasValue(message)) {
-                if (message.source === 'layout.component.broadcastIndexToDatePicker()') {
-                  messageAboutSelectedIndex = message
-                }
-              }
-            });
+          self.quickAddModalRowSelectedSubscription = self.MESSAGING.messagesOf(TaskDatePicked)
+            .subscribe(message => quickAddRowMessage = message);
         },
 
         // Called whenever a date within the date picker is selected or the range is updated
         onSet: (context) => {
-          if (utils.hasValue(context.select)) {
+          // Check if the user clicked on an actual date, not a range selection
+          if (self.UTILS.hasValue(context.select)) {
             let index: number;
-            if (
-              utils.hasValue(messageAboutSelectedIndex) &&
-              utils.hasValue(messageAboutSelectedIndex.message) &&
-              typeof messageAboutSelectedIndex.message === 'number'
-            ) {
-              index = messageAboutSelectedIndex.message;
+            if (self.UTILS.hasValue(quickAddRowMessage) && self.UTILS.hasValue(quickAddRowMessage.getIndex())) {
+              index = quickAddRowMessage.getIndex();
             } else index = -1;
 
             if (index !== -1) {
               // Create a date from the selected day and set the time to 12 pm
-              const unixMillis: number = context.select;
-              const dueDate: Date = new Date(unixMillis + 43200000);
+              const unixMilliseconds12Hours: number = 43200000;
+              const unixMilliseconds: number = context.select;
+              const dueDate: Date = new Date(unixMilliseconds + unixMilliseconds12Hours);
 
-              taskArray[index].dueDate = dueDate;
-            }
+              // Update the Assignment's due date because it isn't in a valid format when first created
+              self.taskArray[index].dueDate = dueDate;
+            } else console.error(quickAddRowMessage);
           }
         },
 
         // Called every time the date picker is exited
         onClose: () => {
           // Unsubscribe to ensure no memory leaks or receiving of old messages
-          this.subscription.unsubscribe();
-          messages.clearMessage()
+          if (self.UTILS.hasValue(self.quickAddModalRowSelectedSubscription)) self.quickAddModalRowSelectedSubscription.unsubscribe();
         },
 
-        // Other date picker properties
+        // Other date picker configuration properties
         min: new Date(1970, 0, 1), // Set the min selectable date as 01/01/1970
         max: false, // Max date is not constrained
-        selectMonths: true, // Creates a dropdown to control month
-        selectYears: 25, // Creates a dropdown of 25 years to control year
+        selectMonths: true, // Creates a dropdown to quick select the month
+        selectYears: 25, // Creates a dropdown of 25 years at a time to quick select the year
         format: 'dddd, mmmm d, yyyy', // Display format once a date has been selected
-        formatSubmit: 'yyyy/mm/dd', // Date format that is provided
-        hiddenName: true, // Ensures that submitted format is used, not regular format
+        formatSubmit: 'yyyy/mm/dd', // Date format that is provided to the onSet method
+        hiddenName: true, // Ensures that submitted format is used in the onSet method, not regular format
       });
     });
   } // End quickAddFormInit()
@@ -452,11 +426,8 @@ export class LayoutComponent implements OnInit {
       // Create the assignments all at once
       this.ASSIGNMENTS.bulkCreate(this.taskArray)
         .then((createdAssignments: Assignment[]) => {
-          // Clear any previous messages for the message service
-          this.clearMessage();
-
-          // Add the saved assignments to the quick add service
-          this.QUICK_ADD.setTaskArray(createdAssignments);
+          // Send a message that new assignments were created from the Quick Add modal
+          this.MESSAGING.publish(new QuickAddAssignmentsCreated(createdAssignments));
 
           // Reset the task array
           this.taskArray = [];
@@ -464,9 +435,6 @@ export class LayoutComponent implements OnInit {
 
           // Reset the date picker for the task array
           this.quickAddFormInit();
-
-          // Notify all listeners that the quick add service has the created assignments
-          this.sendMessage('layout.component.addTasksInBulk()', 'quick_add_success');
 
           this.quickAddSuccess = true;
           this.quickAddSuccessMessage = this.standardQuickAddSuccessMessage;
@@ -485,7 +453,7 @@ export class LayoutComponent implements OnInit {
           $('#quickAddContent').scrollTop(0);
 
           console.error(bulkCreateError);
-
+          console.log(this.taskArray);
           setTimeout(
             () => {
               this.quickAddError = false;
@@ -493,7 +461,6 @@ export class LayoutComponent implements OnInit {
             },
             7500);
 
-          console.log(this.taskArray);
         }); // End this.ASSIGNMENTS.bulkCreate()
       }
   } // End addTasksInBulk()
