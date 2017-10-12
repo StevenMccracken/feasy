@@ -38,31 +38,41 @@ export class LayoutComponent implements OnInit {
   // Array of tasks for the quick add modal
   taskArray: Assignment[];
 
-  // quicksettings variables
-  quickSettingDescription: boolean = true;
+  // Quick Settings variables
   quickSettingLabel: boolean = true;
   quickSettingColors: boolean = false;
+  quickSettingDescription: boolean = true;
 
-  avatarError: boolean = false;
-  avatarErrorMessage: string;
-  avatarErrorDuplicateMessage: string = 'You are already using that avatar';
-  /* tslint:disable max-line-length */
-  standardAvatarErrorMessage: string = 'We are unable to update your avatar at this time. Please contact us at feasyresponse@gmail.com to fix this issue';
-  /* tslint:enable max-line-length */
+  defaultMessageDisplayTime: number = 5000;
 
-  quickAddError: boolean = false;
-  quickAddErrorMessage: string;
-  /* tslint:disable max-line-length */
-  standardQuickAddErrorMessage: string = 'We are unable to create those assignments at this time. Please contact us at feasyresponse@gmail.com to fix this issue';
-  /* tslint:enable max-line-length */
+  errors: Object = {
+    avatar: {
+      occurred: false,
+      message: '',
+      defaultMessage: 'We are unable to update your avatar at this time. Please contact us at feasyresponse@gmail.com to fix this issue',
+      duplicateMessage: 'You are already using that avatar.',
+    },
+    general: {
+      occurred: false,
+      message: '',
+      /* tslint:disable max-line-length */
+      defaultMessage: 'We are unable to create those assignments at this time. Please contact us at feasyresponse@gmail.com to fix this issue',
+      /* tslint:enable max-line-length */
+    },
+  };
 
-  avatarSuccess: boolean = false;
-  avatarSuccessMessage: string;
-  standardAvatarSuccessMessage: string = 'New avatar saved';
-
-  quickAddSuccess: boolean = false;
-  quickAddSuccessMessage: string;
-  standardQuickAddSuccessMessage: string = 'All your tasks have been added to your calendar';
+  success: Object = {
+    avatar: {
+      occurred: false,
+      message: '',
+      defaultMessage: 'New avatar saved',
+    },
+    general: {
+      occurred: false,
+      message: '',
+      defaultMessage: 'All your tasks have been added to your calendar',
+    },
+  };
 
   // Subscription used to receive messages about when a row in the quick add modal is clicked
   quickAddModalRowSelectedSubscription: Subscription;
@@ -79,16 +89,15 @@ export class LayoutComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.taskArray = [];
-    this.taskArray.push(new Assignment());
+    this.taskArray = [new Assignment()];
 
     // Populate all the possible avatars
     this.avatars = this.AVATARS.getAllAvatars();
 
     // Initialize the quick settings
+    this.quickSettingLabel = this.STORAGE.getItem('qsLabel') === 'true';
     this.quickSettingColors = this.STORAGE.getItem('qsColor') === 'true';
     this.quickSettingDescription = this.STORAGE.getItem('qsDescription') === 'true';
-    this.quickSettingLabel = this.STORAGE.getItem('qsLabel') === 'true';
 
     // Instantiate the side nav
     $('#button-slide').sideNav();
@@ -109,9 +118,10 @@ export class LayoutComponent implements OnInit {
         this.user = userAccount;
 
         // Add the user's first name or their username to the side nav
-        if (this.UTILS.hasValue(this.user.firstName) && this.user.firstName !== '') {
-          this.displayName = this.user.firstName.charAt(0).toUpperCase() + this.user.firstName.slice(1);
-        } else this.displayName = this.user.username;
+        const firstName: string = this.user.getFirstName();
+        if (this.UTILS.hasValue(firstName) && firstName.trim() !== '') {
+          this.displayName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+        } else this.displayName = this.user.getUsername();
 
         // Get the URL corresponding to the user's avatar and update the image in the side nav
         this.avatarUrl = this.AVATARS.getAvatarUrl(this.user.avatar);
@@ -160,6 +170,8 @@ export class LayoutComponent implements OnInit {
    */
   closeQuickAddModal(_followUpUrl?: string): void {
     $('#quickAdd').modal('close');
+    this.taskArray = null;
+
     $('#button-slide').sideNav('hide');
     if (_followUpUrl === '/main/calendar') this.ROUTER.navigate([_followUpUrl]);
   } // End closeSideNav()
@@ -187,13 +199,13 @@ export class LayoutComponent implements OnInit {
   /**
    * Appends a new, empty Assignment to the end of the task array
    */
-  incrementTaskArraySize(): void {
+  increaseTaskArraySize(): void {
     const size = this.taskArray.length;
     this.taskArray[size] = new Assignment();
 
     // Add the date picker functionality to the new entry in the array of tasks
     this.quickAddFormInit()
-  } // End incrementTaskArraySize()
+  } // End increaseTaskArraySize()
 
   /**
    * Removes an assignment from the task array
@@ -210,9 +222,8 @@ export class LayoutComponent implements OnInit {
    * Displays a modal to choose an avatar
    */
   displayAvatarSelection(): void {
-    // Make sure no errors are displayed inside the modal
-    this.avatarError = false;
-    this.avatarErrorMessage = '';
+    // Make sure no messages are displayed inside the modal
+    this.clearAllAvatarMessages();
 
     // Open the avatar selction modal
     $('#avatarSelect').modal('open');
@@ -227,71 +238,211 @@ export class LayoutComponent implements OnInit {
   updateAvatar(_avatarUrl: string, _avatarName: string): void {
     // Check that the selected avatar is different from the current one
     if (_avatarUrl === this.avatarUrl) {
-      // Clear any success message
-      this.avatarSuccess = false;
-      this.avatarSuccessMessage = '';
-
-      // Display error message
-      this.avatarError = true;
-      this.avatarErrorMessage = this.avatarErrorDuplicateMessage;
-
-      // Scroll to top of modal to make error message visible
-      this.scrollToModalTop('#avatarSelect');
-      setTimeout(
-        () => {
-          this.avatarError = false;
-          this.avatarErrorMessage = '';
-        },
-        3000);
+      this.clearAvatarSuccess();
+      this.displayAvatarError(this.errors['avatar']['duplicateMessage']);
+      this.scrollToAvatarTop();
     } else {
       // Clear any errors
-      this.avatarError = false;
-      this.avatarErrorMessage = '';
+      this.clearAvatarError();
       this.USERS.updateAvatar(_avatarName)
         .then(() => {
           // Update the current avatar URL to the chosen one and close the selection modal
           this.avatarUrl = _avatarUrl;
-          this.avatarSuccess = true;
-          this.avatarSuccessMessage = this.standardAvatarSuccessMessage;
-
-          // Scroll to top of modal to make success message visible
-          this.scrollToModalTop('#avatarSelect');
-          setTimeout(
-            () => {
-              this.avatarSuccess = false;
-              this.avatarSuccessMessage = '';
-            },
-            2500);
+          this.displayAvatarSuccess();
+          this.scrollToAvatarTop();
         }) // End then()
         .catch((updateError: RemoteError) => {
-          // Clear any success message
-          this.avatarSuccess = false;
-          this.avatarSuccessMessage = '';
+          this.clearAvatarSuccess();
 
-          // Scroll to top of modal to make error message visible
-          this.avatarError = true;
-          this.scrollToModalTop('#avatarSelect');
-
-          if (this.ERROR.isResourceError(updateError)) this.avatarErrorMessage = this.avatarErrorDuplicateMessage;
+          let errorMessage: string
+          if (this.ERROR.isResourceError(updateError)) errorMessage = this.errors['avatar']['duplicateMessage'];
           else {
-            this.avatarErrorMessage = this.standardAvatarErrorMessage;
+            errorMessage = this.errors['avatar']['defaultMessage'];
             this.handleUnknownError(updateError);
           }
 
-          setTimeout(
-            () => {
-              this.avatarError = false;
-              this.avatarErrorMessage = '';
-            },
-            3000);
+          this.displayAvatarError(errorMessage);
+          this.scrollToAvatarTop();
         }); // End this.USERS.updateAvatar()
     }
   } // End updateAvatar()
 
   /**
+   * Displays a message somewhere in the component
+   * @param {boolean} _messageIsError whether
+   * or not the message to display is an error
+   * @param {string} _source the place in the component where the message should
+   * be displayed. Needs to be value in either the errors/success class JSON
+   * @param {string} _message the message to display. If no
+   * value is given, the default message for _source will be used
+   * @param {number} _duration the amount of seconds to display
+   * the message for. If no value is given, the default duration
+   * will be used (class variable: defaultMessageDisplayTime)
+   */
+  private displayMessage(_messageIsError: boolean, _source: string, _message?: string, _duration?: number): void {
+    const messageType: Object = _messageIsError ? this.errors : this.success;
+    messageType[_source]['occurred'] = true;
+    messageType[_source]['message'] = _message || messageType[_source]['defaultMessage'];
+
+    const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.defaultMessageDisplayTime;
+    setTimeout(
+      () => {
+        messageType[_source]['occurred'] = false;
+        messageType[_source]['message'] = '';
+      },
+      duration);
+  } // End displayMessage()
+
+  /**
+   * Clears any message for a specific location in the component
+   * @param {boolean} _messageIsError whether
+   * or not the message to clear is an error
+   * @param {string} _source the place in the component where the message should
+   * be cleared. Needs to be value in either the errors/success class JSONs
+   */
+  private clearMessage(_messageIsError: boolean, _source: string): void {
+    const messageType: Object = _messageIsError ? this.errors : this.success;
+    messageType[_source]['occurred'] = false;
+    messageType[_source]['message'] = '';
+  } // End displayMessage()
+
+  /**
+   * Displays a message in the avatar modal
+   * @param {boolean} _messageIsError whether or not
+   * the message should have error or success styling
+   * @param {string} _message the message to display. If no value
+   * is given, the default message for the avatar modal will be used
+   * @param {number} _duration the amount of seconds to display the
+   * message for. If no value is given, the default duration will be used
+   */
+  private displayMessageInAvatarModal(_messageIsError: boolean, _message?: string, _duration?: number): void {
+    this.displayMessage(_messageIsError, 'avatar', _message, _duration);
+  } // End displayMessageInAvatarModal()
+
+  /**
+   * Clears any message displayed in the avatar modal
+   * @param {boolean} _messageIsError whether
+   * or not the message to clear is an error
+   */
+  private clearAvatarModalMessage(_messageIsError: boolean): void {
+    this.clearMessage(_messageIsError, 'avatar');
+  } // End clearAvatarModalMessage()
+
+  /**
+   * Displays a message in the quick add modal
+   * @param {boolean} _messageIsError whether or not
+   * the message should have error or success styling
+   * @param {string} _message the message to display. If no value is
+   * given, the default message for the quick add modal will be used
+   * @param {number} _duration the amount of seconds to display the
+   * message for. If no value is given, the default duration will be used
+   */
+  private displayMessageInQuickAddModal(_messageIsError: boolean, _message?: string, _duration?: number): void {
+    this.displayMessage(_messageIsError, 'general', _message, _duration);
+  } // End displayMessageInQuickAddModal()
+
+  /**
+   * Clears any message displayed in the quick add modal
+   * @param {boolean} _messageIsError whether
+   * or not the message to clear is an error
+   */
+  private clearQuickAddModalMessage(_messageIsError: boolean): void {
+    this.clearMessage(_messageIsError, 'general');
+  } // End clearQuickAddModalMessage()
+
+  /**
+   * Displays an error message in the avatar modal
+   * @param {string} _message the error message to display. If no value
+   * is given, the default error message for the avatar modal will be used
+   * @param {number} _duration the amount of seconds to display the
+   * message for. If no value is given, the default duration will be used
+   */
+  displayAvatarError(_message?: string, _duration?: number): void {
+    this.displayMessageInAvatarModal(true, _message, _duration);
+  } // End displayAvatarError()
+
+  /**
+   * Clears any error message in the avatar modal
+   */
+  clearAvatarError(): void {
+    this.clearAvatarModalMessage(true);
+  } // End clearAvatarError()
+
+  /**
+   * Displays an error message in the quick add modal
+   * @param {string} _message the error message to display. If no value is
+   * given, the default error message for the quick add modal will be used
+   * @param {number} _duration the amount of seconds to display the
+   * message for. If no value is given, the default duration will be used
+   */
+  displayQuickAddError(_message?: string, _duration?: number): void {
+    this.displayMessageInQuickAddModal(true, _message, _duration);
+  } // End displayQuickAddError()
+
+  /**
+   * Clears any error message in the quick add modal
+   */
+  clearQuickAddError(): void {
+    this.clearQuickAddModalMessage(true);
+  } // End clearQuickAddError()
+
+  /**
+   * Displays a success message in the avatar modal
+   * @param {string} _message the success message to display. If no value
+   * is given, the default success message for the avatar modal will be used
+   * @param {number} _duration the amount of seconds to display the
+   * message for. If no value is given, the default duration will be used
+   */
+  displayAvatarSuccess(_message?: string, _duration?: number): void {
+    this.displayMessageInAvatarModal(false, _message, _duration);
+  } // End displayAvatarSuccess()
+
+  /**
+   * Clears any success message in the avatar modal
+   */
+  clearAvatarSuccess(): void {
+    this.clearAvatarModalMessage(false);
+  } // End clearAvatarSuccess()
+
+  /**
+   * Displays a success message in the quick add modal
+   * @param {string} _message the success message to display. If no value is
+   * given, the default success message for the quick add modal will be used
+   * @param {number} _duration the amount of seconds to display the
+   * message for. If no value is given, the default duration will be used
+   */
+  displayQuickAddSuccess(_message?: string, _duration?: number): void {
+    this.displayMessageInQuickAddModal(false, _message, _duration);
+  } // End displayQuickAddSuccess()
+
+  /**
+   * Clears any success message in the quick add modal
+   */
+  clearQuickAddSuccess(): void {
+    this.clearQuickAddModalMessage(false);
+  } // End clearQuickAddSuccess()
+
+  /**
+   * Clears any success or error messages in the avatar modal
+   */
+  clearAllAvatarMessages(): void {
+    this.clearAvatarError();
+    this.clearAvatarSuccess();
+  } // End clearAllAvatarMessages()
+
+  /**
+   * Clears any success or error messages in the quick add modal
+   */
+  clearAllQuickAddMessages(): void {
+    this.clearQuickAddError();
+    this.clearQuickAddSuccess();
+  } // End clearAllQuickAddMessages()
+
+  /**
    * Opens the quick add modal
    */
   openQuickAdd(): void {
+    this.clearAllQuickAddMessages();
     $('#quickAdd').modal('open');
   } // End openQuickAdd()
 
@@ -304,7 +455,7 @@ export class LayoutComponent implements OnInit {
    */
   publishDatePick(_task: Assignment, _index: number): void {
     this.MESSAGING.publish(new TaskDatePicked(_task, _index));
-  }
+  } // End publishDatePick()
 
   /**
    * Initializes the Materialize date picker for
@@ -344,7 +495,7 @@ export class LayoutComponent implements OnInit {
               const dueDate: Date = new Date(unixMilliseconds + unixMilliseconds12Hours);
 
               // Update the Assignment's due date because it isn't in a valid format when first created
-              self.taskArray[index].dueDate = dueDate;
+              self.taskArray[index].setDueDate(dueDate);
             }
           }
         },
@@ -371,30 +522,29 @@ export class LayoutComponent implements OnInit {
    * Sends a request to add all the tasks in the task array at the same time
    */
   addTasksInBulk(): void {
-    // Clear any previous error and success messages
-    this.quickAddSuccess = false;
-    this.quickAddSuccessMessage = '';
+    this.clearAllQuickAddMessages();
 
-    this.quickAddError = false;
-    this.quickAddErrorMessage = '';
+    /*
+     * Validate all the tasks' due dates and titles first. Get an
+     * iterator representing each index of the task array (but 1-based)
+     */
+    const iterator: IterableIterator<number> = this.UTILS.integerSequence(1);
 
-    // Validate all the tasks' due dates and titles first
-    let invalidTasks: number[] = [];
-    for (let i = 0; i < this.taskArray.length; i++) {
-      const task: Assignment = this.taskArray[i];
-      if (!this.UTILS.hasValue(task.dueDate) || !this.UTILS.hasValue(task.title) ||  task.title === '') {
-        invalidTasks.push(i);
-      }
-    }
+    /*
+     * Map each task to it's 1-based index if the due date/title is
+     * invalid, or null if it is valid. Then filter only the assignment
+     * indexes who were invalid and display those in an error message
+     */
+    const invalidTasks: number[] =  this.taskArray.map((task: Assignment) => {
+        const oneBasedIndex: number = iterator.next().value;
+        /* tslint:disable max-line-length */
+        if (!this.UTILS.hasValue(task.getDueDate()) || !this.UTILS.hasValue(task.getTitle()) ||  task.getTitle() === '') return oneBasedIndex;
+        /* tslint:enable max-line-length */
+        else return null;
+      })
+      .filter((index: number) => index !== null);
 
     if (invalidTasks.length > 0) {
-      // Scroll the modal to the top to display the error
-      this.quickAddError = true;
-      this.scrollToModalTop('#quickAddContent');
-
-      // Convert the invalid indexes to 1-based, not 0-based
-      invalidTasks = invalidTasks.map(index => index + 1);
-
       // Determine the grammar to use based on if there is one or more invalid tasks
       const taskOrTasks: string = invalidTasks.length === 1 ? 'task' : 'tasks';
       const hasOrHave: string = invalidTasks.length === 1 ? 'has' : 'have';
@@ -411,14 +561,9 @@ export class LayoutComponent implements OnInit {
         else tasksString = `${tasksString}, and ${invalidTasks[invalidTasks.length - 1]}`;
       } else tasksString = String(invalidTasks[0]);
 
-      this.quickAddErrorMessage = `Make sure ${taskOrTasks} ${tasksString} ${hasOrHave} both a due date and a name.`;
-
-      setTimeout(
-        () => {
-          this.quickAddError = false;
-          this.quickAddErrorMessage = '';
-        },
-        7500);
+      const errorMessage: string = `Make sure ${taskOrTasks} ${tasksString} ${hasOrHave} both a due date and a name.`;
+      this.displayQuickAddError(errorMessage);
+      this.scrollToQuickAddTop();
     } else {
       // All the tasks are valid, so send a reques to create them all
       this.ASSIGNMENTS.bulkCreate(this.taskArray)
@@ -427,37 +572,20 @@ export class LayoutComponent implements OnInit {
           this.MESSAGING.publish(new QuickAddAssignmentsCreated(createdAssignments));
 
           // Reset the task array
-          this.taskArray = [];
-          this.taskArray[0] = new Assignment();
+          this.taskArray = [new Assignment()];
 
           // Reset the date picker for the task array
           this.quickAddFormInit();
 
-          this.quickAddSuccess = true;
-          this.quickAddSuccessMessage = this.standardQuickAddSuccessMessage;
-          this.scrollToModalTop('#quickAddContent');
-
-          setTimeout(
-            () => {
-              this.quickAddSuccess = false;
-              this.quickAddSuccessMessage = '';
-            },
-            3000);
+          this.displayQuickAddSuccess();
+          this.scrollToQuickAddTop();
         }) // End then(createdAssignments)
         .catch((bulkCreateError: any) => {
-          this.quickAddError = true;
-          this.quickAddErrorMessage = this.standardQuickAddErrorMessage;
-          this.scrollToModalTop('#quickAddContent');
+          this.displayQuickAddError();
+          this.scrollToQuickAddTop();
 
           console.error(bulkCreateError);
           console.log(this.taskArray);
-          setTimeout(
-            () => {
-              this.quickAddError = false;
-              this.quickAddErrorMessage = '';
-            },
-            7500);
-
         }); // End this.ASSIGNMENTS.bulkCreate()
       }
   } // End addTasksInBulk()
@@ -467,7 +595,7 @@ export class LayoutComponent implements OnInit {
    * @param {string} [_identifier = ''] the HTML tag
    * identifier for the page element to scroll to
    * @param {number} _duration the number of
-   * milliseconds for the animation to last
+   * milliseconds for the duration of the animation
    */
   scrollToModalTop(_identifier: string = '', _duration?: number): void {
     const duration: number = this.UTILS.hasValue(_duration) ? _duration : 250;
@@ -475,10 +603,28 @@ export class LayoutComponent implements OnInit {
   } // End scrollToModalTop()
 
   /**
-   * Handles errors that can't be determined elsewhere and logs the error
-   * @param {RemoteError} [_error = new RemoteError()] the unknown error
+   * Scrolls to the top of the avatar modal
+   * @param {number} _duration the number of
+   * milliseconds for the duration of the animation
    */
-  private handleUnknownError(_error: RemoteError = new RemoteError()): void {
+  scrollToAvatarTop(_duration?: number): void {
+    this.scrollToModalTop('#avatarSelect', _duration);
+  } // End scrollToAvatarTop()
+
+  /**
+   * Scrolls to the top of the quick add modal
+   * @param {number} _duration the number of
+   * milliseconds for the duration of the animation
+   */
+  scrollToQuickAddTop(_duration?: number): void {
+    this.scrollToModalTop('#quickAddContent', _duration);
+  } // End scrollToQuickAddTop()
+
+  /**
+   * Handles errors that can't be determined elsewhere and logs the error
+   * @param {RemoteError} [_error] the unknown error
+   */
+  private handleUnknownError(_error: RemoteError): void {
     console.error(_error);
     if (this.ERROR.isAuthError(_error)) {
       this.STORAGE.deleteItem('token');

@@ -54,4 +54,15 @@ export class CommonUtilsService {
   uuid(): string {
     return uuid();
   } // End newUuid()
+
+  /**
+   * Generator function to get an infinite sequence of integers
+   * @param {number} _start the starting value of the infinite
+   * sequence. If no value is provided, 0 will be the starting value
+   * @return {IterableIterator<number>} the iterator to get more numbers from
+   */
+  *integerSequence(_start?: number): IterableIterator<number> {
+    let i = this.hasValue(_start) && typeof _start === 'number' ? _start : 0;
+    while (true) yield i++;
+  } // End infiniteSequence()
 }
