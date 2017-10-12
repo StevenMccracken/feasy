@@ -48,7 +48,7 @@ export class ErrorService {
   private splitParameters(_errorMessage: string = '', _splitRegex: string = '', _secondarySplitRegex: string = ','): string[] {
     const errorMessageSplit: string[] = _errorMessage.split(_splitRegex);
     const paramsString: string = errorMessageSplit.length >= 2 ? errorMessageSplit[1] : '';
-    const params: string[] = paramsString.split(_secondarySplitRegex);
+    const params: string[] = paramsString.split(_secondarySplitRegex).filter(param => param !== '');
 
     return params;
   } // End splitParameters()
@@ -95,7 +95,7 @@ export class ErrorService {
    */
   getUnchangedParameters(_error: Error = new Error()): string[] {
     const errorMessage = _error.getMessage();
-    const unchangedParameters = this.splitParameters(errorMessage, 'Unchanged paramters: ');
+    const unchangedParameters = this.splitParameters(errorMessage, 'Unchanged parameters: ');
 
     return unchangedParameters;
   } // End getUnchangedParameters()

@@ -4,7 +4,6 @@ import {
   Component,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { Location } from '@angular/common';
 
 // Import 3rd-party libraries
 import { Subscription } from 'rxjs/Subscription';
@@ -23,7 +22,6 @@ import { LocalStorageService } from '../utils/local-storage.service';
 import { TaskDatePicked } from '../objects/messages/task-date-picked';
 import { QuickAddAssignmentsCreated } from '../objects/messages/quick-add-assignments-created';
 
-// jQuery definition
 declare var $: any;
 
 @Component({
@@ -32,21 +30,18 @@ declare var $: any;
   styleUrls: ['./layout.component.css'],
 })
 export class LayoutComponent implements OnInit {
-  user: Account = new Account();
+  user: Account;
   displayName: string;
   avatarUrl: string;
-  avatars: Object[] = [];
+  avatars: Object[];
 
-  taskArray: Assignment[] = [];
-  testArray: Assignment[] = [];
+  // Array of tasks for the quick add modal
+  taskArray: Assignment[];
 
   // quicksettings variables
   quickSettingDescription: boolean = true;
   quickSettingLabel: boolean = true;
   quickSettingColors: boolean = false;
-  connectionMade: boolean = false;
-
-  currentLocation: string;
 
   avatarError: boolean = false;
   avatarErrorMessage: string;
@@ -74,19 +69,21 @@ export class LayoutComponent implements OnInit {
 
   constructor(
     private ROUTER: Router,
-    private LOCATION: Location,
     private USERS: UserService,
     private ERROR: ErrorService,
-    private UTILS: CommonUtilsService,
-    private STORAGE: LocalStorageService,
     private AVATARS: AvatarService,
+    private UTILS: CommonUtilsService,
     private MESSAGING: MessagingService,
+    private STORAGE: LocalStorageService,
     private ASSIGNMENTS: AssignmentService,
   ) {}
 
   ngOnInit() {
-    // Initialize the first assignment in the task array so it isn't null for Quick Add
-    this.taskArray[0] = new Assignment();
+    this.taskArray = [];
+    this.taskArray.push(new Assignment());
+
+    // Populate all the possible avatars
+    this.avatars = this.AVATARS.getAllAvatars();
 
     // Initialize the quick settings
     this.quickSettingColors = this.STORAGE.getItem('qsColor') === 'true';
@@ -110,6 +107,7 @@ export class LayoutComponent implements OnInit {
     this.USERS.get(currentUser)
       .then((userAccount: Account) => {
         this.user = userAccount;
+
         // Add the user's first name or their username to the side nav
         if (this.UTILS.hasValue(this.user.firstName) && this.user.firstName !== '') {
           this.displayName = this.user.firstName.charAt(0).toUpperCase() + this.user.firstName.slice(1);
@@ -148,22 +146,22 @@ export class LayoutComponent implements OnInit {
   /**
    * Closes the side nav and optionally navigates
    * to a given route after closing the side nav
-   * @param {string} followUpLink the route to navigate to after closing the nav
+   * @param {string} _followUpUrl the route to navigate to after closing the nav
    */
-  closeSideNav(followUpLink?: string): void {
+  closeSideNav(_followUpUrl?: string): void {
     $('#button-slide').sideNav('hide');
-    if (followUpLink === '/main/calendar') this.ROUTER.navigate([followUpLink]);
+    if (_followUpUrl === '/main/calendar') this.ROUTER.navigate([_followUpUrl]);
   } // End closeSideNav()
 
   /**
    * Closes the quick add modal and optionally
    * navigates to a given route after closing the modal
-   * @param {string} followUpLink the route to navigate to after closing the modal
+   * @param {string} _followUpUrl the route to navigate to after closing the modal
    */
-  closeQuickAddModal(followUpLink?: string): void {
+  closeQuickAddModal(_followUpUrl?: string): void {
     $('#quickAdd').modal('close');
     $('#button-slide').sideNav('hide');
-    if (followUpLink === '/main/calendar') this.ROUTER.navigate([followUpLink]);
+    if (_followUpUrl === '/main/calendar') this.ROUTER.navigate([_followUpUrl]);
   } // End closeSideNav()
 
   /**
@@ -199,22 +197,19 @@ export class LayoutComponent implements OnInit {
 
   /**
    * Removes an assignment from the task array
-   * @param {number} assignmentIndex the index of the assignment in the task array
+   * @param {number} _taskIndex the index of the assignment in the task array
    */
-  removeFromTasks(assignmentIndex: number): void {
-    this.taskArray.splice(assignmentIndex, 1);
+  removeTask(_taskIndex: number): void {
+    this.taskArray.splice(_taskIndex, 1);
 
     // Reset the first assignment if it was deleted
     if (this.taskArray.length === 0) this.taskArray[0] = new Assignment();
-  } // End removeFromTasks()
+  } // End removeTask()
 
   /**
    * Displays a modal to choose an avatar
    */
   displayAvatarSelection(): void {
-    // Populate all the possible avatars
-    this.avatars = this.AVATARS.getAllAvatars();
-
     // Make sure no errors are displayed inside the modal
     this.avatarError = false;
     this.avatarErrorMessage = '';
@@ -241,7 +236,7 @@ export class LayoutComponent implements OnInit {
       this.avatarErrorMessage = this.avatarErrorDuplicateMessage;
 
       // Scroll to top of modal to make error message visible
-      $('#avatarSelect').scrollTop(0);
+      this.scrollToModalTop('#avatarSelect');
       setTimeout(
         () => {
           this.avatarError = false;
@@ -260,7 +255,7 @@ export class LayoutComponent implements OnInit {
           this.avatarSuccessMessage = this.standardAvatarSuccessMessage;
 
           // Scroll to top of modal to make success message visible
-          $('#avatarSelect').scrollTop(0);
+          this.scrollToModalTop('#avatarSelect');
           setTimeout(
             () => {
               this.avatarSuccess = false;
@@ -275,7 +270,7 @@ export class LayoutComponent implements OnInit {
 
           // Scroll to top of modal to make error message visible
           this.avatarError = true;
-          $('#avatarSelect').scrollTop(0);
+          this.scrollToModalTop('#avatarSelect');
 
           if (this.ERROR.isResourceError(updateError)) this.avatarErrorMessage = this.avatarErrorDuplicateMessage;
           else {
@@ -350,7 +345,7 @@ export class LayoutComponent implements OnInit {
 
               // Update the Assignment's due date because it isn't in a valid format when first created
               self.taskArray[index].dueDate = dueDate;
-            } else console.error(quickAddRowMessage);
+            }
           }
         },
 
@@ -379,9 +374,11 @@ export class LayoutComponent implements OnInit {
     // Clear any previous error and success messages
     this.quickAddSuccess = false;
     this.quickAddSuccessMessage = '';
+
     this.quickAddError = false;
     this.quickAddErrorMessage = '';
 
+    // Validate all the tasks' due dates and titles first
     let invalidTasks: number[] = [];
     for (let i = 0; i < this.taskArray.length; i++) {
       const task: Assignment = this.taskArray[i];
@@ -393,7 +390,7 @@ export class LayoutComponent implements OnInit {
     if (invalidTasks.length > 0) {
       // Scroll the modal to the top to display the error
       this.quickAddError = true;
-      $('#quickAddContent').scrollTop(0);
+      this.scrollToModalTop('#quickAddContent');
 
       // Convert the invalid indexes to 1-based, not 0-based
       invalidTasks = invalidTasks.map(index => index + 1);
@@ -423,7 +420,7 @@ export class LayoutComponent implements OnInit {
         },
         7500);
     } else {
-      // Create the assignments all at once
+      // All the tasks are valid, so send a reques to create them all
       this.ASSIGNMENTS.bulkCreate(this.taskArray)
         .then((createdAssignments: Assignment[]) => {
           // Send a message that new assignments were created from the Quick Add modal
@@ -438,7 +435,7 @@ export class LayoutComponent implements OnInit {
 
           this.quickAddSuccess = true;
           this.quickAddSuccessMessage = this.standardQuickAddSuccessMessage;
-          $('#quickAddContent').scrollTop(0);
+          this.scrollToModalTop('#quickAddContent');
 
           setTimeout(
             () => {
@@ -450,7 +447,7 @@ export class LayoutComponent implements OnInit {
         .catch((bulkCreateError: any) => {
           this.quickAddError = true;
           this.quickAddErrorMessage = this.standardQuickAddErrorMessage;
-          $('#quickAddContent').scrollTop(0);
+          this.scrollToModalTop('#quickAddContent');
 
           console.error(bulkCreateError);
           console.log(this.taskArray);
@@ -466,26 +463,16 @@ export class LayoutComponent implements OnInit {
   } // End addTasksInBulk()
 
   /**
-   * Handles errors received from an API call
-   * @param {Response} [_error = new Response()] the Response error from the API call
+   * Scrolls to a specific HTML element in a modal window with animation
+   * @param {string} [_identifier = ''] the HTML tag
+   * identifier for the page element to scroll to
+   * @param {number} _duration the number of
+   * milliseconds for the animation to last
    */
-  private handleError(_error: Response = new Response()): void {
-    if (_error.status === 401 || _error.status === 404) {
-      // Token is stale. Clear the user and token local storage
-      this.STORAGE.deleteItem('token');
-      this.STORAGE.deleteItem('currentUser');
-
-      // Add the reason for re-routing to login
-      if (_error.status === 401) this.STORAGE.setItem('expiredToken', 'true');
-      else if (_error.status === 404) this.STORAGE.setItem('userDoesNotExist', 'true');
-
-      // Route to the login page
-      this.ROUTER.navigate(['/login']);
-    } else {
-      // API error, server could be down/crashed
-      console.error(_error);
-    }
-  } // End handleError()
+  scrollToModalTop(_identifier: string = '', _duration?: number): void {
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 250;
+    $(_identifier).animate({ scrollTop: 0 }, duration);
+  } // End scrollToModalTop()
 
   /**
    * Handles errors that can't be determined elsewhere and logs the error

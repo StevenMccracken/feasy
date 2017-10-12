@@ -146,7 +146,7 @@
           <tr>
             <td class="tableContent center"><input type="text" placeholder="Click to select a date" class="form-control quickAddDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="task.dueDate | date: 'fullDate'" (click)="publishDatePick(task, i)"></td>
             <td class="tableContent center"><input type="text" placeholder="Task name" class="form-control taskName" [(ngModel)]="task.title"></td>
-            <td class="material-icons" style="padding-right: 20px;" (click)="removeFromTasks(i)">delete_sweep</td>
+            <td class="material-icons" style="padding-right: 20px;" (click)="removeTask(i)">delete_sweep</td>
             <td class="material-icons" *ngIf="i === taskArray.length - 1" (click)="incrementTaskArraySize()">control_point</td>
           </tr>
         </tbody>

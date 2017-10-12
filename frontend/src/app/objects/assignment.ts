@@ -4,6 +4,7 @@ interface Serializable<T> {
 
 export class Assignment implements Serializable<Assignment> {
   _id: string;
+  googleId: string;
   title: string;
   dueDate: Date;
   completed: boolean;
@@ -14,6 +15,7 @@ export class Assignment implements Serializable<Assignment> {
   description: string;
 
   // These allow click to edit functionality of tasks
+  editModeType: boolean = false;
   editModeDate: boolean = false;
   editModeTitle: boolean = false;
   editModeDescription: boolean = false;
@@ -24,19 +26,43 @@ export class Assignment implements Serializable<Assignment> {
    * @return {Assignment} assignment with the attributes from the JSON input
    */
   deserialize(_input: Object = {}): Assignment {
-    this._id = _input['_id'];
-    this.title = _input['title'];
+    this._id = _input['_id'] || '';
+    this.googleId = _input['googleId'] || '';
+    this.title = _input['title'] || '';
     this.dueDate = new Date(_input['dueDate']);
-    this.completed = _input['completed'];
-    this.class = _input['class'];
+    this.completed = _input['completed'] || false;
+    this.class = _input['class'] || '';
     this.dateCreated = new Date(_input['dateCreated']);
-    this.type = _input['type'];
-    this.description = _input['description'];
-    this.editModeDescription = false;
+    this.type = _input['type'] || '';
+    this.description = _input['description'] || '';
+
+    this.editModeType = false;
+    this.editModeDate = false;
     this.editModeTitle = false;
+    this.editModeDescription = false;
 
     return this;
   } // End deserialize()
+
+  deepCopy(): Assignment {
+    const clone = new Assignment();
+    clone._id = this._id;
+    clone.googleId = this.googleId;
+    clone.title = this.title;
+    clone.dueDate = new Date(this.dueDate.getTime());
+    clone.completed = this.completed;
+    clone.class = this.class;
+    clone.dateCreated = new Date(this.dateCreated.getTime());
+    clone.type = this.type;
+    clone.description = this.description;
+
+    clone.editModeType = this.editModeType;
+    clone.editModeDate = this.editModeDate;
+    clone.editModeTitle = this.editModeTitle;
+    clone.editModeDescription = this.editModeDescription;
+
+    return clone;
+  } // End clone()
 
   getId(): string {
     return this._id;
@@ -70,13 +96,21 @@ export class Assignment implements Serializable<Assignment> {
     return this.description;
   } // End getDescription()
 
-  getEditModeDescription(): boolean {
-    return this.editModeDescription;
-  } // End getEditModeDescription()
+  getEditModeType(): boolean {
+    return this.editModeType;
+  } // End getEditModeType()
+
+  getEditModeDate(): boolean {
+    return this.editModeDate;
+  } // End getEditModeDate()
 
   getEditModeTitle(): boolean {
     return this.editModeTitle;
   } // End getEditModeTitle()
+
+  getEditModeDescription(): boolean {
+    return this.editModeDescription;
+  } // End getEditModeDescription()
 
   getDueDateInUnixMilliseconds(): number {
     return this.dueDate.getTime();
@@ -118,11 +152,19 @@ export class Assignment implements Serializable<Assignment> {
     this.description = _description;
   } // End setDescription()
 
-  setEditModeDescription(_editModeDescription: boolean): void {
-    this.editModeDescription = _editModeDescription;
-  } // End setEditModeDescription()
+  setEditModeType(_editModeType: boolean): void {
+    this.editModeType = _editModeType;
+  } // End getEditModeType()
+
+  setEditModeDate(_editModeDate: boolean): void {
+    this.editModeDate = _editModeDate;
+  } // End getEditModeDate()
 
   setEditModeTitle(_editModeTitle: boolean): void {
     this.editModeTitle = _editModeTitle;
   } // End setEditModeTitle()
+
+  setEditModeDescription(_editModeDescription: boolean): void {
+    this.editModeDescription = _editModeDescription;
+  } // End setEditModeDescription()
 }
