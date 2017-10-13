@@ -20,6 +20,7 @@ import { AssignmentService } from '../services/assignment.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
 import { TaskDatePicked } from '../objects/messages/task-date-picked';
+import { QuickSettingsService } from '../services/quick-settings.service';
 import { QuickAddAssignmentsCreated } from '../objects/messages/quick-add-assignments-created';
 
 declare var $: any;
@@ -39,9 +40,9 @@ export class LayoutComponent implements OnInit {
   taskArray: Assignment[];
 
   // Quick Settings variables
-  quickSettingLabel: boolean = true;
-  quickSettingColors: boolean = false;
-  quickSettingDescription: boolean = true;
+  quickSettingType: boolean;
+  quickSettingColors: boolean;
+  quickSettingDescription: boolean;
 
   defaultMessageDisplayTime: number = 5000;
 
@@ -86,6 +87,7 @@ export class LayoutComponent implements OnInit {
     private MESSAGING: MessagingService,
     private STORAGE: LocalStorageService,
     private ASSIGNMENTS: AssignmentService,
+    private QUICK_SETTINGS: QuickSettingsService,
   ) {}
 
   ngOnInit() {
@@ -95,9 +97,9 @@ export class LayoutComponent implements OnInit {
     this.avatars = this.AVATARS.getAllAvatars();
 
     // Initialize the quick settings
-    this.quickSettingLabel = this.STORAGE.getItem('qsLabel') === 'true';
-    this.quickSettingColors = this.STORAGE.getItem('qsColor') === 'true';
-    this.quickSettingDescription = this.STORAGE.getItem('qsDescription') === 'true';
+    this.quickSettingType = this.QUICK_SETTINGS.getShowType();
+    this.quickSettingColors = this.QUICK_SETTINGS.getShowColors();
+    this.quickSettingDescription = this.QUICK_SETTINGS.getShowDescription();
 
     // Instantiate the side nav
     $('#button-slide').sideNav();
@@ -183,16 +185,16 @@ export class LayoutComponent implements OnInit {
   toggleQuickSettings(_settingName: string): void {
     switch (_settingName) {
       case 'color':
-        setTimeout(() => this.STORAGE.setItem('qsColor', this.quickSettingColors.toString()), 300);
+        setTimeout(() => this.QUICK_SETTINGS.toggleShowColors(), 300);
         break;
-      case 'label':
-        setTimeout(() => this.STORAGE.setItem('qsLabel', this.quickSettingLabel.toString()), 300);
+      case 'type':
+        setTimeout(() => this.QUICK_SETTINGS.toggleShowType(), 300);
         break;
       case 'description':
-        setTimeout(() => this.STORAGE.setItem('qsDescription', this.quickSettingDescription.toString()), 300);
+        setTimeout(() => this.QUICK_SETTINGS.toggleShowDescription(), 300);
         break;
       default:
-        console.log('Can\'t toggle unknown settings type \'%s\'', _settingName);
+        console.error('Can\'t toggle unknown settings type \'%s\'', _settingName);
     }
   } // End toggleQuickSettings()
 
