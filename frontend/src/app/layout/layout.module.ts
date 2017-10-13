@@ -15,7 +15,6 @@ import { LayoutComponent } from './layout.component';
 import { AuthGuard } from '../router-guard/auth.guard';
 import { ToDoComponent } from './to-do/to-do.component';
 import { LayoutRoutingModule } from './layout-routing.module';
-import { LoadLearnService } from '../services/load-learn.service';
 import { CalendarComponent } from './calendar/calendar.component';
 
 @NgModule({
@@ -34,7 +33,6 @@ import { CalendarComponent } from './calendar/calendar.component';
   providers: [
     AuthGuard,
     DragulaService,
-    LoadLearnService,
   ],
 })
 export class LayoutModule {}

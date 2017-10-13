@@ -19,6 +19,7 @@
       "testTsconfig": "tsconfig.spec.json",
       "prefix": "app",
       "styles": [
+        "../node_modules/material-design-icons/iconfont/material-icons.css",
         "../node_modules/angular-calendar/dist/css/angular-calendar.css",
         "../node_modules/materialize-css/dist/css/materialize.min.css",
         "styles.css"

@@ -1,6 +1,7 @@
 // Import our files
 import { RemoteError } from './remote-error';
 import { ErrorService } from '../services/error.service';
+import { CommonUtilsService } from '../utils/common-utils.service';
 
 export class InvalidRequestError extends RemoteError {
   private invalidParameters: string[];
@@ -12,13 +13,14 @@ export class InvalidRequestError extends RemoteError {
   constructor(_remoteError: RemoteError = new RemoteError()) {
     super(_remoteError.getLocalSource(), _remoteError.getRequestId(), _remoteError.getStatusCode());
 
-    this.errorService = new ErrorService();
+    const UTILS: CommonUtilsService = new CommonUtilsService();
+    this.errorService = new ErrorService(UTILS);
     const errorMessage = this.getMessage() || '';
     if (/invalid/gi.test(errorMessage)) {
-      hasInvalidParams = true;
+      this.hasInvalidParams = true;
       this.invalidParameters = this.errorService.getInvalidParameters(this);
     } else if (/unchanged/gi.test(errorMessage)) {
-      hasUnchangedParams = true;
+      this.hasUnchangedParams = true;
       this.unchangedParameters = this.errorService.getUnchangedParameters(this);
     }
   }

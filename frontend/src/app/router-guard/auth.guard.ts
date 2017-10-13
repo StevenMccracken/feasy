@@ -18,16 +18,16 @@ import { LocalStorageService } from '../utils/local-storage.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
-  constructor(private _router: Router, private _storage: LocalStorageService) {}
+  constructor(private ROUTER: Router, private STORAGE: LocalStorageService) {}
 
   // TODO: Add formal documentation
   canActivate(_next: ActivatedRouteSnapshot, _state: RouterStateSnapshot): boolean {
-    if (this._storage.isValidItem('currentUser') && this._storage.isValidItem('token')) return true;
+    if (this.STORAGE.isValidItem('currentUser') && this.STORAGE.isValidItem('token')) return true;
     else {
-      this._storage.deleteItem('token');
-      this._storage.deleteItem('currentUser');
+      this.STORAGE.deleteItem('token');
+      this.STORAGE.deleteItem('currentUser');
 
-      this._router.navigate(['/login']);
+      this.ROUTER.navigate(['/login']);
 
       // TODO: Does this statement even get evaluated?
       return false;
@@ -45,6 +45,6 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
    * @return {boolean} whether or note the route can be loaded
    */
   canLoad(_route: Route): boolean {
-    return this._storage.isValidItem('currentUser') && this._storage.isValidItem('token');
+    return this.STORAGE.isValidItem('currentUser') && this.STORAGE.isValidItem('token');
   } // End canLoad()
 }

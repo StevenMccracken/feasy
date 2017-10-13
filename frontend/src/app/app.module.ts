@@ -12,8 +12,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 // Import 3rd-party libraries
 import {
   ClientConfig,
-  GoogleApiModule,
   NG_GAPI_CONFIG,
+  GoogleApiModule,
 } from 'ng-gapi';
 import 'hammerjs';
 
@@ -27,11 +27,12 @@ import { LoginComponent } from './login/login.component';
 import { AvatarService } from './services/avatar.service';
 import { SignupComponent } from './signup/signup.component';
 import { LayoutComponent } from './layout/layout.component';
-import { MessageService } from './services/message.service';
+import { MessagingService } from './services/messaging.service';
 import { AssignmentService } from './services/assignment.service';
 import { CommonUtilsService } from './utils/common-utils.service';
 import { LocalStorageService } from './utils/local-storage.service';
 import { AppRoutingModule } from './app-routing/app-routing.module';
+import { QuickSettingsService } from './services/quick-settings.service';
 import { PasswordResetComponent } from './password-reset/password-reset.component';
 
 // Configure client side Google API service
@@ -72,10 +73,11 @@ const gapiClientConfig: ClientConfig = {
     FeasyService,
     ErrorService,
     AvatarService,
-    MessageService,
+    MessagingService,
     AssignmentService,
     CommonUtilsService,
     LocalStorageService,
+    QuickSettingsService,
   ],
   bootstrap: [AppComponent],
 })

@@ -26,12 +26,12 @@ import { InvalidRequestError } from '../objects/invalid-request-error';
 @Injectable()
 export class UserService {
   constructor(
-    private _router: Router,
-    private _error: ErrorService,
-    private _feasyApi: FeasyService,
-    private _utils: CommonUtilsService,
-    private _storage: LocalStorageService,
-    private _googleAuthService: GoogleAuthService,
+    private ROUTER: Router,
+    private ERROR: ErrorService,
+    private FEASY_API: FeasyService,
+    private UTILS: CommonUtilsService,
+    private STORAGE: LocalStorageService,
+    private GOOGLE_AUTH_SERVICE: GoogleAuthService,
   ) {}
 
   /**
@@ -50,25 +50,17 @@ export class UserService {
     };
 
     // Add optional parameters
-    if (this._utils.hasValue(_user.firstName) && _user.firstName !== '') {
-      requestParams['firstName'] = _user.firstName;
-    }
+    if (this.UTILS.hasValue(_user.firstName) && _user.firstName !== '') requestParams['firstName'] = _user.firstName;
+    if (this.UTILS.hasValue(_user.lastName) && _user.lastName !== '') requestParams['lastName'] = _user.lastName;
+    if (this.UTILS.hasValue(_user.avatar) && _user.avatar !== '') requestParams['avatar'] = _user.avatar;
 
-    if (this._utils.hasValue(_user.lastName) && _user.lastName !== '') {
-      requestParams['lastName'] = _user.lastName;
-    }
-
-    if (this._utils.hasValue(_user.avatar) && _user.avatar !== '') {
-      requestParams['avatar'] = _user.avatar;
-    }
-
-    const promise = this._feasyApi.post(createUserPath, requestParams)
+    const promise = this.FEASY_API.post(createUserPath, requestParams)
       .then((successResponse: Response) => {
         // Extract the token from the response body
         const responseBody = successResponse.json();
         const token: string = responseBody && responseBody.success && responseBody.success.token;
 
-        if (this._utils.hasValue(token)) return Promise.resolve(token);
+        if (this.UTILS.hasValue(token)) return Promise.resolve(token);
         else {
           const error: LocalError = new LocalError('user.service.create');
           error.setType('null_token');
@@ -79,19 +71,19 @@ export class UserService {
       }) // End then(successResponse)
       .catch((errorResponse: Response) => {
         if (errorResponse instanceof Response) {
-          const error: RemoteError = this._error.getRemoteError(errorResponse);
+          const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
 
-          if (this._error.isInvalidRequestError(error)) {
+          if (this.ERROR.isInvalidRequestError(error)) {
             // The request contains invalid/malformed parameters from the user's attributes
-            const invalidParameters: string[] = this._error.getInvalidParameters(error);
+            const invalidParameters: string[] = this.ERROR.getInvalidParameters(error);
 
             // Add the invalid parameters to the error object
             error.setCustomProperty('invalidParameters', invalidParameters);
-          } else if (this._error.isResourceError(error)) {
+          } else if (this.ERROR.isResourceError(error)) {
             // A user with either the username, email, or access code already exists
             let duplicateParameter: string;
             const errorMessage: string = error.getMessage();
-            if (this._utils.hasValue(errorMessage)) {
+            if (this.UTILS.hasValue(errorMessage)) {
               if (errorMessage.indexOf('username') !== -1) duplicateParameter = 'username';
               else if (errorMessage.indexOf('email') !== -1) duplicateParameter = 'email';
               else if (errorMessage.indexOf('alpha') !== -1) duplicateParameter = 'alphaCode';
@@ -104,7 +96,7 @@ export class UserService {
 
           return Promise.reject(error);
         } else return Promise.reject(errorResponse);
-      }); // End this._feasyApi.post()
+      }); // End this.FEASY_API.post()
 
     return promise;
   } // End create()
@@ -116,23 +108,23 @@ export class UserService {
    */
   get(_username: string): Promise<Account> {
     // Create request information
-    const token: string = this._storage.getItem('token');
+    const token: string = this.STORAGE.getItem('token');
     const getUserPath = `/users/${_username}`;
     const headersOptions = { Authorization: token };
 
     // Send request
-    const promise = this._feasyApi.get(getUserPath, headersOptions)
+    const promise = this.FEASY_API.get(getUserPath, headersOptions)
       .then((successResponse: Response) => {
         const responseBody = successResponse.json();
         const userAccount = new Account().deserialize(responseBody);
         return Promise.resolve(userAccount);
       }) // End then(successResponse)
       .catch((errorResponse: Response) => {
-        const error: RemoteError = this._error.getRemoteError(errorResponse);
-        if (this._error.isInvalidRequestError(error)) error.setCustomProperty('invalidParameter', 'username');
+        const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
+        if (this.ERROR.isInvalidRequestError(error)) error.setCustomProperty('invalidParameter', 'username');
 
         return Promise.reject(error);
-      }); // End this._feasyApi.get()
+      }); // End this.FEASY_API.get()
 
     return promise;
   } // End get()
@@ -141,12 +133,12 @@ export class UserService {
    * Sends a request to update an attribute for the current user
    * @param {string} _attribute the name of the user attribute to update
    * @param {any} _newValue the new value for the user's attribute
-   * @return {Promise<any>} the Response object from the API
+   * @return {Promise<Response>} the Response object from the API
    */
-  private update(_attribute: string, _newValue: any): Promise<any> {
+  private update(_attribute: string, _newValue: any): Promise<Response> {
     // Create request information
-    const token = this._storage.getItem('token');
-    const username = this._storage.getItem('currentUser');
+    const token = this.STORAGE.getItem('token');
+    const username = this.STORAGE.getItem('currentUser');
     const updatePath = `/users/${username}/${_attribute}`;
     const headersOptions = { Authorization: token };
 
@@ -155,15 +147,15 @@ export class UserService {
     const requestParams = { [`new${capitalizedAttribute}`]: _newValue };
 
     // Send request
-    const promise = this._feasyApi.put(updatePath, requestParams, headersOptions)
+    const promise = this.FEASY_API.put(updatePath, requestParams, headersOptions)
       .then((successResponse: Response) => Promise.resolve(successResponse))
       .catch((updateError: Response) => {
-        const error: RemoteError = this._error.getRemoteError(updateError);
+        const error: RemoteError = this.ERROR.getRemoteError(updateError);
 
-        if (this._error.isInvalidRequestError(error)) {
+        if (this.ERROR.isInvalidRequestError(error)) {
           const invalidRequestError: InvalidRequestError = new InvalidRequestError(error);
           return Promise.reject(invalidRequestError);
-        } else if (this._error.isResourceError()) {
+        } else if (this.ERROR.isResourceError()) {
           const errorMessage: string = error.getMessage() || '';
           if (/another/gi.test(errorMessage)) error.setCustomProperty('reason', 'updating_different_user');
           else if (/google/gi.test(errorMessage)) error.setCustomProperty('reason', 'google_user');
@@ -171,7 +163,7 @@ export class UserService {
 
           return Promise.reject(error);
         } else return promise.reject(error);
-      }); // End this._feasyApi.put()
+      }); // End this.FEASY_API.put()
 
     return promise;
   } // End update()
@@ -204,13 +196,13 @@ export class UserService {
     };
 
     // Send request
-    const promise = this._feasyApi.post(loginPath, requestParams)
+    const promise = this.FEASY_API.post(loginPath, requestParams)
       .then((successResponse: Response) => {
         // Extract the token from the response body
         const responseBody = successResponse.json();
         const token: string = responseBody && responseBody.success && responseBody.success.token;
 
-        if (this._utils.hasValue(token)) return Promise.resolve(token);
+        if (this.UTILS.hasValue(token)) return Promise.resolve(token);
         else {
           const error: LocalError = new LocalError('user.service.getAuthToken');
           error.setType('null_token');
@@ -221,21 +213,21 @@ export class UserService {
       }) // End then(successResponse)
       .catch((errorResponse: Response) => {
         if (errorResponse instanceof Response) {
-          const error: RemoteError = this._error.getRemoteError(errorResponse);
+          const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
 
-          if (this._error.isInvalidRequestError(error)) {
+          if (this.ERROR.isInvalidRequestError(error)) {
             // The request contains invalid/malformed parameters from the username or password
-            const invalidParameters: string[] = this._error.getInvalidParameters(error);
+            const invalidParameters: string[] = this.ERROR.getInvalidParameters(error);
 
             // Add the invalid parameters to the error object
             error.setCustomProperty('invalidParameters', invalidParameters);
-          } else if (this._error.isResourceError(error)) {
+          } else if (this.ERROR.isResourceError(error)) {
             // A Google user tried to log in with a username and password
           }
 
           return Promise.reject(error);
         } else return Promise.reject(errorResponse);
-      }); // End this._feasyApi.post()
+      }); // End this.FEASY_API.post()
 
     return promise;
   } // End getAuthToken()
@@ -246,18 +238,18 @@ export class UserService {
    */
   refreshAuthToken(): Promise<string> {
     // Create request information
-    const token: string = this._storage.getItem('token');
+    const token: string = this.STORAGE.getItem('token');
     const refreshTokenPath = '/login/refresh';
     const headersOptions = { Authorization: token };
 
     // Send request
-    const promise = this._feasyApi.get(refreshTokenPath, headersOptions)
+    const promise = this.FEASY_API.get(refreshTokenPath, headersOptions)
       .then((successResponse: Response) => {
         // Extract the token from the response body
         const responseBody = successResponse.json();
         const newtoken: string = responseBody && responseBody.success && responseBody.success.token;
 
-        if (this._utils.hasValue(newtoken)) return Promise.resolve(newtoken);
+        if (this.UTILS.hasValue(newtoken)) return Promise.resolve(newtoken);
         else {
           const error: LocalError = new LocalError('user.service.refreshAuthToken');
           error.setType('null_token');
@@ -268,10 +260,10 @@ export class UserService {
       }) // End then(successResponse)
       .catch((errorResponse: Response) => {
         if (errorResponse instanceof Response) {
-          const error: RemoteError = this._error.getRemoteError(errorResponse);
+          const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
           return Promise.reject(error);
         } else return Promise.reject(errorResponse);
-      }); // End this._feasyApi.get()
+      }); // End this.FEASY_API.get()
 
     return promise;
   } // End refreshAuthToken()
@@ -285,13 +277,26 @@ export class UserService {
     const getAuthPath = '/auth/googleUrl';
 
     // Send request
-    const promise = this._feasyApi.get(getAuthPath)
+    const promise = this.FEASY_API.get(getAuthPath)
       .then((successResponse: Response) => {
         const responseBody = successResponse.json();
         const authUrl: string = responseBody && responseBody.success && responseBody.success.authUrl;
-        return Promise.resolve(this._utils.hasValue(authUrl) ? authUrl : null);
+
+        if (this.UTILS.hasValue(authUrl)) return Promise.resolve(authUrl);
+        else {
+          const error: LocalError = new LocalError('user.service.getAuthorizationUrl');
+          error.setType('null_url');
+          error.setMessage('No authorization URL was returned when getting the authorization URL succeeded');
+
+          return Promise.reject(error);
+        }
       }) // End then(successResponse)
-      .catch((errorResponse: Response) => Promise.reject(errorResponse)); // End this._feasyApi.get()
+      .catch((errorResponse: Response) => {
+        if (errorResponse instanceof Response) {
+          const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
+          return Promise.reject(error);
+        } else return Promise.reject(errorResponse);
+      }); // End this.FEASY_API.get()
 
     return promise;
   } // End getAuthorizationUrl()
@@ -300,6 +305,7 @@ export class UserService {
    * Retrieves authentication info to login the user once
    * they have granted Feasy offline access. Will only work
    * if the Feasy-specific OAuth2.0 URL is accessed first
+   * @param {string} [_alphaCode = ''] the unique access code to sign up with
    * @return {Promise<Object>} the JSON containing the user's username and a JWT
    */
   authenticateGoogle(_alphaCode: string = ''): Promise<Object> {
@@ -307,47 +313,82 @@ export class UserService {
     const authenticatePath = `/auth/google/await?alphaCode=${_alphaCode}`;
 
     // Send request
-    const promise = this._feasyApi.get(authenticatePath)
+    const promise = this.FEASY_API.get(authenticatePath)
       .then((successResponse: Response) => {
         const responseBody = successResponse.json();
         const token: string = responseBody && responseBody.success && responseBody.success.token;
         const username: string = responseBody && responseBody.success && responseBody.success.username;
 
-        const authInfo = {
-          token: this._utils.hasValue(token) ? token : null,
-          username: this._utils.hasValue(username) ? username : null,
-        };
+        const authInfo: Object = {};
+        let validToken: boolean = true;
+        let validUsername: boolean = true;
 
-        return Promise.resolve(authInfo);
+        if (this.UTILS.hasValue(token)) authInfo['token'] = token;
+        else validToken = false;
+
+        if (this.UTILS.hasValue(username)) authInfo['username'] = token;
+        else validUsername = false;
+
+        if (validToken && validUsername) return Promise.resolve(authInfo);
+        else {
+          const error: LocalError = new LocalError('user.service.authenticateGoogle');
+          error.setType('null_authInfo');
+          error.setMessage('No authorization URL was returned when getting the authorization URL succeeded');
+
+          const nullInfo: string[] = [];
+          if (!validToken) nullInfo.push('token');
+          if (!validUsername) nullInfo.push('username');
+
+          error.setCustomProperty('nullAuthInfo', nullInfo);
+          return Promise.reject(error);
+        }
       }) // End then(successResponse)
-      .catch((errorResponse: Response) => Promise.reject(errorResponse)); // End this._feasyApi.get()
+      .catch((errorResponse: Response) => {
+        if (errorResponse instanceof Response) {
+          const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
+
+          if (this.ERROR.isInvalidRequestError(error)) {
+            // The request contains invalid/malformed parameters from the username or password
+            const invalidParameters: string[] = this.ERROR.getInvalidParameters(error);
+
+            // Add the invalid parameters to the error object
+            error.setCustomProperty('invalidParameters', invalidParameters);
+          } else if (this.ERROR.isResourceError(error)) {
+            // The provided alpha code has already been used or the username/email is taken
+            const errorMessage: string = error.getMessage() || '';
+            if (errorMessage.indexOf('alpha code') !== -1) error.setCustomProperty('invalidResource', 'alphaCode');
+            else if (errorMessage.indexOf('username') !== -1) error.setCustomProperty('invalidResource', 'username');
+            else if (errorMessage.indexOf('email') !== -1) error.setCustomProperty('invalidResource', 'email');
+          }
+        } else return Promise.reject(errorResponse);
+      }); // End this.FEASY_API.get()
 
     return promise;
-  }
+  } // End authenticateGoogle()
 
+  /**
+   * Sends an API request to send a password reset email to the desired email address
+   * @param {string} _email the email address to send the password reset email to
+   * @return {Promise<any>} an empty Promise
+   */
   sendPasswordResetEmail(_email: string): Promise<any> {
     // Create request information
     const resetEmailPath: string = `/password/reset`;
     const requestParams: Object = { email: _email };
 
     // Send request
-    const promise = this._feasyApi.post(resetEmailPath, requestParams)
+    const promise = this.FEASY_API.post(resetEmailPath, requestParams)
       .then((successResponse: Response) => Promise.resolve()) // End then(successResponse)
       .catch((errorResponse: Response) => {
-        let error;
-        switch (errorResponse.status) {
-          case 400:
-            error = 'email_invalid';
-            break;
-          case 404:
-            error = 'email_dne';
-            break;
-          default:
-            error = 'unknown';
+        const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
+
+        if (this.ERROR.isInvalidRequestError(error)) {
+          const invalidParams: string[] = this.ERROR.getInvalidParameters(error);
+          error.setCustomProperty('invalidParameters', invalidParams);
         }
 
         return Promise.reject(error);
-      }); // End this._feasyApi.post()
+      }); // End this.FEASY_API.post()
 
     return promise;
   } // End sendPasswordResetEmail()
@@ -357,41 +398,51 @@ export class UserService {
     const resetDetailsPath: string = `/password/reset/details?code=${_resetCode}`;
 
     // Send request
-    const promise = this._feasyApi.get(resetDetailsPath)
+    const promise = this.FEASY_API.get(resetDetailsPath)
       .then((successResponse: Response) => {
         const responseBody = successResponse.json();
         const userDetails: Object = (responseBody && responseBody.success) || {};
 
-        return Promise.resolve(userDetails);
+        if (this.UTILS.hasValue(userDetails['userId'])) return Promise.resolve(userDetails);
+        else {
+          const error: LocalError = new LocalError('user.service.getPasswordResetDetails');
+          error.setType('null_userDetails');
+          error.setMessage('No userId was returned when getting the password reset details succeeded');
+
+          return Promise.reject(error);
+        }
       }) // End then(successResponse)
       .catch((errorResponse: Response) => {
-        let error: string;
-        const responseBody = errorResponse.json();
-        const errorMessage: string = (responseBody && responseBody.error && responseBody.error.message) || 'unknown';
+        if (errorResponse instanceof Response) {
+          const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
 
-        switch (errorResponse.status) {
-          case 400:
-            error = 'code_invalid';
-            break;
-          case 403:
-            if (errorMessage.indexOf('expired') !== -1) error = 'code_expired';
-            else if (errorMessage.indexOf('already') !== -1) error = 'code_used';
-            else error = errorMessage;
+          if (this.ERROR.isInvalidRequestError(error)) {
+            // The request contains invalid/malformed parameters from the username or password
+            const invalidParameters: string[] = this.ERROR.getInvalidParameters(error);
 
-            break;
-          case 404:
-            error = 'code_dne';
-            break;
-          default:
-            error = errorMessage;
-        }
+            // Add the invalid parameters to the error object
+            error.setCustomProperty('invalidParameters', invalidParameters);
+          } else if (this.ERROR.isResourceError(error)) {
+            // The provided alpha code has already been used or the username/email is taken
+            const errorMessage: string = error.getMessage() || '';
+            if (errorMessage.indexOf('expired') !== -1) error.setCustomProperty('invalidResourceReason', 'expired');
+            else if (errorMessage.indexOf('already') !== -1) error.setCustomProperty('invalidResourceReason', 'used');
+          }
 
-        return Promise.reject(error);
-      }); // End this._feasyApi.get()
+          return Promise.reject(error);
+        } else return Promise.reject(errorResponse);
+      }); // End this.FEASY_API.get()
 
     return promise;
   } // End getPasswordResetDetails()
 
+  /**
+   * Sends a request to reset a user's password without knowing the existing password
+   * @param {string} _resetCode the unique password reset code that was emailed to the user
+   * @param {string} _userId the userId of the user
+   * @param {string} _password the new password for the user
+   * @return {Promise<any>} an empty promise
+   */
   resetPassword(_resetCode: string, _userId: string, _password: string): Promise<any> {
     // Create request information
     const resetPasswordPath: string = '/password/reset/callback';
@@ -402,37 +453,27 @@ export class UserService {
     };
 
     // Send request
-    const promise = this._feasyApi.post(resetPasswordPath, requestParams)
+    const promise = this.FEASY_API.post(resetPasswordPath, requestParams)
       .then((successResponse: Response) => Promise.resolve()) // End then(successResponse)
       .catch((errorResponse: Response) => {
-        let error;
-        const responseBody = errorResponse.json();
-        const errorMessage: string = (responseBody && responseBody.error && responseBody.error.message) || '';
+        const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
 
-        switch (errorResponse.status) {
-          case 400:
-            const errorMessageParts: string[] = errorMessage.split('Invalid parameters: ');
-            const invalidParamsString: string = errorMessageParts.length > 1 ? errorMessageParts[1] : '';
-            const invalidParams: string[] = invalidParamsString.split(',');
-            error = invalidParams;
+        if (this.ERROR.isInvalidRequestError(error)) {
+          // The request contains invalid/malformed parameters from the username or password
+          const invalidParameters: string[] = this.ERROR.getInvalidParameters(error);
 
-            break;
-          case 403:
-            if (errorMessage.indexOf('expired') !== -1) error = 'code_expired';
-            else if (errorMessage.indexOf('already') !== -1) error = 'code_used';
-            else if (errorMessage.indexOf('match') !== -1) error = 'code_mismatch';
-            else error = errorMessage;
-
-            break;
-          case 404:
-            error = 'code_dne';
-            break;
-          default:
-            error = errorMessage;
+          // Add the invalid parameters to the error object
+          error.setCustomProperty('invalidParameters', invalidParameters);
+        } else if (this.ERROR.isResourceError(error)) {
+          // The provided alpha code has already been used or the username/email is taken
+          const errorMessage: string = error.getMessage() || '';
+          if (errorMessage.indexOf('expired') !== -1) error.setCustomProperty('invalidResourceReason', 'expired');
+          else if (errorMessage.indexOf('already') !== -1) error.setCustomProperty('invalidResourceReason', 'used');
+          else if (errorMessage.indexOf('match') !== -1) error.setCustomProperty('invalidResourceReason', 'mismatch');
         }
 
         return Promise.reject(error);
-      }); // End this._feasyApi.post()
+      }); // End this.FEASY_API.post()
 
     return promise;
   } // End resetPassword()

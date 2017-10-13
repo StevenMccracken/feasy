@@ -2,8 +2,12 @@
   <div  class="navbar-fixed">
     <nav>
       <div class="nav-wrapper primary">
-        <a href="#" data-activates="slide-out" class="btn-flat circle" id="button-slide"><i class="material-icons white-text">menu</i></a>
-        <a routerLink='/main/calendar' class="btn-flat circle" ><i class="material-icons white-text">event_note</i></a>
+        <a href="#" data-activates="slide-out" class="btn-flat circle" id="button-slide">
+          <i class="material-icons white-text">menu</i>
+        </a>
+        <a routerLink='/main/calendar' class="btn-flat circle">
+          <i class="material-icons white-text">event_note</i>
+        </a>
         <a routerLink='/main/calendar' class="logo brand-logo center">Feasy</a>
       </div>
     </nav>
@@ -14,17 +18,17 @@
         <div class="background secondary">
         </div>
         <div class="user-setting">
-          <img class="circle avatar" [src]="avatarUrl" (click)="changeAvatar()">
+          <img class="circle avatar" [src]="avatarUrl" (click)="displayAvatarSelection()">
         </div>
-        <p class="white-text">Hey,&nbsp;{{ firstName }}</p>
+        <p class="white-text">Hey, {{ displayName }}</p>
         <div class="action">
-          <div class="logout" (click)="logout()">Logout</div>
+          <div class="logout" (click)="logUserOut()">Logout</div>
           <div class="settings">Settings</div>
         </div>
       </div>
     </li>
     <li>
-      <a (click)="closeNav('/main/calendar')">
+      <a (click)="closeSideNav('/main/calendar')">
         <table>
           <tr>
             <td class="icon-menu">
@@ -38,7 +42,7 @@
       </a>
     </li>
     <li>
-      <a routerLink="/main/todo" (click)="closeNav('handled')">
+      <a routerLink="/main/todo" (click)="closeSideNav()">
         <table>
           <tr>
             <td class="icon-menu">
@@ -52,7 +56,7 @@
       </a>
     </li>
     <li>
-      <a (click)="debug()">
+      <a>
         <table>
           <tr>
             <td class="icon-menu">
@@ -66,7 +70,6 @@
       </a>
     </li>
 
-
     <div class="container">
       <div class="quick-settings">
         <div class="head fontify">Quick Settings</div>
@@ -78,18 +81,18 @@
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="quickSettingColors" value="true" (click)="toggleSettings('color')">
+                    <input type="checkbox" [(ngModel)]="quickSettingColors" value="true" (click)="toggleQuickSettings('color')">
                     <span class="lever"></span>
                     On
                   </label>
                 </td>
               </tr>
               <tr>
-                <td class="fontify">Task Label</td>
+                <td class="fontify">Task Type</td>
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="quickSettingLabel" value="true" (click)="toggleSettings('label')">
+                    <input type="checkbox" [(ngModel)]="quickSettingType" value="true" (click)="toggleQuickSettings('type')">
                     <span class="lever"></span>
                     On
                   </label>
@@ -100,7 +103,7 @@
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="quickSettingDescription" value="true" (click)="toggleSettings('description')">
+                    <input type="checkbox" [(ngModel)]="quickSettingDescription" value="true" (click)="toggleQuickSettings('description')">
                     <span class="lever"></span>
                     On
                   </label>
@@ -112,42 +115,57 @@
       </div>
     </div>
 
-    <div class="container center upload-button" (click)="openLoadLearn()">
+    <div class="container center upload-button" (click)="openQuickAdd()">
       <label class="waves-effect waves-light btn blue">
-         Quick Add
+        Quick Add
       </label>
     </div>
   </ul>
 
-  <div id="loadLearn" class="modal modal-fixed-footer">
-    <div class="modal-content">
-      <div *ngIf="this.loadNLearnError" id="loadNLearnError">
+  <div id="quickAdd" class="modal modal-fixed-footer">
+    <div id="quickAddContent" class="modal-content">
+      <div *ngIf="this.errors.general.occurred" id="quickAddError">
         <div class="card error-message">
           <div class="card-content">
-            {{ this.loadNLearnErrorMessage }}
+            {{ this.errors.general.message }}
+          </div>
+        </div>
+      </div>
+      <div *ngIf="this.success.general.occurred" id="quickAddSuccess">
+        <div class="card success-message">
+          <div class="card-content" (click)="closeQuickAddModal('main/calendar/')">
+            {{ this.success.general.message }}
           </div>
         </div>
       </div>
       <table>
         <thead>
           <tr>
-            <td><h4>Due Date</h4></td>
-            <td><h4>Task Name</h4></td>
+            <td>
+              <h4>Due Date</h4>
+            </td>
+            <td>
+              <h4>Task Name</h4>
+            </td>
           </tr>
         </thead>
         <br><br><br>
-        <tbody *ngFor="let a of taskArray; let i = index" style="margin-top: 100px;">
-            <tr>
-              <td class="tableContent center"><input class="form-control dueDate" type="date" [(ngModel)]="taskArray[i].dueDate"></td>
-              <td class="tableContent center"><input class="form-control taskName" type="text" [(ngModel)]="taskArray[i].title"></td>
-              <td class="material-icons" style="padding-right: 20px;" *ngIf="i == taskArray.length - 1"(click)="addMore()">control_point</td>
-              <td class="material-icons" (click)="deleteCurrent(i)">delete_sweep</td>
-            </tr>
-          </tbody>
+        <tbody *ngFor="let task of taskArray; let i = index" style="margin-top: 100px;">
+          <tr>
+            <td class="tableContent center">
+              <input type="text" placeholder="Click to select a date" class="form-control quickAddDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="task.dueDate | date: 'fullDate'" (click)="publishDatePick(task, i)">
+            </td>
+            <td class="tableContent center">
+              <input type="text" placeholder="Task name" class="form-control taskName" [(ngModel)]="task.title">
+            </td>
+            <td class="material-icons" style="padding-right: 20px;" (click)="removeTask(i)">delete_sweep</td>
+            <td class="material-icons" *ngIf="i === taskArray.length - 1" (click)="increaseTaskArraySize()">control_point</td>
+          </tr>
+        </tbody>
       </table>
     </div>
     <div class="modal-footer">
-      <a class="waves-effect waves-green btn-flat" (click)="addAllTask()">Import to Calendar</a>
+      <a class="waves-effect waves-green btn-flat" (click)="addTasksInBulk()">Add to Calendar</a>
     </div>
   </div>
 
@@ -155,16 +173,23 @@
   <div id="avatarSelect" class="modal">
     <div class="modal-content center">
       <h4>Choose Your Avatar</h4>
-      <div *ngIf="this.avatarError" id="avatarError">
+      <div *ngIf="this.errors.avatar.occurred" id="avatarError">
         <div class="card error-message">
           <div class="card-content">
-            {{ this.avatarErrorMessage }}
+            {{ this.errors.avatar.message }}
+          </div>
+        </div>
+      </div>
+      <div *ngIf="this.success.avatar.occurred" id="avatarSuccess">
+        <div class="card success-message">
+          <div class="card-content">
+            {{ this.success.avatar.message }}
           </div>
         </div>
       </div>
       <div class="row">
-        <div class="col s4" *ngFor="let img of avatars">
-            <img class="circle avatar-select col s12" [src]="img.url" (click)="updateAvatar(img.url, img.name)">
+        <div class="col s4" *ngFor="let image of avatars">
+            <img class="circle avatar-select col s12" [src]="image.url" (click)="updateAvatar(image.url, image.name)">
         </div>
       </div>
     </div>

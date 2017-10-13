@@ -64,8 +64,8 @@ const isValidName = function isValidName(_name) {
  * @return {Boolean} validity of _string
  */
 const isValidString = function isValidString(_string) {
-  // Evaluates to true if _string is not null, not undefined, and not empty
-  return UTIL.hasValue(_string) && (/^[\w\W]+$/).test(_string.trim());
+  // Evaluates to true if _string is not null and not undefined
+  return UTIL.hasValue(_string) && (/^[\w\W]*$/).test(_string.trim());
 }; // End isValidString()
 
 /**

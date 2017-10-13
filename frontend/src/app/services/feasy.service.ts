@@ -27,7 +27,7 @@ export class FeasyService {
 
   private standardHeaders: Headers = new Headers({ 'Content-Type': this.contentTypes['urlencoded'] });
 
-  constructor(private _http: Http, private _utils: CommonUtilsService) {}
+  constructor(private HTTP: Http, private UTILS: CommonUtilsService) {}
 
   /**
    * Sends a POST request to the Feasy API
@@ -101,7 +101,7 @@ export class FeasyService {
 
     // Create headers for request
     let requestHeaders: Headers;
-    if (this._utils.isJsonEmpty(_headers)) requestHeaders = this.standardHeaders;
+    if (this.UTILS.isJsonEmpty(_headers)) requestHeaders = this.standardHeaders;
     else {
       requestHeaders = new Headers({ 'Content-Type': this.contentTypes['urlencoded'] });
       for (const headerKey in _headers) {
@@ -118,16 +118,16 @@ export class FeasyService {
     let httpRequest;
     switch (_requestType) {
       case 'post':
-        httpRequest = this._http.post(requestUrl, requestParameters, requestOptions).toPromise();
+        httpRequest = this.HTTP.post(requestUrl, requestParameters, requestOptions).toPromise();
         break;
       case 'get':
-        httpRequest = this._http.get(requestUrl, requestOptions).toPromise();
+        httpRequest = this.HTTP.get(requestUrl, requestOptions).toPromise();
         break;
       case 'put':
-        httpRequest = this._http.put(requestUrl, requestParameters, requestOptions).toPromise();
+        httpRequest = this.HTTP.put(requestUrl, requestParameters, requestOptions).toPromise();
         break;
       case 'delete':
-        httpRequest = this._http.delete(requestUrl, requestOptions).toPromise();
+        httpRequest = this.HTTP.delete(requestUrl, requestOptions).toPromise();
         break;
       default:
         httpRequest = new Promise((resolve, reject) => reject(new Response(null)));
@@ -161,10 +161,7 @@ export class FeasyService {
     for (const parameter in _parametersJson) {
       if (_parametersJson.hasOwnProperty(parameter)) {
         if (Array.isArray(_parametersJson[parameter])) {
-          _parametersJson[parameter].forEach((value) => {
-            const key = `${parameter}[]`;
-            searchParameters.append(key, value);
-          })
+          _parametersJson[parameter].forEach(value => searchParameters.append(`${parameter}[]`, value));
         } else searchParameters.append(parameter, _parametersJson[parameter]);
       }
     }

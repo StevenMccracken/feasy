@@ -33,11 +33,11 @@ import {
 import { COLORS } from '../../objects/colors';
 import { Assignment } from '../../objects/assignment';
 import { LayoutComponent } from '../layout.component';
-import { MessageService } from '../../services/message.service';
-import { LoadLearnService } from '../../services/load-learn.service';
+import { MessagingService } from '../../services/messaging.service';
 import { AssignmentService } from '../../services/assignment.service';
 import { CommonUtilsService } from '../../utils/common-utils.service';
 import { LocalStorageService } from '../../utils/local-storage.service';
+import { QuickAddAssignmentsCreated } from '../../objects/messages/quick-add-assignments-created';
 
 // Used to access jQuery and Materialize script
 declare var $: any;
@@ -123,15 +123,13 @@ export class CalendarComponent implements OnInit {
     },
   }];
 
-  message: any;
-  subscription: Subscription;
+  quickAddAssignmentsSubscription: Subscription;
 
   constructor(
     private _router: Router,
     private _utils: CommonUtilsService,
-    private _loadLearn: LoadLearnService,
+    private MESSAGING: MessagingService,
     private _storage: LocalStorageService,
-    private _messageService: MessageService,
     private _assignmentService: AssignmentService,
   ) {}
 
@@ -141,39 +139,41 @@ export class CalendarComponent implements OnInit {
   }
 
   ngOnDestroy() {
-    // unsubscribe to ensure no memory leaks
-    this.subscription.unsubscribe();
+    // Unsubscribe to ensure no memory leaks
+    if (this._utils.hasValue(this.quickAddAssignmentsSubscription)) this.quickAddAssignmentsSubscription.unsubscribe();
   }
 
   ngOnInit() {
-    this.subscription = this._messageService.getMessage()
-      .subscribe((message) => {
-        const temp = this._loadLearn.getTaskArray();
-        this.populateAfter(temp);
+    this.quickAddAssignmentsSubscription = this.MESSAGING.messagesOf(QuickAddAssignmentsCreated)
+      .subscribe((quickAddMessage) => {
+        if (this._utils.hasValue(quickAddMessage)) {
+          const newAssignments: Assignment[] = quickAddMessage.getAssignments() || [];
+          this.populateAfter(newAssignments);
+        }
       });
 
+    const self = this;
     $('#viewEvent').modal({
       dismissible: true,
       ready: () => console.log('open modal'),
       complete: () => {
         console.log('this hit');
-        this.initializeCalendar();
+        self.initializeCalendar();
       },
     });
 
     // Used to capture local storage service variable inside jQuery closure
-    const storage: LocalStorageService = this._storage;
     $(document).ready(function () {
       $('#select').material_select();
       $('#select').on('change', function (e) {
         const selected = e.currentTarget.selectedOptions[0].value;
-        storage.setItem('type', selected);
+        self._storage.setItem('type', selected);
         $('#select').prop('selectedIndex', 0); // Sets the first option as selected
       });
     });
 
     $('.datepicker').pickadate({
-      onSet: context => this.assignment.dueDate = new Date(context.select),
+      onSet: context => self.assignment.dueDate = new Date(context.select),
       selectMonths: true, // Creates a dropdown to control month
       selectYears: 15, // Creates a dropdown of 15 years to control year
     });

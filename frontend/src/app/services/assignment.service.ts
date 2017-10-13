@@ -14,17 +14,21 @@ import { Observable } from 'rxjs/Observable';
 
 // Import our files
 import { FeasyService } from './feasy.service';
+import { ErrorService } from './error.service';
 import { Assignment } from '../objects/assignment';
+import { LocalError } from '../objects/local-error';
+import { RemoteError } from '../objects/remote-error';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
 
 @Injectable()
 export class AssignmentService {
   constructor(
-    private _router: Router,
-    private _feasyApi: FeasyService,
-    private _utils: CommonUtilsService,
-    private _storage: LocalStorageService,
+    private ROUTER: Router,
+    private ERROR: ErrorService,
+    private FEASY_API: FeasyService,
+    private UTILS: CommonUtilsService,
+    private STORAGE: LocalStorageService,
   ) {}
 
   /**
@@ -34,34 +38,37 @@ export class AssignmentService {
    */
   create(_assignment: Assignment = new Assignment()): Promise<Assignment> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const createPath: string = `/users/${username}/assignments`;
     const headersOptions: Object = { Authorization: token };
 
     // Check required assignment attributes
     const invalidParams: string[] = [];
-    if (!this._utils.hasValue(_assignment.title)) invalidParams.push('title');
-    if (!this._utils.hasValue(_assignment.dueDate)) _assignment.dueDate = new Date();
+    if (!this.UTILS.hasValue(_assignment.title)) invalidParams.push('title');
+    if (!this.UTILS.hasValue(_assignment.dueDate)) invalidParams.push('dueDate');
 
     // Reject if there are invalid required assignment parameters
-    if (invalidParams.length > 0) Promise.reject(invalidParams);
-    else {
+    if (invalidParams.length > 0) {
+      const localError: LocalError = new LocalError('assignment.service.create')
+      localError.setCustomProperty('invalidParameters', invalidParams);
+      return Promise.reject(localError);
+    } else {
       // Add required assignment attributes
-      const dateUnixSeconds: Number = Math.round(_assignment.dueDate.getTime() / 1000);
+      const dateUnixSeconds: number = _assignment.getDueDateInUnixSeconds();
       const requestParams: Object = {
         title: _assignment.title,
         dueDate: dateUnixSeconds,
       };
 
       // Add optional assignment attributes
-      if (this._utils.hasValue(_assignment.class)) requestParams['class'] = _assignment.class;
-      if (this._utils.hasValue(_assignment.type)) requestParams['type'] = _assignment.type;
-      if (this._utils.hasValue(_assignment.description)) requestParams['description'] = _assignment.description;
-      if (this._utils.hasValue(_assignment.completed)) requestParams['completed'] = _assignment.completed;
+      if (this.UTILS.hasValue(_assignment.class)) requestParams['class'] = _assignment.class;
+      if (this.UTILS.hasValue(_assignment.type)) requestParams['type'] = _assignment.type;
+      if (this.UTILS.hasValue(_assignment.description)) requestParams['description'] = _assignment.description;
+      if (this.UTILS.hasValue(_assignment.completed)) requestParams['completed'] = _assignment.completed;
 
       // Send request
-      const promise = this._feasyApi.post(createPath, requestParams, headersOptions)
+      const promise = this.FEASY_API.post(createPath, requestParams, headersOptions)
         .then((successResponse: Response) => {
           const responseBody = successResponse.json();
 
@@ -71,19 +78,17 @@ export class AssignmentService {
           return Promise.resolve(_assignment);
         }) // End then(successResponse)
         .catch((errorResponse: Response) => {
-          // Return detailed errors for invalid request error or resource errors. Otherwise, return the response object
-          if (errorResponse.status === 400) {
-            const responseBody = errorResponse.json();
-            const errorMessage: string = (responseBody && responseBody.error && responseBody.error.message) || '';
+          if (errorResponse instanceof Response) {
+            const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
 
-            // The request contains invalid/malformed parameters from the assignment's attributes
-            const commaSeparatedParams: string = errorMessage.split('Invalid parameters: ')[1];
+            if (this.ERROR.isInvalidRequestError(error)) {
+              const invalidParameters: string[] = this.ERROR.getInvalidParameters(error);
+              error.setCustomProperty('invalidParameters', invalidParameters);
+            }
 
-            // Comma separated params should be something like title,dueDate
-            const invalidParameters = commaSeparatedParams.split(',');
-            return Promise.reject(invalidParameters);
+            return Promise.reject(error);
           } else return Promise.reject(errorResponse);
-        }); // End this._feasyApi.post()
+        }); // End this.FEASY_API.post()
 
       return promise;
     }
@@ -96,8 +101,8 @@ export class AssignmentService {
    */
   bulkCreate(_assignments: Assignment[] = []): Promise<Assignment[]> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const createPath: string = `/users/${username}/assignments`;
     const headersOptions: Object = { Authorization: token };
 
@@ -106,8 +111,8 @@ export class AssignmentService {
     const formattedAssignments: Object[] = [];
     for (let i = 0; i < _assignments.length; i++) {
       const invalidParams = [];
-      if (!this._utils.hasValue(_assignments[i].title)) invalidParams.push('title');
-      if (!this._utils.hasValue(_assignments[i].dueDate)) invalidParams.push('dueDate');
+      if (!this.UTILS.hasValue(_assignments[i].title)) invalidParams.push('title');
+      if (!this.UTILS.hasValue(_assignments[i].dueDate)) invalidParams.push('dueDate');
 
       if (invalidParams.length > 0) invalidAssignments[String(i)] = invalidParams;
       else {
@@ -119,22 +124,25 @@ export class AssignmentService {
         };
 
         // Add optional assignment attributes
-        if (this._utils.hasValue(_assignments[i].class)) assignmentAttributes['class'] = _assignments[i].class;
-        if (this._utils.hasValue(_assignments[i].type)) assignmentAttributes['type'] = _assignments[i].type;
-        if (this._utils.hasValue(_assignments[i].description)) assignmentAttributes['description'] = _assignments[i].description;
-        if (this._utils.hasValue(_assignments[i].completed)) assignmentAttributes['completed'] = _assignments[i].completed;
+        if (this.UTILS.hasValue(_assignments[i].class)) assignmentAttributes['class'] = _assignments[i].class;
+        if (this.UTILS.hasValue(_assignments[i].type)) assignmentAttributes['type'] = _assignments[i].type;
+        if (this.UTILS.hasValue(_assignments[i].description)) assignmentAttributes['description'] = _assignments[i].description;
+        if (this.UTILS.hasValue(_assignments[i].completed)) assignmentAttributes['completed'] = _assignments[i].completed;
 
         formattedAssignments.push(assignmentAttributes);
       }
     }
 
-    if (!this._utils.isJsonEmpty(invalidAssignments)) return Promise.reject(invalidAssignments);
-    else {
+    if (!this.UTILS.isJsonEmpty(invalidAssignments)) {
+      const localError: LocalError = new LocalError('assignment.service.bulkCreate')
+      localError.setCustomProperty('invalidAssignments', invalidAssignments);
+      return Promise.reject(localError);
+    } else {
       // Create request parameters from assignment array
-      const requestParams: Object = { assignments: formattedAssignments.map(this._utils.stringify) };
+      const requestParams: Object = { assignments: formattedAssignments.map(this.UTILS.stringify) };
 
       // Send request
-      const promise = this._feasyApi.post(createPath, requestParams, headersOptions)
+      const promise = this.FEASY_API.post(createPath, requestParams, headersOptions)
         .then((successResponse: Response) => {
           const apiAssignments = successResponse.json();
 
@@ -143,19 +151,15 @@ export class AssignmentService {
           return Promise.resolve(assignments);
         })
         .catch((errorResponse: Response) => {
-          //  Return detailed errors for invalid request error or resource errors. Otherwise, return the response object
-          if (errorResponse.status === 400) {
-            const responseBody = errorResponse.json();
-            const errorMessage: string = (responseBody && responseBody.error && responseBody.error.message) || '';
+          const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
 
-            // The request contains invalid/malformed parameters from the assignment's attributes
-            const commaSeparatedParams: string = errorMessage.split('Invalid parameters: ')[1];
+          if (this.ERROR.isInvalidRequestError(error)) {
+            const invalidParameters: string[] = this.ERROR.getInvalidParameters(error);
+            error.setCustomProperty('invalidParameters', invalidParameters);
+          }
 
-            // Comma separated params should be something like title,dueDate
-            const invalidParameters = commaSeparatedParams.split(',');
-            return Promise.reject(invalidParameters);
-          } else return Promise.reject(errorResponse);
-        }); // End this._feasyApi.post()
+          return Promise.reject(error);
+        }); // End this.FEASY_API.post()
 
       return promise;
     }
@@ -168,13 +172,13 @@ export class AssignmentService {
    */
   get(_id: string): Promise<Assignment> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const getPath: string = `/users/${username}/assignments/${_id}`;
     const headersOptions: Object = { Authorization: token };
 
     // Send request
-    const promise = this._feasyApi.get(getPath, headersOptions)
+    const promise = this.FEASY_API.get(getPath, headersOptions)
       .then((successResponse: Response) => {
         const responseBody = successResponse.json();
 
@@ -182,7 +186,16 @@ export class AssignmentService {
         const assignment = new Assignment().deserialize(responseBody);
         return Promise.resolve(assignment);
       }) // End then(successResponse)
-      .catch((errorResponse: Response) => Promise.reject(errorResponse)); // End this._feasyApi.get()
+      .catch((errorResponse: Response) => {
+        const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
+
+        if (this.ERROR.isInvalidRequestError(error)) {
+          const invalidParameters: string[] = this.ERROR.getInvalidParameters(error);
+          error.setCustomProperty('invalidParameters', invalidParameters);
+        }
+
+        return Promise.reject(error);
+      }); // End this.FEASY_API.get()
 
     return promise;
   } // End get()
@@ -193,13 +206,13 @@ export class AssignmentService {
    */
   getAll(): Promise<Assignment[]> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const getPath: string = `/users/${username}/assignments`;
     const headersOptions: Object = { Authorization: token };
 
     // Send request
-    const promise = this._feasyApi.get(getPath, headersOptions)
+    const promise = this.FEASY_API.get(getPath, headersOptions)
       .then((successResponse: Response) => {
         const apiAssignments = successResponse.json();
 
@@ -207,7 +220,12 @@ export class AssignmentService {
         const assignments: Assignment[] = apiAssignments.map(this.convertAssignmentJson);
         return Promise.resolve(assignments);
       }) // End then(successResponse)
-      .catch((errorResponse: Response) => Promise.reject(errorResponse)); // End this._feasyApi.get()
+      .catch((errorResponse: Response) => {
+        const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
+        if (this.ERROR.isInvalidRequestError(error)) error.setCustomProperty('invalidParameter', 'username');
+
+        return Promise.reject(error);
+      }); // End this.FEASY_API.get()
 
     return promise;
   } // End getAll()
@@ -221,8 +239,8 @@ export class AssignmentService {
    */
   private update(_id: string, _attribute: string, _newValue: any): Promise<any> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const updatePath: string = `/users/${username}/assignments/${_id}/${_attribute}`;
     const headersOptions: Object = { Authorization: token };
 
@@ -231,23 +249,21 @@ export class AssignmentService {
     const requestParams = { [`new${capitalizedAttribute}`]: _newValue };
 
     // Send request
-    const promise = this._feasyApi.put(updatePath, requestParams, headersOptions)
+    const promise = this.FEASY_API.put(updatePath, requestParams, headersOptions)
       .then((successResponse: Response) => Promise.resolve(successResponse))
       .catch((updateError: Response) => {
-        // Return detailed errors for invalid request error. Otherwise, return the response object
-        if (updateError.status === 400) {
-          const responseBody = updateError.json();
-          const errorMessage: string = (responseBody && responseBody.error && responseBody.error.message) || '';
+        const error: RemoteError = this.ERROR.getRemoteError(updateError);
+        if (this.ERROR.isInvalidRequestError(error)) {
+          let invalidParameters: string[] = this.ERROR.getInvalidParameters(error);
+          if (invalidParameters.length > 0) error.setCustomProperty('invalidParameters', invalidParameters);
+          else {
+            invalidParameters = this.ERROR.getUnchangedParameters(error);
+            if (invalidParameters.length > 0) error.setCustomProperty('unchangedParameters', invalidParameters);
+          }
+        }
 
-          // The request contains invalid/malformed parameters from the assignment's attributes
-          let errorReason;
-          if (/[iI]nvalid/.test(errorMessage)) errorReason = 'invalid';
-          else if (/[uU]nchanged/.test(errorMessage)) errorReason = 'unchanged';
-          else errorReason = 'unknown';
-
-          return Promise.reject(errorReason);
-        } else return Promise.reject(updateError);
-      }); // End this._feasyApi.put()
+        return Promise.reject(error);
+      }); // End this.FEASY_API.put()
 
     return promise;
   } // End update()
@@ -259,9 +275,11 @@ export class AssignmentService {
    * @return {Promise<any>} an empty resolved promise
    */
   updateTitle(_id: string, _newTitle: string): Promise<any> {
-    return this.update(_id, 'title', _newTitle)
+    const promise = this.update(_id, 'title', _newTitle)
       .then((successResponse: Response) => Promise.resolve())
-      .catch((updateError: any) => Promise.reject(updateError));
+      .catch((updateError: RemoteError) => Promise.reject(updateError));
+
+    return promise;
   } // End updateTitle()
 
   /**
@@ -272,9 +290,11 @@ export class AssignmentService {
    */
   updateDueDate(_id: string, _newDueDate: Date): Promise<any> {
     const newDueDateUnixSeconds = Math.round(_newDueDate.getTime() / 1000);
-    return this.update(_id, 'dueDate', newDueDateUnixSeconds)
+    const promise = this.update(_id, 'dueDate', newDueDateUnixSeconds)
       .then((successResponse: Response) => Promise.resolve())
-      .catch((updateError: any) => Promise.reject(updateError));
+      .catch((updateError: RemoteError) => Promise.reject(updateError));
+
+    return promise;
   } // End updateDueDate()
 
   /**
@@ -284,9 +304,11 @@ export class AssignmentService {
    * @return {Promise<any>} an empty resolved promise
    */
   updateCompleted(_id: string, _newCompleted: boolean): Promise<any> {
-    return this.update(_id, 'completed', _newCompleted)
+    const promise = this.update(_id, 'completed', _newCompleted)
       .then((successResponse: Response) => Promise.resolve())
-      .catch((updateError: any) => Promise.reject(updateError));
+      .catch((updateError: RemoteError) => Promise.reject(updateError));
+
+    return promise;
   } // End updateCompleted()
 
   /**
@@ -296,9 +318,11 @@ export class AssignmentService {
    * @return {Promise<any>} an empty resolved promise
    */
   updateClass(_id: string, _newClass: string): Promise<any> {
-    return this.update(_id, 'class', _newClass)
+    const promise = this.update(_id, 'class', _newClass)
       .then((successResponse: Response) => Promise.resolve())
-      .catch((updateError: any) => Promise.reject(updateError));
+      .catch((updateError: RemoteError) => Promise.reject(updateError));
+
+    return promise;
   } // End updateClass()
 
   /**
@@ -308,9 +332,11 @@ export class AssignmentService {
    * @return {Promise<any>} an empty resolved promise
    */
   updateType(_id: string, _newType: string): Promise<any> {
-    return this.update(_id, 'type', _newType)
+    const promise = this.update(_id, 'type', _newType)
       .then((successResponse: Response) => Promise.resolve())
-      .catch((updateError: any) => Promise.reject(updateError));
+      .catch((updateError: RemoteError) => Promise.reject(updateError));
+
+    return promise;
   } // End updateType()
 
   /**
@@ -320,9 +346,11 @@ export class AssignmentService {
    * @return {Promise<any>} an empty resolved promise
    */
   updateDescription(_id: string, _newDescription: string): Promise<any> {
-    return this.update(_id, 'description', _newDescription)
+    const promise = this.update(_id, 'description', _newDescription)
       .then((successResponse: Response) => Promise.resolve())
-      .catch((updateError: any) => Promise.reject(updateError));
+      .catch((updateError: RemoteError) => Promise.reject(updateError));
+
+    return promise;
   } // End updateDescription()
 
   /**
@@ -332,15 +360,22 @@ export class AssignmentService {
    */
   delete(_id: string): Promise<any> {
     // Create request information
-    const token: string = this._storage.getItem('token');
-    const username: string = this._storage.getItem('currentUser');
+    const token: string = this.STORAGE.getItem('token');
+    const username: string = this.STORAGE.getItem('currentUser');
     const deletePath: string = `/users/${username}/assignments/${_id}`;
     const headersOptions: Object = { Authorization: token };
 
     // Send request
-    return this._feasyApi.delete(deletePath, headersOptions)
+    const promise = this.FEASY_API.delete(deletePath, headersOptions)
       .then((successResponse: Response) => Promise.resolve())
-      .catch((deleteError: any) => Promise.reject(deleteError));
+      .catch((deleteError: Response) => {
+        const error: RemoteError = this.ERROR.getRemoteError(deleteError);
+        if (this.ERROR.isInvalidRequestError(error)) error.setCustomProperty('invalidParameter', 'assignmentId');
+
+        return Promise.reject(error);
+      });
+
+    return promise;
   } // End delete()
 
   /**
@@ -352,4 +387,12 @@ export class AssignmentService {
     const assignment = new Assignment().deserialize(_assignmentJson);
     return assignment;
   } // End convertAssignmentJson()
+
+  /**
+   * Sorts a given array of assignments in ascending order based on their due date
+   * @param {Assignment[]} [_assignments = []] the assignments to sort
+   */
+  sort(_assignments: Assignment[] = []): void {
+    _assignments.sort((a, b) => a.getDueDateInUnixMilliseconds() - b.getDueDateInUnixMilliseconds());
+  } // End sort()
 }
