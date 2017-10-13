@@ -39,6 +39,13 @@ const routing = function routing(_router) {
     _response.json({ message: 'This is the REST API for Feasy' })
   ));
 
+  router.route('/shit/:username').get(async (_request, _response) => {
+    try {
+      const result = await MIDDLEWARE.shit(_request, _response);
+      _response.json(result);
+    } catch (error) { _response.json(error.message); }
+  });
+
   /**
    * The POST route for validating login credentials. Sends
    * an error JSON or a JSON web token for authentication.

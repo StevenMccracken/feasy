@@ -140,6 +140,24 @@ const getByUsername = function getByUsername(_username, _includePassword) {
 }; // End getByUsername()
 
 /**
+ * getByUsernameAsync - Retrieves a user by their username using async await
+ * @param {String} _username the username of the user
+ * @param {Boolean} _includePassword includes or excludes
+ * the password with the user information from the database
+ * @return {User} the Mongoose object
+ */
+const getByUsernameAsync = async function getByUsernameAsync(_username, _includePassword) {
+  const SOURCE = 'getByUsernameAsync()';
+  log(SOURCE);
+
+  let projection = '_id googleId username email firstName lastName avatar';
+  if (_includePassword) projection = `${projection} password`;
+
+  const user = await USER.findOne({ username: _username }, projection);
+  return user;
+}; // End getByUsernameAsync()
+
+/**
  * getByEmail - Retrieves a user by their email
  * @param {String} _email the email of the user
  * @param {Boolean} _includePassword includes or excludes
@@ -285,6 +303,7 @@ module.exports = {
   getAttribute,
   getById,
   getByUsername,
+  getByUsernameAsync,
   getByEmail,
   getByGoogleId,
   update,

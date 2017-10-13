@@ -27,6 +27,18 @@ function log(_message, _request) {
   LOG.log('Middleware Module', _message, _request);
 }
 
+const shit = async function shit(_request, _response) {
+  const SOURCE = 'shit()';
+  log(SOURCE, _request);
+
+  try {
+    const user = await USERS.getByUsernameAsync(_request.params.username, true);
+    if (user === null) throw new Error('not found');
+    console.log('ayyy');
+    return user;
+  } catch (error) { throw error; }
+};
+
 /**
  * authenticate - Authorizes a user and generates a JSON web token for the user
  * @param {Object} _request the HTTP request
@@ -2878,6 +2890,7 @@ const deleteAssignment = function deleteAssignment(_request, _response) {
 }; // End deleteAssignment()
 
 module.exports = {
+  shit,
   authenticate,
   refreshAuthToken,
   getGoogleAuthUrl,
