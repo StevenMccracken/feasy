@@ -11,7 +11,7 @@ import { CommonUtilsService } from './common-utils.service';
 export class LocalStorageService {
   private storage: Storage;
 
-  constructor(private _utils: CommonUtilsService) {
+  constructor(private UTILS: CommonUtilsService) {
     this.storage = this.localStorageExists() ? localStorage : new Storage();
   }
 
@@ -43,7 +43,7 @@ export class LocalStorageService {
    */
   isValidItem(_itemKey: string): boolean {
     const storageItem: string = this.storage.getItem(_itemKey);
-    return this._utils.hasValue(storageItem) && storageItem !== '';
+    return this.UTILS.hasValue(storageItem) && storageItem !== '';
   } // End isValidItem()
 
   /**

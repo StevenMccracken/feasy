@@ -15,7 +15,7 @@ import { CommonUtilsService } from '../utils/common-utils.service';
 
 @Injectable()
 export class ErrorService {
-  constructor(private _utils: CommonUtilsService) {}
+  constructor(private UTILS: CommonUtilsService) {}
 
   /**
    * Returns the appropriate error object for a given Feasy API response
@@ -181,7 +181,7 @@ export class ErrorService {
    */
   getErrorObjectType(_error: Error): string {
     let errorType = 'unknown';
-    if (this._utils.hasValue(_error)) {
+    if (this.UTILS.hasValue(_error)) {
       if (_error.constructor.name === 'Error') errorType = 'Error';
       else if (_error.constructor.name === 'LocalError') errorType = 'LocalError';
       else if (_error.constructor.name === 'RemoteError') errorType = 'RemoteError';
