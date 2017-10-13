@@ -25,4 +25,11 @@ class UserService {
       resolve(httpResponse, responseBodyJson)
     }
   }
+  
+  static func getWelcomeMessage(resolve: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
+    let welcomeMessagePath = ""
+    FeasyApi.get(path: welcomeMessagePath) { httpResponse, responseBodyJson in
+      resolve(httpResponse, responseBodyJson)
+    }
+  }
 }

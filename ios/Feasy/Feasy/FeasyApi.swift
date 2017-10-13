@@ -9,8 +9,9 @@
 import Foundation
 
 class FeasyApi {
-  
-  static let apiUrl = "http://localhost:8080" //"https://api.feasy-app.com"
+  private static let localhostUrl = "http://localhost:8080"
+  private static let remoteUrl = "https://api.feasy-app.com"
+  static let apiUrl = Platform.isSimulator ? localhostUrl : remoteUrl
   
   /**
    Sends a POST request to the Feasy API

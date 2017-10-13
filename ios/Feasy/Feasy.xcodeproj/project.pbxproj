@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		691092001F9136AF00F7BB8A /* Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 691091FF1F9136AF00F7BB8A /* Platform.swift */; };
+		691092011F9136B600F7BB8A /* Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 691091FF1F9136AF00F7BB8A /* Platform.swift */; };
 		694FABC61F6B63A300DFF897 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 694FABC51F6B63A300DFF897 /* AppDelegate.swift */; };
 		694FABC81F6B63A300DFF897 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 694FABC71F6B63A300DFF897 /* ViewController.swift */; };
 		694FABCB1F6B63A300DFF897 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 694FABC91F6B63A300DFF897 /* Main.storyboard */; };
@@ -46,6 +48,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		691091FF1F9136AF00F7BB8A /* Platform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Platform.swift; sourceTree = "<group>"; };
 		694FABC21F6B63A300DFF897 /* Feasy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Feasy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		694FABC51F6B63A300DFF897 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		694FABC71F6B63A300DFF897 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -91,6 +94,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		691091FE1F91369E00F7BB8A /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				691091FF1F9136AF00F7BB8A /* Platform.swift */,
+			);
+			name = Helpers;
+			sourceTree = "<group>";
+		};
 		694FABB91F6B63A300DFF897 = {
 			isa = PBXGroup;
 			children = (
@@ -114,6 +125,7 @@
 		694FABC41F6B63A300DFF897 /* Feasy */ = {
 			isa = PBXGroup;
 			children = (
+				691091FE1F91369E00F7BB8A /* Helpers */,
 				69D6ECB51F6F00D8009738A6 /* Managers */,
 				694FABF61F6C676300DFF897 /* Services */,
 				694FABC51F6B63A300DFF897 /* AppDelegate.swift */,
@@ -226,23 +238,26 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0830;
-				LastUpgradeCheck = 0830;
+				LastUpgradeCheck = 0900;
 				ORGANIZATIONNAME = Feasy;
 				TargetAttributes = {
 					694FABC11F6B63A300DFF897 = {
 						CreatedOnToolsVersion = 8.3.3;
 						DevelopmentTeam = VW2FMQUB95;
+						LastSwiftMigration = 0900;
 						ProvisioningStyle = Automatic;
 					};
 					694FABD81F6B63A300DFF897 = {
 						CreatedOnToolsVersion = 8.3.3;
 						DevelopmentTeam = VW2FMQUB95;
+						LastSwiftMigration = 0900;
 						ProvisioningStyle = Automatic;
 						TestTargetID = 694FABC11F6B63A300DFF897;
 					};
 					694FABE31F6B63A300DFF897 = {
 						CreatedOnToolsVersion = 8.3.3;
 						DevelopmentTeam = VW2FMQUB95;
+						LastSwiftMigration = 0900;
 						ProvisioningStyle = Automatic;
 						TestTargetID = 694FABC11F6B63A300DFF897;
 					};
@@ -306,6 +321,7 @@
 				694FABCE1F6B63A300DFF897 /* Feasy.xcdatamodeld in Sources */,
 				694FABC61F6B63A300DFF897 /* AppDelegate.swift in Sources */,
 				694FABF81F6C67CC00DFF897 /* FeasyApi.swift in Sources */,
+				691092001F9136AF00F7BB8A /* Platform.swift in Sources */,
 				69D6ECAC1F6EECA3009738A6 /* LoginManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -314,6 +330,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				691092011F9136B600F7BB8A /* Platform.swift in Sources */,
 				69D6ECB21F6F0033009738A6 /* AppDelegate.swift in Sources */,
 				69D6ECB11F6F0030009738A6 /* ViewController.swift in Sources */,
 				69D6ECB31F6F0036009738A6 /* LoginManager.swift in Sources */,
@@ -378,7 +395,9 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
@@ -386,7 +405,11 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
@@ -409,12 +432,13 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -429,7 +453,9 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
@@ -437,7 +463,11 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
@@ -454,10 +484,11 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -472,7 +503,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.feasy-app.Feasy";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = On;
+				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
 		};
@@ -485,7 +517,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.feasy-app.Feasy";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = On;
+				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
 		};
@@ -499,7 +532,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.feasy-app.FeasyTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = On;
+				SWIFT_VERSION = 4.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Feasy.app/Feasy";
 			};
 			name = Debug;
@@ -514,7 +548,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.feasy-app.FeasyTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = On;
+				SWIFT_VERSION = 4.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Feasy.app/Feasy";
 			};
 			name = Release;
@@ -528,7 +563,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.feasy-app.FeasyUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = On;
+				SWIFT_VERSION = 4.0;
 				TEST_TARGET_NAME = Feasy;
 			};
 			name = Debug;
@@ -542,7 +578,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.feasy-app.FeasyUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = On;
+				SWIFT_VERSION = 4.0;
 				TEST_TARGET_NAME = Feasy;
 			};
 			name = Release;
