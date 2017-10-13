@@ -133,8 +133,11 @@ export class AssignmentService {
       }
     }
 
-    if (!this.UTILS.isJsonEmpty(invalidAssignments)) return Promise.reject(invalidAssignments);
-    else {
+    if (!this.UTILS.isJsonEmpty(invalidAssignments)) {
+      const localError: LocalError = new LocalError('assignment.service.bulkCreate')
+      localError.setCustomProperty('invalidAssignments', invalidAssignments);
+      return Promise.reject(localError);
+    } else {
       // Create request parameters from assignment array
       const requestParams: Object = { assignments: formattedAssignments.map(this.UTILS.stringify) };
 
@@ -148,18 +151,14 @@ export class AssignmentService {
           return Promise.resolve(assignments);
         })
         .catch((errorResponse: Response) => {
-          //  Return detailed errors for invalid request error or resource errors. Otherwise, return the response object
-          if (errorResponse.status === 400) {
-            const responseBody = errorResponse.json();
-            const errorMessage: string = (responseBody && responseBody.error && responseBody.error.message) || '';
+          const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
 
-            // The request contains invalid/malformed parameters from the assignment's attributes
-            const commaSeparatedParams: string = errorMessage.split('Invalid parameters: ')[1];
+          if (this.ERROR.isInvalidRequestError(error)) {
+            const invalidParameters: string[] = this.ERROR.getInvalidParameters(error);
+            error.setCustomProperty('invalidParameters', invalidParameters);
+          }
 
-            // Comma separated params should be something like title,dueDate
-            const invalidParameters = commaSeparatedParams.split(',');
-            return Promise.reject(invalidParameters);
-          } else return Promise.reject(errorResponse);
+          return Promise.reject(error);
         }); // End this.FEASY_API.post()
 
       return promise;
@@ -187,7 +186,16 @@ export class AssignmentService {
         const assignment = new Assignment().deserialize(responseBody);
         return Promise.resolve(assignment);
       }) // End then(successResponse)
-      .catch((errorResponse: Response) => Promise.reject(errorResponse)); // End this.FEASY_API.get()
+      .catch((errorResponse: Response) => {
+        const error: RemoteError = this.ERROR.getRemoteError(errorResponse);
+
+        if (this.ERROR.isInvalidRequestError(error)) {
+          const invalidParameters: string[] = this.ERROR.getInvalidParameters(error);
+          error.setCustomProperty('invalidParameters', invalidParameters);
+        }
+
+        return Promise.reject(error);
+      }); // End this.FEASY_API.get()
 
     return promise;
   } // End get()

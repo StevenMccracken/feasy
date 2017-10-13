@@ -582,7 +582,8 @@ export class LayoutComponent implements OnInit {
           this.displayQuickAddSuccess();
           this.scrollToQuickAddTop();
         }) // End then(createdAssignments)
-        .catch((bulkCreateError: any) => {
+        .catch((bulkCreateError: Error) => {
+          // TODO: Handle Local/Remote errors that are caught
           this.displayQuickAddError();
           this.scrollToQuickAddTop();
 
