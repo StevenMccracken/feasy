@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import Alamofire
+import SwiftyJSON
 
 class FeasyApi {
   private static let localhostUrl = "http://localhost:8080"
@@ -41,6 +43,17 @@ class FeasyApi {
     let getRequest: URLRequest = self.createRequest(path: path)
     self.sendRequest(request: getRequest) { response, json in
       completion(response, json)
+    }
+  }
+  
+  static func get2(path: String, completion: @escaping (JSON) -> Void) {
+    Alamofire.request("\(apiUrl)\(path)").responseJSON { response in
+//      print("Request: \(String(describing: response.request))")   // original url request
+//      print("Response: \(String(describing: response.response))") // http url response
+//      print("Result: \(response.result.value)")                         // response serialization result
+      
+      let json: JSON = JSON(response.result.value ?? [:])
+      completion(json)
     }
   }
   

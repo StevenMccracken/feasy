@@ -11,6 +11,8 @@ import Foundation
 /// Handles information for confidential user credentials
 class LoginManager {
   
+  private static var userIsLoggedIn: Bool = false
+  
   static func getToken() -> String? {
     return StorageManager.get(key: "token") as? String
   }
@@ -33,5 +35,18 @@ class LoginManager {
   
   static func setPassword(password: String) {
     StorageManager.set(key: "password", value: password)
+  }
+  
+  static func removeToken() {
+    StorageManager.delete(key: "token")
+  }
+  
+  static func isUserLoggedIn() -> Bool {
+    return self.userIsLoggedIn
+  }
+  
+  static func logUserOut() {
+    self.userIsLoggedIn = false
+    self.removeToken()
   }
 }

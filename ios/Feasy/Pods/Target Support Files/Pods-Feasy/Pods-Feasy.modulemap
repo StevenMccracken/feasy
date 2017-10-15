@@ -1,0 +1,6 @@
+framework module Pods_Feasy {
+  umbrella header "Pods-Feasy-umbrella.h"
+
+  export *
+  module * { export * }
+}

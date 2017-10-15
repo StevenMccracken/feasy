@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftyJSON
 
 class UserService {
   
@@ -26,10 +27,11 @@ class UserService {
     }
   }
   
-  static func getWelcomeMessage(resolve: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
+  static func getWelcomeMessage(completion: @escaping (String) -> Void) {
     let welcomeMessagePath = ""
-    FeasyApi.get(path: welcomeMessagePath) { httpResponse, responseBodyJson in
-      resolve(httpResponse, responseBodyJson)
+    FeasyApi.get2(path: welcomeMessagePath) { result in
+      let welcomeMessage: String = result["message"].stringValue
+      completion(welcomeMessage)
     }
   }
 }

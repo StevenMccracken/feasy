@@ -31,4 +31,13 @@ class StorageManager {
   static func set(key: String, value: Any) {
     UserDefaults.standard.set(value, forKey: key)
   }
+  
+  /**
+   Removes a value in UserDefaults for a given key
+   
+   - Parameter key: the uniquely identifying key to remove from UserDefaults
+  */
+  static func delete(key: String) {
+    UserDefaults.standard.removeObject(forKey: key)
+  }
 }
