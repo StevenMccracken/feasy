@@ -21,6 +21,7 @@ import { AssignmentService } from '../../services/assignment.service';
 import { CommonUtilsService } from '../../utils/common-utils.service';
 import { LocalStorageService } from '../../utils/local-storage.service';
 import { TaskDatePicked } from '../../objects/messages/task-date-picked';
+import { QuickSettingsService } from '../../services/quick-settings.service';
 
 declare var $: any;
 
@@ -33,6 +34,7 @@ export class ToDoComponent implements OnInit {
   today: Date = new Date();
   newAssignment: Assignment;
   assignmentCopy: Assignment;
+  currentEditingAssignmentIndex: number;
 
   showList: boolean = false;
   doneSorting: boolean = false;
@@ -102,6 +104,7 @@ export class ToDoComponent implements OnInit {
     private STORAGE: LocalStorageService,
     private ASSIGNMENTS: AssignmentService,
     private DRAGULA_SERVICE: DragulaService,
+    private QUICK_SETTINGS: QuickSettingsService,
   ) {}
 
   ngOnInit() {
@@ -176,10 +179,7 @@ export class ToDoComponent implements OnInit {
    * @param {any[]} [_dropInfo = []] the dragula information from the drop event
    */
   private onDrop(_dropInfo: any[] = []): void {
-    /*
-     * Get the index of the dropped assignment in
-     * the original array and where it was dropped
-     */
+    // Get the index of the dropped assignment in the original array and where it was dropped
     const assignmentInfo: Object = this.getInfoFromDragulaEvent(_dropInfo);
 
     let assignmentsSource: Assignment[];
@@ -264,7 +264,7 @@ export class ToDoComponent implements OnInit {
   } // End displayCompletedListError()
 
   /**
-  * Displays an error within the incomplete section of the to do component
+   * Displays an error within the incomplete section of the to do component
    * @param {string} _message the error message to display
    * @param {number} _duration the number of seconds to display the error for
    */
@@ -437,7 +437,7 @@ export class ToDoComponent implements OnInit {
   } // End assignmentFormInit()
 
   /**
-   * Configures a jQuery date picker with standard date
+   * Configures a Materialize date picker with standard date
    * options and the option of custom 'on' event functions
    * @param {string} [_identifier = ''] the HTML
    * tag identifier for the date picker element
@@ -447,7 +447,7 @@ export class ToDoComponent implements OnInit {
    * @param {Function} _onClose a custom onClose function
    * @return {Object} the date picker object
    */
-  configureDatePicker(_identifier: string = '', _onOpen: Function, _onSet: Function, _onClose: Function) {
+  configureDatePicker(_identifier: string = '', _onOpen?: Function, _onSet?: Function, _onClose?: Function) {
     const input = $(_identifier).pickadate({
       onOpen: _onOpen,
       onSet: _onSet,
@@ -484,6 +484,7 @@ export class ToDoComponent implements OnInit {
   addAssignment(): void {
     const invalidTitle: boolean = !this.UTILS.hasValue(this.newAssignment.getTitle()) || this.newAssignment.getTitle().trim() === '';
     const invalidDueDate: boolean = !this.UTILS.hasValue(this.newAssignment.getDueDate());
+
     if (invalidTitle || invalidDueDate) {
       let errorMessage: string = 'Your new assignment needs a ';
       if (invalidTitle && !invalidDueDate) errorMessage += 'title.';
@@ -552,18 +553,18 @@ export class ToDoComponent implements OnInit {
    * should be displayed based on the quick settings value
    * @return {boolean} whether or not to display the assignment type
    */
-  displayTaskTypeLabel(): boolean {
-    return this.STORAGE.getItem('qsLabel') === 'true';
-  } // End displayTaskTypeLabel()
+  doDisplayTaskType(): boolean {
+    return this.QUICK_SETTINGS.getShowType();
+  } // End doDisplayTaskType()
 
   /**
    * Determines whether or not the description of the assignments
    * should be displayed based on the quick settings value
    * @return {boolean} whether or not to display the assignment description
    */
-  displayTaskDescriptionLabel(): boolean {
-    return this.STORAGE.getItem('qsDescription') === 'true';
-  } // End displayTaskDescriptionLabel();
+  doDisplayTaskDescription(): boolean {
+    return this.QUICK_SETTINGS.getShowDescription();
+  } // End doDisplayTaskDescription();
 
   /**
    * Sends a request to delete an assignment through the API
@@ -600,22 +601,34 @@ export class ToDoComponent implements OnInit {
 
   /**
    * Enables an assignment within the HTML to be edited
-   * @param {Assignment} assignment the assignment to enable editing for
-   * @param {number} index the index of the assignment
+   * @param {Assignment} _assignment the assignment to enable editing for
+   * @param {number} _index the index of the assignment
    * in it's respective array (incomplete or complete)
    */
-  enableEdit(_assignment: Assignment, _index: number): void {
-    // If an assignment is completed, don't allow it to be edited
-    if (this.UTILS.hasValue(this.assignmentCopy)) this.disableEditing(this.assignmentCopy);
+  displayEditableFields(_assignment: Assignment, _index: number): void {
+    // Check if another task is already being edited
+    if (this.UTILS.hasValue(this.currentEditingAssignmentIndex)) {
+      // Update the UI for that task by disabling any editing
+      this.disableEditing(this.incompleteAssignments[this.currentEditingAssignmentIndex]);
+
+      // Undo any edits to that edited task if it's copy was saved
+      if (this.UTILS.hasValue(this.assignmentCopy)) {
+        this.incompleteAssignments[this.currentEditingAssignmentIndex] = this.assignmentCopy.deepCopy();
+        this.assignmentFormInit();
+      }
+    }
+
+    // Do one last safety check to make sure the task isn't completed
     if (!_assignment.getCompleted()) {
       // Deep copy the assignment to save it's state before it is edited
       this.assignmentCopy = _assignment.deepCopy();
+      this.currentEditingAssignmentIndex = _index;
 
       const id: string = `#titleEdit${_index}`;
       this.enableEditing(_assignment);
       setTimeout(() => $(id).focus(), 1);
     }
-  } // End enableEdit()
+  } // End displayEditableFields()
 
   /**
    * Updates an assignment's title by making a service request to the
@@ -631,19 +644,19 @@ export class ToDoComponent implements OnInit {
    * @return {Promise<any>} the value indicating success or failure
    * after the service is called to update the assignment's title
    */
-   updateTitle(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
-     const unchangedTitle: boolean = _newAssignment.getTitle() === _oldAssignment.getTitle();
-     const promise = new Promise((resolve, reject) => {
-       if (unchangedTitle) Promise.resolve(false);
-       else {
-         this.ASSIGNMENTS.updateTitle(_newAssignment.getId(), _newAssignment.getTitle())
-           .then(() => Promise.resolve('title'))
-           .catch((updateError: RemoteError) => {
-             const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'title');
-             return Promise.reject(updatedUpdateError);
-           }); // End this.ASSIGNMENTS.updateTitle()
-       }
-     });
+  updateTitle(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
+    const unchangedTitle: boolean = _newAssignment.getTitle() === _oldAssignment.getTitle();
+
+    let promise;
+    if (unchangedTitle) promise = Promise.resolve(false);
+    else {
+      promise = this.ASSIGNMENTS.updateTitle(_newAssignment.getId(), _newAssignment.getTitle())
+        .then(() => Promise.resolve('title'))
+        .catch((updateError: RemoteError) => {
+          const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'title');
+          Promise.reject(updatedUpdateError);
+        }); // End this.ASSIGNMENTS.updateTitle()
+    }
 
     return promise;
   } // End updateTitle()
@@ -662,21 +675,21 @@ export class ToDoComponent implements OnInit {
    * @return {Promise<any>} the value indicating success or failure
    * after the service is called to update the assignment's due date
    */
-   updateDueDate(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
-     const unchangedDueDate: boolean = _newAssignment.getDueDateInUnixMilliseconds() === _oldAssignment.getDueDateInUnixMilliseconds();
-     const promise = new Promise((resolve, reject) => {
-       if (unchangedDueDate) Promise.resolve(false);
-       else {
-         this.ASSIGNMENTS.updateDueDate(_newAssignment.getId(), _newAssignment.getDueDate())
-           .then(() => Promise.resolve('dueDate'))
-           .catch((updateError: RemoteError) => {
-             const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'dueDate');
-             return Promise.reject(updatedUpdateError);
-           }); // End this.ASSIGNMENTS.updateDueDate()
-       }
-     });
+  updateDueDate(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
+    const unchangedDueDate: boolean = _newAssignment.getDueDateInUnixMilliseconds() === _oldAssignment.getDueDateInUnixMilliseconds();
 
-     return promise;
+    let promise;
+    if (unchangedDueDate) promise = Promise.resolve(false);
+    else {
+      promise = this.ASSIGNMENTS.updateDueDate(_newAssignment.getId(), _newAssignment.getDueDate())
+        .then(() => Promise.resolve('dueDate'))
+        .catch((updateError: RemoteError) => {
+          const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'dueDate');
+          Promise.reject(updatedUpdateError);
+        }); // End this.ASSIGNMENTS.updateDueDate()
+    }
+
+    return promise;
   } // End updateDueDate()
 
   /**
@@ -693,21 +706,21 @@ export class ToDoComponent implements OnInit {
    * @return {Promise<any>} the value indicating success or failure
    * after the service is called to update the assignment's type
    */
-   updateType(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
-     const unchangedType: boolean = _newAssignment.getType() === _oldAssignment.getType();
-     const promise = new Promise((resolve, reject) => {
-       if (unchangedType) Promise.resolve(false);
-       else {
-         this.ASSIGNMENTS.updateType(_newAssignment.getId(), _newAssignment.getType())
-           .then(() => Promise.resolve('type'))
-           .catch((updateError: RemoteError) => {
-             const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'type');
-             return Promise.reject(updatedUpdateError);
-           }); // End this.ASSIGNMENTS.updateType()
-       }
-     });
+  updateType(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
+    const unchangedType: boolean = _newAssignment.getType() === _oldAssignment.getType();
 
-     return promise;
+    let promise;
+    if (unchangedType) promise = Promise.resolve(false);
+    else {
+      promise = this.ASSIGNMENTS.updateType(_newAssignment.getId(), _newAssignment.getType())
+        .then(() => Promise.resolve('type'))
+        .catch((updateError: RemoteError) => {
+          const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'type');
+          Promise.reject(updatedUpdateError);
+        }); // End this.ASSIGNMENTS.updateType()
+    }
+
+    return promise;
   } // End updateType()
 
   /**
@@ -724,21 +737,21 @@ export class ToDoComponent implements OnInit {
    * @return {Promise<any>} the value indicating success or failure
    * after the service is called to update the assignment's description
    */
-   updateDescription(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
-     const unchangedDescription: boolean = _newAssignment.getDescription() === _oldAssignment.getDescription();
-     const promise = new Promise((resolve, reject) => {
-       if (unchangedDescription) Promise.resolve(false);
-       else {
-         this.ASSIGNMENTS.updateDescription(_newAssignment.getId(), _newAssignment.getDescription())
-           .then(() => Promise.resolve('description'))
-           .catch((updateError: RemoteError) => {
-             const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'description');
-             return Promise.reject(updatedUpdateError);
-           }); // End this.ASSIGNMENTS.updateDescription()
-       }
-     });
+  updateDescription(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
+    const unchangedDescription: boolean = _newAssignment.getDescription() === _oldAssignment.getDescription();
 
-     return promise;
+    let promise;
+    if (unchangedDescription) promise = Promise.resolve(false);
+    else {
+      promise = this.ASSIGNMENTS.updateDescription(_newAssignment.getId(), _newAssignment.getDescription())
+        .then(() => Promise.resolve('description'))
+        .catch((updateError: RemoteError) => {
+          const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'description');
+          Promise.reject(updatedUpdateError);
+        }); // End this.ASSIGNMENTS.updateDescription()
+    }
+
+    return promise;
   } // End updateDescription()
 
   /**
@@ -753,6 +766,7 @@ export class ToDoComponent implements OnInit {
       this.disableEditing(oldAssignment);
       this.incompleteAssignments[_index] = oldAssignment;
       this.assignmentCopy = null;
+      this.currentEditingAssignmentIndex = null;
     }
 
     this.assignmentFormInit();
@@ -787,6 +801,9 @@ export class ToDoComponent implements OnInit {
         this.incompleteAssignments[_index].setDueDate(this.assignmentCopy.getDueDate());
       }
 
+      this.assignmentCopy = null;
+      this.currentEditingAssignmentIndex = null;
+
       this.displayIncompleteListError(errorMessage, 7.5);
       this.scrollToTop();
     } else {
@@ -798,53 +815,54 @@ export class ToDoComponent implements OnInit {
 
       // Execute all the promises and make sure they all finish, even if some get rejected
       const promises = [
-        updateTitlePromise.catch(e => e),
-        updateDueDatePromise.catch(e => e),
-        updateTypePromise.catch(e => e),
-        updateDescriptionPromise.catch(e => e),
+        updateTitlePromise.catch(error => error),
+        updateDueDatePromise.catch(error => error),
+        updateTypePromise.catch(error => error),
+        updateDescriptionPromise.catch(error => error),
       ];
 
-      Promise.all(promises)
-        .then((resolutions: any[]) => {
-          // Determine if there are any errors when the promises are all resolved or rejected
-          const errors: RemoteError[] = resolutions.filter(resolution => resolution instanceof RemoteError);
-          const unknownErrors: RemoteError[] = errors.filter(error => error.getCustomProperty('unknownError'));
+      Promise.all(promises).then((resolutions: any[]) => {
+        // Determine if there are any errors when the promises are all resolved or rejected
+        const errors: RemoteError[] = resolutions.filter(resolution => resolution instanceof RemoteError);
+        const unknownErrors: RemoteError[] = errors.filter(error => error.getCustomProperty('unknownError'));
 
-          if (unknownErrors.length > 0) {
-            this.handleUnknownError();
-            this.scrollToTop();
-            this.refreshIncompleteList();
-            this.enableEditing(_assignment);
-            unknownErrors.forEach(unknownError => console.error(unknownError));
-          } else if (errors.length > 0) {
-            const errorMessages: string[] = errors.map(error => error.getCustomProperty('detailedErrorMessage'));
-            const errorMessage: string = errorMessages.join('. ') + '.';
+        if (unknownErrors.length > 0) {
+          this.handleUnknownError();
+          this.scrollToTop();
+          this.refreshIncompleteList();
+          this.enableEditing(_assignment);
+          unknownErrors.forEach(unknownError => console.error(unknownError));
+        } else if (errors.length > 0) {
+          const errorMessages: string[] = errors.map(error => error.getCustomProperty('detailedErrorMessage'));
+          const errorMessage: string = errorMessages.join('. ') + '.';
 
-            this.displayIncompleteListError(errorMessage, 7.5);
-            this.scrollToTop();
-            this.refreshIncompleteList();
-            this.enableEditing(_assignment);
-          } else {
-            // No errors occurred so reset any previous errors
-            this.resetIncompleteError();
+          this.displayIncompleteListError(errorMessage, 7.5);
+          this.scrollToTop();
+          this.refreshIncompleteList();
+          this.enableEditing(_assignment);
+        } else {
+          // No errors occurred so reset any previous errors
+          this.resetIncompleteError();
 
-            // Check if attributes were actually updated
-            const actuallyUpdated: string[] = resolutions.filter(resolution => typeof resolution === 'string');
-            if (actuallyUpdated.length > 0) {
-              // TODO: Display inline success icon
+          // Check if attributes were actually updated
+          const actuallyUpdated: string[] = resolutions.filter(resolution => typeof resolution === 'string');
+          if (actuallyUpdated.length > 0) {
+            // TODO: Display inline success icon
 
-              // If the due date was updated, re-sort the list
-              if (actuallyUpdated.some(attribute => attribute === 'dueDate')) {
-                this.sortIncompleteAssignments();
-                this.refreshIncompleteList();
-              }
-            } else console.log('Didn\'t actually update anything');
+            // If the due date was updated, re-sort the list
+            if (actuallyUpdated.some(attribute => attribute === 'dueDate')) {
+              this.sortIncompleteAssignments();
+              this.refreshIncompleteList();
+            }
+          } else console.error('No task attributes were actually different');
 
-            this.assignmentFormInit();
-          }
-        }) // End then(resolutions)
-        .catch(unhandledError => this.handleUnknownError(unhandledError));
-      }
+          this.assignmentCopy = null;
+          this.currentEditingAssignmentIndex = null;
+          this.assignmentFormInit();
+        }
+      }) // End then(resolutions)
+      .catch(unhandledError => this.handleUnknownError(unhandledError));
+    }
   } // End updateTask()
 
   /**
