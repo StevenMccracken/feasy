@@ -156,6 +156,13 @@ export class LayoutComponent implements OnInit {
   } // End logUserOut()
 
   /**
+   * Opens a system-native pop-up window to send an email to Feasy
+   */
+  emailFeasy(): void {
+    window.location.href = 'mailto:feasyresponse@gmail.com';
+  } // End emailFeasy()
+
+  /**
    * Closes the side nav and optionally navigates
    * to a given route after closing the side nav
    * @param {string} _followUpUrl the route to navigate to after closing the nav
