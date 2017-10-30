@@ -65,4 +65,21 @@ export class CommonUtilsService {
     let i = this.hasValue(_start) && typeof _start === 'number' ? _start : 0;
     while (true) yield i++;
   } // End infiniteSequence()
+
+  /**
+   * Returns the number of milliseconds in a given number of hours
+   * @param {number} _hours decimal number of hours
+   * @return {number} the number of milliseconds
+   */
+  getUnixMillisecondsFromHours(_hours: number): number {
+    return _hours * 3600000;
+  } // End getUnixMillisecondsFromHours()
+
+  /**
+   * Returns the number of milliseconds in 12 hours
+   * @return {number} [description]
+   */
+  getUnixMilliseconds12Hours(): number {
+    return this.getUnixMillisecondsFromHours(12);
+  } // End getUnixMilliseconds12Hours()
 }

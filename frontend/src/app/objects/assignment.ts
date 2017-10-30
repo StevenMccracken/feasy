@@ -44,15 +44,20 @@ export class Assignment implements Serializable<Assignment> {
     return this;
   } // End deserialize()
 
+  /**
+   * Returns a completely new object with all of the same
+   * attributes of the assignment that the function was called on
+   * @return {Assignment} the deep-cloned assignment
+   */
   deepCopy(): Assignment {
     const clone = new Assignment();
     clone._id = this._id;
     clone.googleId = this.googleId;
     clone.title = this.title;
-    clone.dueDate = new Date(this.dueDate.getTime());
+    clone.dueDate = this.dueDate instanceof Date ? new Date(this.dueDate.getTime()) : this.dueDate;
     clone.completed = this.completed;
     clone.class = this.class;
-    clone.dateCreated = new Date(this.dateCreated.getTime());
+    clone.dateCreated = this.dateCreated instanceof Date ? new Date(this.dateCreated.getTime()) : this.dateCreated;
     clone.type = this.type;
     clone.description = this.description;
 
@@ -62,7 +67,7 @@ export class Assignment implements Serializable<Assignment> {
     clone.editModeDescription = this.editModeDescription;
 
     return clone;
-  } // End clone()
+  } // End deepCopy()
 
   getId(): string {
     return this._id;

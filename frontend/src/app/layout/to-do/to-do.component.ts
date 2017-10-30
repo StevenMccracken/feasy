@@ -32,18 +32,22 @@ declare var $: any;
 })
 export class ToDoComponent implements OnInit {
   today: Date = new Date();
-  newAssignment: Assignment;
-  assignmentCopy: Assignment;
-  currentEditingAssignmentIndex: number;
+  newTask: Assignment;
+  currentEditingTaskCopy: Assignment;
+  currentEditingTaskIndex: number;
 
   showList: boolean = false;
   doneSorting: boolean = false;
 
-  completeAssignments: Assignment[];
-  incompleteAssignments: Assignment[];
+  completeTasks: Assignment[];
+  incompleteTasks: Assignment[];
+
+  // Materialize date-picker holder
+  newDatePicker: any;
+  existingDatePicker: any;
 
   // Subscription used to receive messages about when a row in the incomplete section is clicked
-  assignmentRowSelectedSubscription: Subscription;
+  taskRowSelectedSubscription: Subscription;
 
   defaultMessageDisplayTime: number = 5000;
 
@@ -53,38 +57,33 @@ export class ToDoComponent implements OnInit {
       message: '',
       defaultMessage: 'Something bad happened. Please try that again or contact us at feasyresponse@gmail.com to fix this issue.',
     },
-    completedAssignments: {
+    completedTasks: {
       occurred: false,
       message: '',
-      defaultMessage: 'Unable to complete that assignment right now. Please try again.',
+      defaultMessage: 'Unable to complete that task right now. Please try again.',
     },
-    incompleteAssignments: {
+    incompleteTasks: {
       occurred: false,
       message: '',
-      defaultMessage: 'Unable to update that assignment to be incomplete right now. Please try again.',
+      defaultMessage: 'Unable to update that task to be incomplete right now. Please try again.',
     },
-    assignmentDoesNotExist: {
+    taskDoesNotExist: {
       occurred: false,
       message: '',
-      defaultMessage: 'That assignment no longer exists.',
+      defaultMessage: 'That task no longer exists.',
     },
   };
 
   success: Object = {
-    completedAssignments: {
+    completedTasks: {
       occurred: false,
       message: '',
-      defaultMessage: 'Amazing job completing that assignment. Keep it going!',
+      defaultMessage: 'Amazing job completing that task. Keep it going!',
     },
-    incompleteAssignments: {
+    taskCreated: {
       occurred: false,
       message: '',
-      defaultMessage: 'Unable to update that assignment to be incomplete right now. Please try again.',
-    },
-    assignmentCreated: {
-      occurred: false,
-      message: '',
-      defaultMessage: 'Your assignment has been created.',
+      defaultMessage: 'Your task has been created.',
     },
   };
 
@@ -102,7 +101,7 @@ export class ToDoComponent implements OnInit {
     private UTILS: CommonUtilsService,
     private MESSAGING: MessagingService,
     private STORAGE: LocalStorageService,
-    private ASSIGNMENTS: AssignmentService,
+    private TASKS: AssignmentService,
     private DRAGULA_SERVICE: DragulaService,
     private QUICK_SETTINGS: QuickSettingsService,
   ) {}
@@ -115,39 +114,38 @@ export class ToDoComponent implements OnInit {
 
   ngOnDestroy() {
     // Unsubscribe to ensure no memory leaks or duplicate messages
-    if (this.UTILS.hasValue(this.assignmentRowSelectedSubscription)) this.assignmentRowSelectedSubscription.unsubscribe();
+    if (this.UTILS.hasValue(this.taskRowSelectedSubscription)) this.taskRowSelectedSubscription.unsubscribe();
   } // End ngOnDestroy()
 
   /**
-   * Initializes the data in the ToDo component by retrieving
-   * all the assignments, filtering them into complete and
-   * incomplete arrays, and sorting them by how soon they are due
+   * Initializes the data in the component by retrieving all
+   * the tasks, filtering them into complete and incomplete
+   * arrays, and sorting them by how soon they are due
    */
   toDoInit(): void {
-    this.newAssignment = new Assignment();
-    this.newAssignment.setDueDate(null);
-    this.completeAssignments = [];
-    this.incompleteAssignments = [];
+    this.newTask = new Assignment();
+    this.completeTasks = [];
+    this.incompleteTasks = [];
 
-    // Fetch all the user's assignments
-    this.ASSIGNMENTS.getAll()
-      .then((assignments: Assignment[]) => {
-        // Filter the assignments into complete and incomplete arrays
-        assignments.forEach((assignment) => {
-          if (assignment.getCompleted()) this.completeAssignments.push(assignment);
-          else this.incompleteAssignments.push(assignment);
+    // Fetch all the user's tasks
+    this.TASKS.getAll()
+      .then((tasks: Assignment[]) => {
+        // Filter the tasks into complete and incomplete arrays
+        tasks.forEach((task) => {
+          if (task.getCompleted()) this.completeTasks.push(task);
+          else this.incompleteTasks.push(task);
         });
 
-        this.sortAllAssignments();
-        this.assignmentFormInit();
-
+        this.sortAllTasks();
         this.showList = true;
-      }) // End then(assignments)
+        this.resetNewTaskFields();
+      }) // End then(tasks)
       .catch((getError: RemoteError) => {
         this.handleUnknownError(getError);
-        this.assignmentFormInit();
+        this.taskDatePickerInit();
         this.scrollToTop();
-      }); // End this.ASSIGNMENTS.getAll()
+        this.resetNewTaskFields();
+      }); // End this.TASKS.getAll()
   } // End toDoInit()
 
   /**
@@ -155,68 +153,69 @@ export class ToDoComponent implements OnInit {
    * the event came from and the data it contained
    * @param {any[]} [_eventInfo = []] the drag or drop event from Dragula
    * @return {Object} a JSON containing the ID of the
-   * assignment for the dragged element and where it was dropped
+   * task for the dragged element and where it was dropped
    */
   private getInfoFromDragulaEvent(_eventInfo: any[] = []): Object {
-    const assignmentInfo = {};
+    const taskInfo = {};
     if (_eventInfo.length === 5) {
       const dropDiv = _eventInfo[2] || {};
       const dropDestination: string = dropDiv.id || '';
 
-      const assignmentDiv = _eventInfo[1] || {};
-      const assignmentId: string = assignmentDiv.id || '';
+      const taskDiv = _eventInfo[1] || {};
+      const taskId: string = taskDiv.id || '';
 
-      assignmentInfo['assignmentId'] = assignmentId;
-      assignmentInfo['dropDestination'] = dropDestination;
+      taskInfo['taskId'] = taskId;
+      taskInfo['dropDestination'] = dropDestination;
     }
 
-    return assignmentInfo;
+    return taskInfo;
   } // End getInfoFromDragulaEvent()
 
   /**
-   * Handles a drop event from the Dragula service to
-   * try and update an assignment's completed value
+   * Handles a drop event from the Dragula service
+   * to try and update a task's completed value
    * @param {any[]} [_dropInfo = []] the dragula information from the drop event
    */
   private onDrop(_dropInfo: any[] = []): void {
-    // Get the index of the dropped assignment in the original array and where it was dropped
-    const assignmentInfo: Object = this.getInfoFromDragulaEvent(_dropInfo);
+    // Get the index of the dropped task in the original array and where it was dropped
+    const taskInfo: Object = this.getInfoFromDragulaEvent(_dropInfo);
 
-    let assignmentsSource: Assignment[];
-    let assignmentsDestination: Assignment[]
-    const destinationIsCompletedList: boolean = assignmentInfo['dropDestination'] === 'complete';
+    let tasksSource: Assignment[];
+    let tasksDestination: Assignment[]
+    const destinationIsCompletedList: boolean = taskInfo['dropDestination'] === 'complete';
 
     if (destinationIsCompletedList) {
-      assignmentsSource = this.incompleteAssignments;
-      assignmentsDestination = this.completeAssignments;
+      tasksSource = this.incompleteTasks;
+      tasksDestination = this.completeTasks;
     } else {
-      assignmentsSource = this.completeAssignments;
-      assignmentsDestination = this.incompleteAssignments;
+      tasksSource = this.completeTasks;
+      tasksDestination = this.incompleteTasks;
     }
 
-    // Find the assignment object and try to update it
-    const assignmentIndex: number = assignmentsSource.findIndex(a => a.getId() === assignmentInfo['assignmentId']);
-    if (assignmentIndex !== -1) {
-      const assignment: Assignment = assignmentsSource[assignmentIndex];
-      this.ASSIGNMENTS.updateCompleted(assignment.getId(), !assignment.getCompleted())
+    // Find the task object and try to update it
+    const taskIndex: number = tasksSource.findIndex(a => a.getId() === taskInfo['taskId']);
+    if (taskIndex !== -1) {
+      const task: Assignment = tasksSource[taskIndex];
+      this.TASKS.updateCompleted(task.getId(), !task.getCompleted())
         .then(() => {
-          // Update the local assignment object
-          assignment.setCompleted(!assignment.getCompleted());
-          this.disableEditing(assignment);
+          // Update the local task object
+          task.setCompleted(!task.getCompleted());
+          this.disableEditing(task);
 
-          // Remove the assignment from the array that it was originally in
-          assignmentsSource = assignmentsSource.splice(assignmentIndex, 1);
+          // Remove the task from the array that it was originally in
+          tasksSource = tasksSource.splice(taskIndex, 1);
 
-          // Add the assignment into the right place in the array that it was dropped into
+          // Add the task into the right place in the array that it was dropped into
           let insertIndex: number;
-          for (insertIndex = 0; insertIndex < assignmentsDestination.length; insertIndex++) {
-            if (assignment.getDueDate() < assignmentsDestination[insertIndex].getDueDate()) break;
+          for (insertIndex = 0; insertIndex < tasksDestination.length; insertIndex++) {
+            if (task.getDueDate() < tasksDestination[insertIndex].getDueDate()) break;
           }
 
-          assignmentsDestination.splice(insertIndex, 0, assignment);
+          tasksDestination.splice(insertIndex, 0, task);
+          if (this.isTaskCacheValid() && task.getId() === taskInfo['taskId']) this.clearTaskCache();
 
           // Refresh the appropriate list
-          if (assignment.getCompleted()) {
+          if (task.getCompleted()) {
             this.refreshCompletedList();
             this.displayCompletedListSuccess();
             this.scrollToTop();
@@ -225,14 +224,14 @@ export class ToDoComponent implements OnInit {
         .catch((error: RemoteError) => {
           if (this.ERROR.isResourceDneError(error)) {
             if (destinationIsCompletedList) {
-              this.displayIncompleteListError(this.errors['assignmentDoesNotExist']['defaultMessage']);
+              this.displayIncompleteListError(this.errors['taskDoesNotExist']['defaultMessage']);
               this.refreshIncompleteList();
             } else {
-              this.displayCompletedListError(this.errors['assignmentDoesNotExist']['defaultMessage']);
+              this.displayCompletedListError(this.errors['taskDoesNotExist']['defaultMessage']);
               this.refreshCompletedList();
             }
 
-            this.deleteLocalAssignment(assignment);
+            this.deleteLocalTask(task);
           } else {
             this.handleUnknownError(error);
 
@@ -241,67 +240,66 @@ export class ToDoComponent implements OnInit {
           }
 
           this.scrollToTop();
-        }); //  End this.ASSIGNMENTS.updateCompleted()
+        }); //  End this.TASKS.updateCompleted()
     }
   } // End onDrop()
 
   /**
-   * Displays an error within the completed section of the to do component
+   * Displays an error within the completed section
    * @param {string} _message the error message to display
    * @param {number} _duration the number of seconds to display the error for
    */
   displayCompletedListError(_message?: string, _duration?: number): void {
-    this.errors['completedAssignments']['occurred'] = true;
-    this.errors['completedAssignments']['message'] = _message || this.errors['completedAssignments']['defaultMessage'];
+    this.errors['completedTasks']['occurred'] = true;
+    this.errors['completedTasks']['message'] = _message || this.errors['completedTasks']['defaultMessage'];
 
     const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.defaultMessageDisplayTime;
     setTimeout(
       () => {
-        this.errors['completedAssignments']['occurred'] = false;
-        this.errors['completedAssignments']['message'] = '';
+        this.errors['completedTasks']['occurred'] = false;
+        this.errors['completedTasks']['message'] = '';
       },
       duration);
   } // End displayCompletedListError()
 
   /**
-   * Displays an error within the incomplete section of the to do component
+   * Displays an error within the incomplete section
    * @param {string} _message the error message to display
    * @param {number} _duration the number of seconds to display the error for
    */
   displayIncompleteListError(_message?: string, _duration?: number): void {
-    this.errors['incompleteAssignments']['occurred'] = true;
-    this.errors['incompleteAssignments']['message'] = _message || this.errors['incompleteAssignments']['defaultMessage'];
+    this.errors['incompleteTasks']['occurred'] = true;
+    this.errors['incompleteTasks']['message'] = _message || this.errors['incompleteTasks']['defaultMessage'];
 
     const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.defaultMessageDisplayTime;
     setTimeout(
       () => {
-        this.errors['incompleteAssignments']['occurred'] = false;
-        this.errors['incompleteAssignments']['message'] = '';
+        this.errors['incompleteTasks']['occurred'] = false;
+        this.errors['incompleteTasks']['message'] = '';
       },
       duration);
   } // End displayIncompleteListError()
 
   /**
-   * Forces a UI update of the completed section of the to do component
+   * Forces a UI update of the completed section
    */
   refreshCompletedList(): void {
-    const completeAssignments: Assignment[] = this.completeAssignments;
-    this.completeAssignments = [];
-    setTimeout(() => this.completeAssignments = completeAssignments, 1);
+    const completeTasks: Assignment[] = this.completeTasks;
+    this.completeTasks = [];
+    setTimeout(() => this.completeTasks = completeTasks, 1);
   } // End refreshCompletedList()
 
   /**
-   * Forces a UI update of the incomplete section of the to do component
+   * Forces a UI update of the incomplete section
    */
   refreshIncompleteList(): void {
-    const incompleteAssignments: Assignment[] = this.incompleteAssignments;
-    this.incompleteAssignments = [];
-    setTimeout(() => this.incompleteAssignments = incompleteAssignments, 1);
+    const incompleteTasks: Assignment[] = this.incompleteTasks;
+    this.incompleteTasks = [];
+    setTimeout(() => this.incompleteTasks = incompleteTasks, 1);
   } // End refreshIncompleteList()
 
   /**
-   * Forces a UI update of both the completed and
-   * incomplete sections of the to do component
+   * Forces a UI update of both the completed and incomplete sections
    */
   refreshToDoLists(): void {
     this.showList = false;
@@ -312,8 +310,8 @@ export class ToDoComponent implements OnInit {
    * Scrolls to a specific HTML element on the page with animation
    * @param {string} [_identifier = ''] the HTML tag
    * identifier for the page element to scroll to
-   * @param {number} _duration the number of
-   * milliseconds for the animation to last
+   * @param {number} _duration the number of milliseconds for the animation to
+   * last. If no value is given, the default value of 250 milliseconds is used
    */
   scrollToElement(_identifier: string = '', _duration?: number): void {
     const duration: number = this.UTILS.hasValue(_duration) ? _duration : 250;
@@ -324,117 +322,106 @@ export class ToDoComponent implements OnInit {
 
   /**
    * Scrolls to the top of the HTML page with animation
-   * @param {number} _duration the number of
-   * milliseconds for the animation to last
+   * @param {number} _duration the number of milliseconds for the animation to
+   * last. If no value is given, the default value of 375 milliseconds is used
    */
   scrollToTop(_duration?: number): void {
-    this.scrollToElement('#date-view', _duration);
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 375;
+    this.scrollToElement('#topOfPage', _duration);
   } // End scrollToTop()
 
   /**
-   * Sends a message to subscribers about the assignment and row
-   * that was chosen in the incomplete section of the ToDo component
-   * @param {Assignment} _assignment the
-   * assignment for the given row that was clicked
-   * @param {number} _index the 0-based index representing the row that
-   * was clicked on in the row of assignments in the incomplete section
+   * Sends a message to subscribers about the task
+   * and row that was chosen in the incomplete section
+   * @param {Assignment} _task the task for the given row that was clicked
+   * @param {number} _index the 0-based index representing the row
+   * that was clicked on in the row of tasks in the incomplete section
    */
-  publishDatePick(_assignment: Assignment, _index: number): void {
-    this.MESSAGING.publish(new TaskDatePicked(_assignment, _index));
+  publishDatePick(_task: Assignment, _index: number): void {
+    this.MESSAGING.publish(new TaskDatePicked(_task, _index));
   } // End publishDatePick
 
   /**
-   * Configures the functions that are called when form
-   * elements for the assignments are clicked on. NOTE: Must be
-   * called every time one of the rows in the table is updated
+   * Configures the functions that are called when form elements for the tasks
+   * are clicked on. NOTE: Must be called when displaying the date picker
    */
-  assignmentFormInit(): void {
+  taskDatePickerInit(): void {
     const self = this;
-    $(document).ready(function () {
-      $('#select').material_select();
-      $('#select').on('change', function (e) {
-        const selected = e.currentTarget.selectedOptions[0].value;
-        self.STORAGE.setItem('type', selected);
-        $('#select').prop('selectedIndex', 0); // Sets the first option as selected
-      });
-
-      // Holds the message that will be received when the date picker for existing assignments is open
-      let assignmentRowMessage;
-      const onOpenForExistingAssignment: Function = () => {
+    $(document).ready(() => {
+      // Holds the message that will be received when the date picker for existing tasks is open
+      let taskRowMessage;
+      const onOpenForExistingTask: Function = () => {
         /*
          * When the date picker opens, subscribe to receive a message
          * about which index was clicked on to open the date picker
          */
-        self.assignmentRowSelectedSubscription = self.MESSAGING.messagesOf(TaskDatePicked)
-          .subscribe(message => assignmentRowMessage = message);
+        self.taskRowSelectedSubscription = self.MESSAGING.messagesOf(TaskDatePicked)
+          .subscribe(message => taskRowMessage = message);
       };
 
-      const onCloseForExistingAssignment: Function = () => {
+      const onCloseForExistingTask: Function = () => {
         // Unsubscribe to ensure no memory leaks or receiving of old messages
-        if (self.UTILS.hasValue(self.assignmentRowSelectedSubscription)) self.assignmentRowSelectedSubscription.unsubscribe();
+        if (self.UTILS.hasValue(self.taskRowSelectedSubscription)) self.taskRowSelectedSubscription.unsubscribe();
       };
 
-      const onSetForExistingAssignment: Function = (context) => {
+      const onSetForExistingTask: Function = (context) => {
         let index: number;
-        let assignment: Assignment;
+        let task: Assignment;
 
         // Try and get the data from the message that was sent when the date picker was opened
         if (
-          self.UTILS.hasValue(assignmentRowMessage) &&
-          self.UTILS.hasValue(assignmentRowMessage.getIndex()) &&
-          self.UTILS.hasValue(assignmentRowMessage.getAssignment())
+          self.UTILS.hasValue(taskRowMessage) &&
+          self.UTILS.hasValue(taskRowMessage.getIndex()) &&
+          self.UTILS.hasValue(taskRowMessage.getAssignment())
         ) {
-          index = assignmentRowMessage.getIndex();
-          assignment = assignmentRowMessage.getAssignment();
+          index = taskRowMessage.getIndex();
+          task = taskRowMessage.getAssignment();
         } else {
           index = -1;
-          assignment = null;
+          task = null;
         }
 
         // Check if the user clicked on an actual date, not a range selection
         if (self.UTILS.hasValue(context.select)) {
-          if (index !== -1 && self.UTILS.hasValue(assignment)) {
+          if (index !== -1 && self.UTILS.hasValue(task)) {
             // Create a date from the selected day and set the time to 12 pm
-            const unixMilliseconds12Hours: number = 43200000;
             const unixMilliseconds: number = context.select;
-            const newDueDate: Date = new Date(unixMilliseconds + unixMilliseconds12Hours);
+            const newDueDate: Date = new Date(unixMilliseconds + self.UTILS.getUnixMilliseconds12Hours());
 
-            // Update the Assignment's due date because it isn't in a valid format when first created
-            if (assignment.getCompleted()) self.completeAssignments[index].setDueDate(newDueDate)
-            else self.incompleteAssignments[index].setDueDate(newDueDate);
+            // Update the Task's due date because it isn't in a valid format when first created
+            if (task.getCompleted()) self.completeTasks[index].setDueDate(newDueDate)
+            else self.incompleteTasks[index].setDueDate(newDueDate);
           }
-        } else {
-          // Reset the assignment's due date in the HTML form
-          self.incompleteAssignments[index].setDueDate(null);
-          setTimeout(() => self.incompleteAssignments[index].setDueDate(self.incompleteAssignments[index].getDueDate()));
+        } else if (context.hasOwnProperty('clear')) {
+          // Reset the task's due date in the HTML form
+          self.incompleteTasks[index].setDueDate(new Date(self.currentEditingTaskCopy.getDueDateInUnixMilliseconds()));
         }
       };
 
-      const onSetForNewAssignment: Function = (context) => {
+      const onSetForNewTask: Function = (context) => {
         // Check if the user clicked on an actual date, not a range selection
         if (self.UTILS.hasValue(context.select)) {
           // Create a date from the selected day and set the time to 12 pm
-          const unixMilliseconds12Hours: number = 43200000;
           const unixMilliseconds: number = context.select;
-          const newDueDate: Date = new Date(unixMilliseconds + unixMilliseconds12Hours);
+          const newDueDate: Date = new Date(unixMilliseconds + self.UTILS.getUnixMilliseconds12Hours());
 
-          // Update the assignment's due date because it isn't in a valid format when first created
-          self.newAssignment.setDueDate(newDueDate);
+          // Update the task's due date because it isn't in a valid format when first created
+          self.newTask.setDueDate(newDueDate);
         } else if (context.hasOwnProperty('clear')) {
-          // The clear button was pressed
-          self.newAssignment.setDueDate(null);
+          self.newTask.setDueDate(null);
         }
       };
 
-      self.configureDatePicker(
-        '.existingAssignmentDatePicker',
-        onOpenForExistingAssignment,
-        onSetForExistingAssignment,
-        onCloseForExistingAssignment);
-
-      self.configureDatePicker('.newAssignmentDatePicker', null, onSetForNewAssignment, null);
+      self.existingDatePicker = self.configureDatePicker(
+        '.existingTaskDatePicker',
+        onOpenForExistingTask,
+        onSetForExistingTask,
+        onCloseForExistingTask);
+      self.newDatePicker = self.configureDatePicker('.newTaskDatePicker', null, onSetForNewTask, null);
+      self.existingDatePicker.start();
+      self.newDatePicker.start();
     });
-  } // End assignmentFormInit()
+  } // End taskDatePickerInit()
 
   /**
    * Configures a Materialize date picker with standard date
@@ -476,54 +463,79 @@ export class ToDoComponent implements OnInit {
     });
 
     return input.pickadate('picker');
-  } // End getDefaultDatePicker()
+  } // End configureDatePicker()
 
   /**
-   * Adds an assignment to the user's assignments by sending a request to the API
+   * Refreshes and configures all HTML select elements in the current day modal
+   * @param {Assignment} _task the task that serves as the model
+   * for when a specific select input field changes it's value.
+   * NOTE: this is only a work around for a current Materialize bug
    */
-  addAssignment(): void {
-    const invalidTitle: boolean = !this.UTILS.hasValue(this.newAssignment.getTitle()) || this.newAssignment.getTitle().trim() === '';
-    const invalidDueDate: boolean = !this.UTILS.hasValue(this.newAssignment.getDueDate());
+  refreshSelectElements(_task?: Assignment): void {
+    // $('select').material_select('destroy');
+    $('select').material_select();
+    $('select').on('change', (changeEvent: any) => {
+      // HACK: Subscribe to change events from the select inputs and use their value to update the task model
+      if (this.UTILS.hasValue(_task)) _task.setType(changeEvent.currentTarget.selectedOptions[0].value);
+
+      // TODO: The select is not closing when choosing a new option. This needs to be fixed
+    });
+  } // End refreshSelectElements()
+
+  /**
+   * Renitializes all forms for the new task to be created
+   */
+  resetNewTaskFields(): void {
+    this.newTask = new Assignment();
+    this.taskDatePickerInit();
+    this.refreshSelectElements(this.newTask);
+    $('#createTaskForm').trigger('reset');
+  } // End resetNewTaskFields()
+
+  /**
+   * Adds a task to the user's tasks by sending a request to the API
+   */
+  addTask(): void {
+    const invalidTitle: boolean = !this.UTILS.hasValue(this.newTask.getTitle()) || this.newTask.getTitle().trim() === '';
+    const invalidDueDate: boolean = !this.UTILS.hasValue(this.newTask.getDueDate());
 
     if (invalidTitle || invalidDueDate) {
-      let errorMessage: string = 'Your new assignment needs a ';
-      if (invalidTitle && !invalidDueDate) errorMessage += 'title.';
-      else if (invalidDueDate && !invalidTitle) errorMessage += 'due date.';
-      else errorMessage += 'title and due date.';
+      let errorMessage: string = 'Your new task needs a';
+      if (invalidTitle && !invalidDueDate) errorMessage = `${errorMessage} title.`;
+      else if (invalidDueDate && !invalidTitle) errorMessage = `${errorMessage} due date.`;
+      else errorMessage = `${errorMessage} title and due date.`;
 
       this.displayIncompleteListError(errorMessage, 7.5);
       this.scrollToTop();
     } else {
-      this.newAssignment.setCompleted(false);
-      this.ASSIGNMENTS.create(this.newAssignment)
-        .then((newAssignment: Assignment) => {
-          if (this.errors['incompleteAssignments']['occurred']) this.resetIncompleteError();
+      this.newTask.setCompleted(false);
+      this.TASKS.create(this.newTask)
+        .then((newTask: Assignment) => {
+          if (this.errors['incompleteTasks']['occurred']) this.resetIncompleteError();
           if (this.errors['general']['occurred']) this.resetToDoError();
 
-          this.displayCreateAssignmentSuccess();
+          this.displayCreateTaskSuccess();
           this.scrollToTop();
 
-          // Insert the new assignment into the correct place in the incomplete assignments
+          // Insert the new task into the correct place in the incomplete tasks
           let insertIndex: number;
-          for (insertIndex = 0; insertIndex < this.incompleteAssignments.length; insertIndex++) {
-            if (newAssignment.getDueDate() < this.incompleteAssignments[insertIndex].getDueDate()) break;
+          for (insertIndex = 0; insertIndex < this.incompleteTasks.length; insertIndex++) {
+            if (newTask.getDueDate() < this.incompleteTasks[insertIndex].getDueDate()) break;
           }
 
-          this.incompleteAssignments.splice(insertIndex, 0, newAssignment);
+          this.incompleteTasks.splice(insertIndex, 0, newTask);
 
-          // Reset the default assignment for the form
-          this.newAssignment = new Assignment();
-          $('#createAssignmentForm').trigger('reset');
-          this.assignmentFormInit();
-        }) // End then(newAssignment)
+          // Reset the default task for the form
+          this.resetNewTaskFields();
+        }) // End then(newTask)
         .catch((createError: Error) => {
           if (this.ERROR.isInvalidRequestError(createError) || createError instanceof LocalError) {
             const invalidParams: string[] = createError.getCustomProperty('invalidParameters') || [];
 
             let errorMessage: string;
             const length: number = invalidParams.length;
-            if (length === 0) errorMessage = 'Your assignment is invalid.';
-            else if (length === 1) errorMessage = `Your assignment's ${this.varToWordMap[invalidParams[0]]} is invalid.`;
+            if (length === 0) errorMessage = 'Your task is invalid.';
+            else if (length === 1) errorMessage = `Your task's ${this.varToWordMap[invalidParams[0]]} is invalid.`;
             else {
               const prettyInvalidParams: string[] = invalidParams.map((invalidParam) => {
                 let prettyInvalidParam: string;
@@ -537,281 +549,291 @@ export class ToDoComponent implements OnInit {
               const possibleComma: string = length === 2 ? '' : ',';
 
               /* tslint:disable max-line-length */
-              errorMessage = `Your assignment's ${invalidParamsSubset.join(', ')}${possibleComma} and ${prettyInvalidParams[length - 1]} are invalid.`;
+              errorMessage = `Your task's ${invalidParamsSubset.join(', ')}${possibleComma} and ${prettyInvalidParams[length - 1]} are invalid.`;
               /* tslint:enable max-line-length */
             }
 
             this.scrollToTop();
             this.displayIncompleteListError(errorMessage, 7.5);
           } else this.handleUnknownError(createError as RemoteError);
-        }); // End this.ASSIGNMENTS.create()
+        }); // End this.TASKS.create()
     }
-  } // End addAssignment()
+  } // End addTask()
 
   /**
-   * Determines whether or not the type of the assignments
+   * Determines whether or not the type of the tasks
    * should be displayed based on the quick settings value
-   * @return {boolean} whether or not to display the assignment type
+   * @return {boolean} whether or not to display the task type
    */
   doDisplayTaskType(): boolean {
     return this.QUICK_SETTINGS.getShowType();
   } // End doDisplayTaskType()
 
   /**
-   * Determines whether or not the description of the assignments
+   * Determines whether or not the description of the tasks
    * should be displayed based on the quick settings value
-   * @return {boolean} whether or not to display the assignment description
+   * @return {boolean} whether or not to display the task description
    */
   doDisplayTaskDescription(): boolean {
     return this.QUICK_SETTINGS.getShowDescription();
   } // End doDisplayTaskDescription();
 
   /**
-   * Sends a request to delete an assignment through the API
-   * @param {Assignment} _assignment the assignment to delete
+   * Sends a request to delete a task through the API
+   * @param {Assignment} _task the task to delete
    */
-  deleteRemoteAssignment(_assignment: Assignment): void {
-    this.disableEditing(_assignment);
-    this.ASSIGNMENTS.delete(_assignment.getId())
-      .then(() => this.deleteLocalAssignment(_assignment))
+  deleteRemoteTask(_task: Assignment): void {
+    this.disableEditing(_task);
+    this.TASKS.delete(_task.getId())
+      .then(() => this.deleteLocalTask(_task))
       .catch((deleteError: RemoteError) => {
         if (this.ERROR.isResourceDneError(deleteError)) {
-          if (_assignment.getCompleted()) this.displayCompletedListError(this.errors['assignmentDoesNotExist']['defaultMessage']);
-          else this.displayIncompleteListError(this.errors['assignmentDoesNotExist']['defaultMessage']);
+          if (_task.getCompleted()) this.displayCompletedListError(this.errors['taskDoesNotExist']['defaultMessage']);
+          else this.displayIncompleteListError(this.errors['taskDoesNotExist']['defaultMessage']);
 
-          this.deleteLocalAssignment(_assignment);
+          this.deleteLocalTask(_task);
         } else this.handleUnknownError(deleteError);
 
         this.scrollToTop();
       });
-  } // End deleteRemoteAssignment()
+  } // End deleteRemoteTask()
 
   /**
-   * Removes an assignment from it's respective array
+   * Removes a task from it's respective array
    * based on whether it is completed or incomplete
-   * @param {Assignment} _assignment the assignment to delete
+   * @param {Assignment} _task the task to delete
    */
-  deleteLocalAssignment(_assignment: Assignment): void {
-    if (this.UTILS.hasValue(_assignment)) {
-      const assignments: Assignment[] = _assignment.getCompleted() ? this.completeAssignments : this.incompleteAssignments;
-      const index: number = assignments.indexOf(_assignment);
-      if (index !== -1) assignments.splice(index, 1);
+  deleteLocalTask(_task: Assignment): void {
+    if (this.UTILS.hasValue(_task)) {
+      const tasks: Assignment[] = _task.getCompleted() ? this.completeTasks : this.incompleteTasks;
+      const index: number = tasks.indexOf(_task);
+      if (index !== -1) tasks.splice(index, 1);
     }
-  } // End deleteLocalAssignment()
+  } // End deleteLocalTask()
 
   /**
-   * Enables an assignment within the HTML to be edited
-   * @param {Assignment} _assignment the assignment to enable editing for
-   * @param {number} _index the index of the assignment
-   * in it's respective array (incomplete or complete)
+   * Saves a deep copy of the given task to a class variable,
+   * along with the index of that task in the incomplete task list
+   * @param {Assignment} _task the task to cache
+   * @param {number} _index the index of the task in the incomplete task list
    */
-  displayEditableFields(_assignment: Assignment, _index: number): void {
+  cacheTaskState(_task: Assignment, _index: number): void {
+    this.currentEditingTaskCopy = _task.deepCopy();
+    this.currentEditingTaskIndex = _index;
+  } // End cacheTaskState()
+
+  /**
+   * Determines whether or not the current
+   * editing task and index have valid values
+   * @return {boolean} whether the current editing task and index are value
+   */
+  isTaskCacheValid(): boolean {
+    const taskIndex: number = this.currentEditingTaskIndex;
+    const validTask: boolean = this.UTILS.hasValue(this.currentEditingTaskCopy);
+    const validIndex: boolean = this.UTILS.hasValue(taskIndex) && taskIndex >= 0 && taskIndex < this.incompleteTasks.length;
+
+    return validTask && validIndex;
+  } // End isTaskCacheValid()
+
+  /**
+   * Sets the current editing task and index to null
+   */
+  clearTaskCache(): void {
+    this.currentEditingTaskCopy = null;
+    this.currentEditingTaskIndex = null;
+  } // End clearTaskCache()
+
+  /**
+   * Enables a task within the HTML to be edited
+   * @param {Assignment} _task the task to enable editing for
+   * @param {number} _index the index of the task in
+   * it's respective array (incomplete or complete)
+   */
+  displayEditableFields(_task: Assignment, _index: number): void {
     // Check if another task is already being edited
-    if (this.UTILS.hasValue(this.currentEditingAssignmentIndex)) {
-      // Update the UI for that task by disabling any editing
-      this.disableEditing(this.incompleteAssignments[this.currentEditingAssignmentIndex]);
+    if (_index !== this.currentEditingTaskIndex) {
+      // Check if another task is already being edited
+      if (this.isTaskCacheValid()) {
+        // Update the UI for that task by disabling any editing
+        this.disableEditing(this.incompleteTasks[this.currentEditingTaskIndex]);
 
-      // Undo any edits to that edited task if it's copy was saved
-      if (this.UTILS.hasValue(this.assignmentCopy)) {
-        this.incompleteAssignments[this.currentEditingAssignmentIndex] = this.assignmentCopy.deepCopy();
-        this.assignmentFormInit();
+        // Undo any edits to that edited task if it's copy was saved
+        this.incompleteTasks[this.currentEditingTaskIndex] = this.currentEditingTaskCopy.deepCopy();
       }
-    }
 
-    // Do one last safety check to make sure the task isn't completed
-    if (!_assignment.getCompleted()) {
-      // Deep copy the assignment to save it's state before it is edited
-      this.assignmentCopy = _assignment.deepCopy();
-      this.currentEditingAssignmentIndex = _index;
-
-      const id: string = `#titleEdit${_index}`;
-      this.enableEditing(_assignment);
-      setTimeout(() => $(id).focus(), 1);
+      this.cacheTaskState(_task, _index);
+      this.enableEditing(_task);
+      setTimeout(() => $(`#titleEdit${_index}`).focus(), 1);
     }
   } // End displayEditableFields()
 
   /**
-   * Updates an assignment's title by making a service request to the
-   * API. If the assignment's title is unchanged, the promise is resolved
+   * Updates a task's title by making a service request to the
+   * API. If the task's title is unchanged, the promise is resolved
    * immediately with a boolean false value. If the request succeeds,
    * the promise is resolved with a string value 'title'. If the request
    * is denied, the promise is rejected with a RemoteError object
-   * @param {Assignment} _oldAssignment the assignment
-   * object before it was updated (should be a deep copy
-   * of _newAssignment before any updates were made)
-   * @param {Assignment} _newAssignment the assignment
+   * @param {Assignment} _oldTask the task object before it was updated
+   * (should be a deep copy of _oldTask before any updates were made)
+   * @param {Assignment} _newTask the task
    * to update with all edits already applied
-   * @return {Promise<any>} the value indicating success or failure
-   * after the service is called to update the assignment's title
+   * @return {Promise<any>} the value indicating success or
+   * failure after the service is called to update the task's title
    */
-  updateTitle(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
-    const unchangedTitle: boolean = _newAssignment.getTitle() === _oldAssignment.getTitle();
+  updateTitle(_oldTask: Assignment, _newTask: Assignment): Promise<any> {
+    const unchangedTitle: boolean = _newTask.getTitle() === _oldTask.getTitle();
 
     let promise;
     if (unchangedTitle) promise = Promise.resolve(false);
     else {
-      promise = this.ASSIGNMENTS.updateTitle(_newAssignment.getId(), _newAssignment.getTitle())
+      promise = this.TASKS.updateTitle(_newTask.getId(), _newTask.getTitle())
         .then(() => Promise.resolve('title'))
         .catch((updateError: RemoteError) => {
           const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'title');
           Promise.reject(updatedUpdateError);
-        }); // End this.ASSIGNMENTS.updateTitle()
+        }); // End this.TASKS.updateTitle()
     }
 
     return promise;
   } // End updateTitle()
 
   /**
-   * Updates an assignment's due date by making a service request to
-   * the API. If the assignment's due date is unchanged, the promise
-   * is resolved immediately with a boolean false value. If the request
-   * succeeds, the promise is resolved with a string value 'dueDate'. If the
+   * Updates a task's due date by making a service request to the
+   * API. If the task's due date is unchanged, the promise is resolved
+   * immediately with a boolean false value. If the request succeeds,
+   * the promise is resolved with a string value 'dueDate'. If the
    * request is denied, the promise is rejected with a RemoteError object
-   * @param {Assignment} _oldAssignment the assignment
-   * object before it was updated (should be a deep copy
-   * of _newAssignment before any updates were made)
-   * @param {Assignment} _newAssignment the assignment
+   * @param {Assignment} _oldTask the task object before it was updated
+   * (should be a deep copy of _oldTask before any updates were made)
+   * @param {Assignment} _newTask the task
    * to update with all edits already applied
    * @return {Promise<any>} the value indicating success or failure
-   * after the service is called to update the assignment's due date
+   * after the service is called to update the task's due date
    */
-  updateDueDate(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
-    const unchangedDueDate: boolean = _newAssignment.getDueDateInUnixMilliseconds() === _oldAssignment.getDueDateInUnixMilliseconds();
+  updateDueDate(_oldTask: Assignment, _newTask: Assignment): Promise<any> {
+    const unchangedDueDate: boolean = _newTask.getDueDateInUnixMilliseconds() === _oldTask.getDueDateInUnixMilliseconds();
 
     let promise;
     if (unchangedDueDate) promise = Promise.resolve(false);
     else {
-      promise = this.ASSIGNMENTS.updateDueDate(_newAssignment.getId(), _newAssignment.getDueDate())
+      promise = this.TASKS.updateDueDate(_newTask.getId(), _newTask.getDueDate())
         .then(() => Promise.resolve('dueDate'))
         .catch((updateError: RemoteError) => {
           const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'dueDate');
           Promise.reject(updatedUpdateError);
-        }); // End this.ASSIGNMENTS.updateDueDate()
+        }); // End this.TASKS.updateDueDate()
     }
 
     return promise;
   } // End updateDueDate()
 
   /**
-   * Updates an assignment's type by making a service request to the
-   * API. If the assignment's type is unchanged, the promise is resolved
-   * immediately with a boolean false value. If the request succeeds,
-   * the promise is resolved with a string value 'type'. If the request
+   * Updates a task's type by making a service request to the API. If
+   * the task's type is unchanged, the promise is resolved immediately
+   * with a boolean false value. If the request succeeds, the
+   * promise is resolved with a string value 'type'. If the request
    * is denied, the promise is rejected with a RemoteError object
-   * @param {Assignment} _oldAssignment the assignment
-   * object before it was updated (should be a deep copy
-   * of _newAssignment before any updates were made)
-   * @param {Assignment} _newAssignment the assignment
+   * @param {Assignment} _oldTask the task object before it was updated
+   * (should be a deep copy of _newTask before any updates were made)
+   * @param {Assignment} _newTask the task
    * to update with all edits already applied
-   * @return {Promise<any>} the value indicating success or failure
-   * after the service is called to update the assignment's type
+   * @return {Promise<any>} the value indicating success or
+   * failure after the service is called to update the task's type
    */
-  updateType(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
-    const unchangedType: boolean = _newAssignment.getType() === _oldAssignment.getType();
+  updateType(_oldTask: Assignment, _newTask: Assignment): Promise<any> {
+    const unchangedType: boolean = _newTask.getType() === _oldTask.getType();
 
     let promise;
     if (unchangedType) promise = Promise.resolve(false);
     else {
-      promise = this.ASSIGNMENTS.updateType(_newAssignment.getId(), _newAssignment.getType())
+      promise = this.TASKS.updateType(_newTask.getId(), _newTask.getType())
         .then(() => Promise.resolve('type'))
         .catch((updateError: RemoteError) => {
           const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'type');
           Promise.reject(updatedUpdateError);
-        }); // End this.ASSIGNMENTS.updateType()
+        }); // End this.TASKS.updateType()
     }
 
     return promise;
   } // End updateType()
 
   /**
-   * Updates an assignment's description by making a service request to
-   * the API. If the assignment's description is unchanged, the promise
-   * is resolved immediately with a boolean false value. If the request
-   * succeeds, the promise is resolved with a string value 'description'. If
-   * the request is denied, the promise is rejected with a RemoteError object
-   * @param {Assignment} _oldAssignment the assignment
-   * object before it was updated (should be a deep copy
-   * of _newAssignment before any updates were made)
-   * @param {Assignment} _newAssignment the assignment
+   * Updates a task's description by making a service request to the
+   * API. If the task's description is unchanged, the promise is resolved
+   * immediately with a boolean false value. If the request succeeds,
+   * the promise is resolved with a string value 'description'. If the
+   * request is denied, the promise is rejected with a RemoteError object
+   * @param {Assignment} _oldTask the task object before it was updated
+   * (should be a deep copy of _newTask before any updates were made)
+   * @param {Assignment} _newTask the task
    * to update with all edits already applied
    * @return {Promise<any>} the value indicating success or failure
-   * after the service is called to update the assignment's description
+   * after the service is called to update the task's description
    */
-  updateDescription(_oldAssignment: Assignment, _newAssignment: Assignment): Promise<any> {
-    const unchangedDescription: boolean = _newAssignment.getDescription() === _oldAssignment.getDescription();
+  updateDescription(_oldTask: Assignment, _newTask: Assignment): Promise<any> {
+    const unchangedDescription: boolean = _newTask.getDescription() === _oldTask.getDescription();
 
     let promise;
     if (unchangedDescription) promise = Promise.resolve(false);
     else {
-      promise = this.ASSIGNMENTS.updateDescription(_newAssignment.getId(), _newAssignment.getDescription())
+      promise = this.TASKS.updateDescription(_newTask.getId(), _newTask.getDescription())
         .then(() => Promise.resolve('description'))
         .catch((updateError: RemoteError) => {
           const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'description');
           Promise.reject(updatedUpdateError);
-        }); // End this.ASSIGNMENTS.updateDescription()
+        }); // End this.TASKS.updateDescription()
     }
 
     return promise;
   } // End updateDescription()
 
   /**
-   * Cancels the editing of a task and resets the assignment's
+   * Cancels the editing of a task and resets the task's
    * attributes to what they were before editing began
-   * @param {Assignment} _assignment the assignment that was edited
-   * @param {number} _index the index of the assignment in it's respective array
+   * @param {Assignment} _task the task that was edited
+   * @param {number} _index the index of the task in it's respective array
    */
-  cancelEditingTask(_assignment: Assignment, _index: number): void {
-    if (this.UTILS.hasValue(this.assignmentCopy) && _index >= 0 && _index < this.incompleteAssignments.length) {
-      const oldAssignment: Assignment = this.assignmentCopy.deepCopy();
-      this.disableEditing(oldAssignment);
-      this.incompleteAssignments[_index] = oldAssignment;
-      this.assignmentCopy = null;
-      this.currentEditingAssignmentIndex = null;
-    }
+  cancelEditingTask(_task: Assignment, _index: number): void {
+    if (this.isTaskCacheValid()) {
+      const oldTask: Assignment = this.currentEditingTaskCopy.deepCopy();
+      this.disableEditing(oldTask);
+      this.incompleteTasks[_index] = oldTask;
 
-    this.assignmentFormInit();
+      this.clearTaskCache();
+    }
   } // End cancelEditingTask()
 
   /**
    * Updates a task's changed attributes by making a service request to the API
-   * @param {Assigment} _assignment the task to update
-   * @param {number} _index the index of the assignment in it's respective array
+   * @param {Assigment} _task the task to update
+   * @param {number} _index the index of the task in it's respective array
    */
-  updateTask(_assignment: Assignment, _index: number): void {
-    this.disableEditing(_assignment);
+  updateTask(_task: Assignment, _index: number): void {
+    this.disableEditing(_task);
 
-    const invalidTitle: boolean = !this.UTILS.hasValue(_assignment.getTitle()) || _assignment.getTitle().trim() === '';
-    const invalidDueDate: boolean = !this.UTILS.hasValue(_assignment.getDueDate());
+    const invalidTitle: boolean = !this.UTILS.hasValue(_task.getTitle()) || _task.getTitle().trim() === '';
+    const invalidDueDate: boolean = !this.UTILS.hasValue(_task.getDueDate());
 
     if (invalidTitle || invalidDueDate) {
-      let errorMessage: string = 'Your assignment needs a ';
-      if (invalidTitle && !invalidDueDate) {
-        errorMessage += 'title';
-        this.incompleteAssignments[_index].setTitle(this.assignmentCopy.getTitle());
-      } else if (invalidDueDate && !invalidTitle) {
-        errorMessage += 'due date';
+      let errorMessage: string = 'Your task needs a ';
+      if (invalidTitle && !invalidDueDate) errorMessage = `${errorMessage} title.`;
+      else if (invalidDueDate && !invalidTitle) errorMessage = `${errorMessage} due date.`;
+      else errorMessage = `${errorMessage} title and due date.`;
 
-        // this.assignmentFormInit();
-        this.incompleteAssignments[_index].setDueDate(this.assignmentCopy.getDueDate());
-      } else {
-        errorMessage += 'title and due date';
-
-        // this.assignmentFormInit();
-        this.incompleteAssignments[_index].setTitle(this.assignmentCopy.getTitle());
-        this.incompleteAssignments[_index].setDueDate(this.assignmentCopy.getDueDate());
-      }
-
-      this.assignmentCopy = null;
-      this.currentEditingAssignmentIndex = null;
+      // Refresh the current task with the old, cached version
+      const oldTask: Assignment = this.currentEditingTaskCopy.deepCopy();
+      this.disableEditing(oldTask);
+      this.incompleteTasks[_index] = oldTask;
+      this.clearTaskCache();
 
       this.displayIncompleteListError(errorMessage, 7.5);
       this.scrollToTop();
     } else {
-      // Updated fields are validated locally. Create promise variables to hold promises of service requests to update the assignment
-      const updateTitlePromise = this.updateTitle(this.assignmentCopy, _assignment);
-      const updateDueDatePromise = this.updateDueDate(this.assignmentCopy, _assignment);
-      const updateTypePromise = this.updateType(this.assignmentCopy, _assignment);
-      const updateDescriptionPromise = this.updateDescription(this.assignmentCopy, _assignment);
+      // Updated fields are validated locally. Create promise variables to hold promises of service requests to update the task
+      const updateTitlePromise = this.updateTitle(this.currentEditingTaskCopy, _task);
+      const updateDueDatePromise = this.updateDueDate(this.currentEditingTaskCopy, _task);
+      const updateTypePromise = this.updateType(this.currentEditingTaskCopy, _task);
+      const updateDescriptionPromise = this.updateDescription(this.currentEditingTaskCopy, _task);
 
       // Execute all the promises and make sure they all finish, even if some get rejected
       const promises = [
@@ -830,16 +852,16 @@ export class ToDoComponent implements OnInit {
           this.handleUnknownError();
           this.scrollToTop();
           this.refreshIncompleteList();
-          this.enableEditing(_assignment);
+          this.enableEditing(_task);
           unknownErrors.forEach(unknownError => console.error(unknownError));
         } else if (errors.length > 0) {
           const errorMessages: string[] = errors.map(error => error.getCustomProperty('detailedErrorMessage'));
-          const errorMessage: string = errorMessages.join('. ') + '.';
+          const errorMessage: string = `${errorMessages.join('. ')}.`;
 
           this.displayIncompleteListError(errorMessage, 7.5);
           this.scrollToTop();
           this.refreshIncompleteList();
-          this.enableEditing(_assignment);
+          this.enableEditing(_task);
         } else {
           // No errors occurred so reset any previous errors
           this.resetIncompleteError();
@@ -851,25 +873,23 @@ export class ToDoComponent implements OnInit {
 
             // If the due date was updated, re-sort the list
             if (actuallyUpdated.some(attribute => attribute === 'dueDate')) {
-              this.sortIncompleteAssignments();
+              this.sortIncompleteTasks();
               this.refreshIncompleteList();
             }
-          } else console.error('No task attributes were actually different');
+          } else console.log('No task attributes were actually different');
 
-          this.assignmentCopy = null;
-          this.currentEditingAssignmentIndex = null;
-          this.assignmentFormInit();
+          this.clearTaskCache();
         }
       }) // End then(resolutions)
-      .catch(unhandledError => this.handleUnknownError(unhandledError));
+      .catch(unhandledError => this.handleUnknownError(unhandledError)); // End Promises.all()
     }
   } // End updateTask()
 
   /**
-   * Handles remote errors from the API that are
-   * received when an update to an assignment fails
-   * @param {RemoteError} _error the remote error that contains
-   * information about why updating the assignment failed
+   * Handles remote errors from the API that
+   * are received when an update to a task fails
+   * @param {RemoteError} _error the remote error that
+   * contains information about why updating the task failed
    * @param {string} [_attribute = 'attribute']
    * the attribute that tried to be updated
    * @return {RemoteError} the same RemoteError object with more
@@ -884,9 +904,9 @@ export class ToDoComponent implements OnInit {
     if (this.ERROR.isInvalidRequestError(updateError)) {
       const unchangedParams: string[] = updateError.getCustomProperty('unchangedParameters') || [];
       const prettyAttribute: string = this.varToWordMap[_attribute] || 'attribute';
-      if (unchangedParams.length > 0) errorMessage = `Your assignment\'s ${prettyAttribute} is unchanged`;
+      if (unchangedParams.length > 0) errorMessage = `Your task\'s ${prettyAttribute} is unchanged`;
       else unknownError = true;
-    } else if (this.ERROR.isResourceDneError(updateError)) errorMessage = this.errors['assignmentDoesNotExist']['defaultMessage'];
+    } else if (this.ERROR.isResourceDneError(updateError)) errorMessage = this.errors['taskDoesNotExist']['defaultMessage'];
     else unknownError = true;
 
     if (unknownError) updateError.setCustomProperty('unknownError', true);
@@ -896,81 +916,85 @@ export class ToDoComponent implements OnInit {
   } // End handleUpdateError()
 
   /**
-   * Enables editing for any of an assignment's attributes through the HTML form
-   * @param {Assignment} _assignment the assignment to enable editing for
+   * Enables editing for any of a task's attributes through the HTML form
+   * @param {Assignment} _task the task to enable editing for
    */
-  enableEditing(_assignment: Assignment): void {
-    if (this.UTILS.hasValue(_assignment) && _assignment instanceof Assignment) {
-      _assignment.setEditModeType(true);
-      _assignment.setEditModeDate(true);
-      _assignment.setEditModeTitle(true);
-      _assignment.setEditModeDescription(true);
+  enableEditing(_task: Assignment): void {
+    if (this.UTILS.hasValue(_task)) {
+      _task.setEditModeType(true);
+      _task.setEditModeDate(true);
+      _task.setEditModeTitle(true);
+      _task.setEditModeDescription(true);
+
+      // Initialize the Materialize input elements for the task
+      this.taskDatePickerInit();
+      this.refreshSelectElements(_task);
     }
   } // End enableEditing()
 
   /**
-   * Disables editing for any of an assignment's attributes through the HTML form
-   * @param {Assignment} _assignment the assignment to disable editing for
+   * Disables editing for any of a task's attributes through the HTML form
+   * @param {Assignment} _task the task to disable editing for
    */
-  disableEditing(_assignment: Assignment): void {
-    if (this.UTILS.hasValue(_assignment) && _assignment instanceof Assignment) {
-      _assignment.setEditModeType(false);
-      _assignment.setEditModeDate(false);
-      _assignment.setEditModeTitle(false);
-      _assignment.setEditModeDescription(false);
+  disableEditing(_task: Assignment): void {
+    if (this.UTILS.hasValue(_task) && _task instanceof Assignment) {
+      _task.setEditModeType(false);
+      _task.setEditModeDate(false);
+      _task.setEditModeTitle(false);
+      _task.setEditModeDescription(false);
     }
   } // End disableEditing()
 
   /**
-   * Sorts the completed assignments by their due date
+   * Sorts the completed tasks by their due date
    * @param {boolean} [_disableDoneSortingUpdates = false] Determines whether
    * or not the doneSorting class variable will be updated inside this method
    */
-  sortCompletedAssignments(_disableDoneSortingUpdates: boolean = false): void {
+  sortCompletedTasks(_disableDoneSortingUpdates: boolean = false): void {
     if (!_disableDoneSortingUpdates) this.doneSorting = false;
-    this.ASSIGNMENTS.sort(this.completeAssignments);
+    this.TASKS.sort(this.completeTasks);
     if (!_disableDoneSortingUpdates) this.doneSorting = true;
-  } // End sortCompletedAssignments()
+  } // End sortCompletedTasks()
 
   /**
-   * Sorts the completed assignments by their due date
+   * Sorts the completed tasks by their due date
    * @param {boolean} [_disableDoneSortingUpdates = false] Determines whether
    * or not the doneSorting class variable will be updated inside this method
    */
-  sortIncompleteAssignments(_disableDoneSortingUpdates: boolean = false): void {
+  sortIncompleteTasks(_disableDoneSortingUpdates: boolean = false): void {
     if (!_disableDoneSortingUpdates) this.doneSorting = false;
-    this.ASSIGNMENTS.sort(this.incompleteAssignments);
+    this.TASKS.sort(this.incompleteTasks);
     if (!_disableDoneSortingUpdates) this.doneSorting = true;
-  } // End sortIncompleteAssignments()
+  } // End sortIncompleteTasks()
 
   /**
-   * Sorts all assignments, complete and incomplete, by their due date
+   * Sorts all tasks, complete and incomplete, by their due date
    */
-  sortAllAssignments(): void {
+  sortAllTasks(): void {
     this.doneSorting = false;
-    this.sortIncompleteAssignments(true);
-    this.sortCompletedAssignments(true);
+    this.sortIncompleteTasks(true);
+    this.sortCompletedTasks(true);
     this.doneSorting = true;
-  } // End sortAllAssignments()
+  } // End sortAllTasks()
 
   /**
    * Resets any error in the completed section
    */
   resetCompletedError(): void {
-    this.errors['completedAssignments']['occurred'] = false
-    this.errors['completedAssignments']['message'] = '';
+    this.errors['completedTasks']['occurred'] = false
+    this.errors['completedTasks']['message'] = '';
   } // End resetCompletedError()
 
   /**
    * Resets any error in the incomplete section
    */
   resetIncompleteError(): void {
-    this.errors['incompleteAssignments']['occurred'] = false;
-    this.errors['incompleteAssignments']['message'] = '';
+    this.errors['incompleteTasks']['occurred'] = false;
+    this.errors['incompleteTasks']['message'] = '';
   } // End resetIncompleteError()
 
   /**
-   * Resets any error at the top of the to do component
+   * Resets any error at the top
    */
   resetToDoError(): void {
     this.errors['general']['occurred'] = false;
@@ -989,41 +1013,41 @@ export class ToDoComponent implements OnInit {
   /**
    * Resets any message at the top of the incomplete section
    */
-  resetCreateAssignmentMessage(): void {
-    this.success['assignmentCreated']['occurred'] = false;
-    this.success['assignmentCreated']['message'] = '';
-  } // End resetCreateAssignmentMessage()
+  resetCreateTaskMessage(): void {
+    this.success['taskCreated']['occurred'] = false;
+    this.success['taskCreated']['message'] = '';
+  } // End resetCreateTaskMessage()
 
   /**
    * Resets any message at the top of the completed section
    */
-  resetCompleteAssignmentMessage(): void {
-    this.success['completedAssignments']['occurred'] = false;
-    this.success['completedAssignments']['message'] = '';
-  } // End resetCompleteAssignmentMessage()
+  resetCompleteTaskMessage(): void {
+    this.success['completedTasks']['occurred'] = false;
+    this.success['completedTasks']['message'] = '';
+  } // End resetCompleteTaskMessage()
 
   /**
    * Displays a success message in the incomplete section
-   * @param {string} _message a custom message to display. If no value is passed,
-   * the default message for successfully creating an assignment will be used
+   * @param {string} _message a custom message to display. If no value is
+   * passed, the default message for successfully creating a task will be used
    */
-  displayCreateAssignmentSuccess(_message?: string): void {
-    const message: string = this.UTILS.hasValue(_message) ? _message : this.success['assignmentCreated']['defaultMessage'];
-    this.success['assignmentCreated']['occurred'] = true;
-    this.success['assignmentCreated']['message'] = message;
-    setTimeout(() => this.resetCreateAssignmentMessage(), this.defaultMessageDisplayTime);
-  } // End displayCreateAssignmentSuccess()
+  displayCreateTaskSuccess(_message?: string): void {
+    const message: string = this.UTILS.hasValue(_message) ? _message : this.success['taskCreated']['defaultMessage'];
+    this.success['taskCreated']['occurred'] = true;
+    this.success['taskCreated']['message'] = message;
+    setTimeout(() => this.resetCreateTaskMessage(), this.defaultMessageDisplayTime);
+  } // End displayCreateTaskSuccess()
 
   /**
    * Displays a success message in the completed section
-   * @param {string} _message a custom message to display. If no value is passed,
-   * the default message for successfully completing an assignment will be used
+   * @param {string} _message a custom message to display. If no value is
+   * passed, the default message for successfully completing a task will be used
    */
   displayCompletedListSuccess(_message?: string): void {
-    const message: string = this.UTILS.hasValue(_message) ? _message : this.success['completedAssignments']['defaultMessage'];
-    this.success['completedAssignments']['occurred'] = true;
-    this.success['completedAssignments']['message'] = message;
-    setTimeout(() => this.resetCompleteAssignmentMessage(), this.defaultMessageDisplayTime);
+    const message: string = this.UTILS.hasValue(_message) ? _message : this.success['completedTasks']['defaultMessage'];
+    this.success['completedTasks']['occurred'] = true;
+    this.success['completedTasks']['message'] = message;
+    setTimeout(() => this.resetCompleteTaskMessage(), this.defaultMessageDisplayTime);
   } // End displayCompletedListSuccess()
 
   /**

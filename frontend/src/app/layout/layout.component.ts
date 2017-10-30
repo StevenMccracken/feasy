@@ -86,7 +86,7 @@ export class LayoutComponent implements OnInit {
     private UTILS: CommonUtilsService,
     private MESSAGING: MessagingService,
     private STORAGE: LocalStorageService,
-    private ASSIGNMENTS: AssignmentService,
+    private TASKS: AssignmentService,
     private QUICK_SETTINGS: QuickSettingsService,
   ) {}
 
@@ -206,7 +206,7 @@ export class LayoutComponent implements OnInit {
   } // End toggleQuickSettings()
 
   /**
-   * Appends a new, empty Assignment to the end of the task array
+   * Appends a new, empty task to the end of the task array
    */
   increaseTaskArraySize(): void {
     const size = this.taskArray.length;
@@ -503,7 +503,7 @@ export class LayoutComponent implements OnInit {
               const unixMilliseconds: number = context.select;
               const dueDate: Date = new Date(unixMilliseconds + unixMilliseconds12Hours);
 
-              // Update the Assignment's due date because it isn't in a valid format when first created
+              // Update the task's due date because it isn't in a valid format when first created
               self.taskArray[index].setDueDate(dueDate);
             }
           }
@@ -575,10 +575,10 @@ export class LayoutComponent implements OnInit {
       this.scrollToQuickAddTop();
     } else {
       // All the tasks are valid, so send a reques to create them all
-      this.ASSIGNMENTS.bulkCreate(this.taskArray)
-        .then((createdAssignments: Assignment[]) => {
+      this.TASKS.bulkCreate(this.taskArray)
+        .then((createdTasks: Assignment[]) => {
           // Send a message that new assignments were created from the Quick Add modal
-          this.MESSAGING.publish(new QuickAddAssignmentsCreated(createdAssignments));
+          this.MESSAGING.publish(new QuickAddAssignmentsCreated(createdTasks));
 
           // Reset the task array
           this.taskArray = [new Assignment()];
@@ -588,7 +588,7 @@ export class LayoutComponent implements OnInit {
 
           this.displayQuickAddSuccess();
           this.scrollToQuickAddTop();
-        }) // End then(createdAssignments)
+        }) // End then(createdTasks)
         .catch((bulkCreateError: Error) => {
           // TODO: Handle Local/Remote errors that are caught
           this.displayQuickAddError();
@@ -596,7 +596,7 @@ export class LayoutComponent implements OnInit {
 
           console.error(bulkCreateError);
           console.log(this.taskArray);
-        }); // End this.ASSIGNMENTS.bulkCreate()
+        }); // End this.TASKS.bulkCreate()
       }
   } // End addTasksInBulk()
 
