@@ -5,9 +5,6 @@ import {
 } from '@angular/http';
 import { Injectable } from '@angular/core';
 
-// Import 3rd-party libraries
-import 'rxjs/add/operator/map';
-
 // Import our files
 import { Error } from '../objects/error';
 import { RemoteError } from '../objects/remote-error';

@@ -1,14 +1,6 @@
 // Import angular packages
-import {
-  OnInit,
-  Component,
-} from '@angular/core';
-import {
-  FormGroup,
-  Validators,
-  FormBuilder,
-} from '@angular/forms';
 import { Router } from '@angular/router';
+import { Component } from '@angular/core';
 
 // Import our files
 import { User } from '../objects/user';

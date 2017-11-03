@@ -1,6 +1,5 @@
 // Import angular packages
 import {
-  Inject,
   OnInit,
   Component,
 } from '@angular/core';
@@ -11,13 +10,13 @@ import { DragulaService } from 'ng2-dragula';
 import { Subscription } from 'rxjs/Subscription';
 
 // Import our files
+import { Task } from '../../objects/task';
 import { Error } from '../../objects/error';
-import { Assignment } from '../../objects/assignment';
 import { LocalError } from '../../objects/local-error';
 import { RemoteError } from '../../objects/remote-error';
+import { TaskService } from '../../services/task.service';
 import { ErrorService } from '../../services/error.service';
 import { MessagingService } from '../../services/messaging.service';
-import { AssignmentService } from '../../services/assignment.service';
 import { CommonUtilsService } from '../../utils/common-utils.service';
 import { LocalStorageService } from '../../utils/local-storage.service';
 import { TaskDatePicked } from '../../objects/messages/task-date-picked';
@@ -32,15 +31,15 @@ declare var $: any;
 })
 export class ToDoComponent implements OnInit {
   today: Date = new Date();
-  newTask: Assignment;
-  currentEditingTaskCopy: Assignment;
+  newTask: Task;
+  currentEditingTaskCopy: Task;
   currentEditingTaskIndex: number;
 
   showList: boolean = false;
   doneSorting: boolean = false;
 
-  completeTasks: Assignment[];
-  incompleteTasks: Assignment[];
+  completeTasks: Task[];
+  incompleteTasks: Task[];
 
   // Materialize date-picker holder
   newDatePicker: any;
@@ -97,11 +96,11 @@ export class ToDoComponent implements OnInit {
 
   constructor(
     private ROUTER: Router,
+    private TASKS: TaskService,
     private ERROR: ErrorService,
     private UTILS: CommonUtilsService,
     private MESSAGING: MessagingService,
     private STORAGE: LocalStorageService,
-    private TASKS: AssignmentService,
     private DRAGULA_SERVICE: DragulaService,
     private QUICK_SETTINGS: QuickSettingsService,
   ) {}
@@ -123,13 +122,13 @@ export class ToDoComponent implements OnInit {
    * arrays, and sorting them by how soon they are due
    */
   toDoInit(): void {
-    this.newTask = new Assignment();
+    this.newTask = new Task();
     this.completeTasks = [];
     this.incompleteTasks = [];
 
     // Fetch all the user's tasks
     this.TASKS.getAll()
-      .then((tasks: Assignment[]) => {
+      .then((tasks: Task[]) => {
         // Filter the tasks into complete and incomplete arrays
         tasks.forEach((task) => {
           if (task.getCompleted()) this.completeTasks.push(task);
@@ -180,8 +179,8 @@ export class ToDoComponent implements OnInit {
     // Get the index of the dropped task in the original array and where it was dropped
     const taskInfo: Object = this.getInfoFromDragulaEvent(_dropInfo);
 
-    let tasksSource: Assignment[];
-    let tasksDestination: Assignment[]
+    let tasksSource: Task[];
+    let tasksDestination: Task[]
     const destinationIsCompletedList: boolean = taskInfo['dropDestination'] === 'complete';
 
     if (destinationIsCompletedList) {
@@ -195,7 +194,7 @@ export class ToDoComponent implements OnInit {
     // Find the task object and try to update it
     const taskIndex: number = tasksSource.findIndex(a => a.getId() === taskInfo['taskId']);
     if (taskIndex !== -1) {
-      const task: Assignment = tasksSource[taskIndex];
+      const task: Task = tasksSource[taskIndex];
       this.TASKS.updateCompleted(task.getId(), !task.getCompleted())
         .then(() => {
           // Update the local task object
@@ -284,7 +283,7 @@ export class ToDoComponent implements OnInit {
    * Forces a UI update of the completed section
    */
   refreshCompletedList(): void {
-    const completeTasks: Assignment[] = this.completeTasks;
+    const completeTasks: Task[] = this.completeTasks;
     this.completeTasks = [];
     setTimeout(() => this.completeTasks = completeTasks, 1);
   } // End refreshCompletedList()
@@ -293,7 +292,7 @@ export class ToDoComponent implements OnInit {
    * Forces a UI update of the incomplete section
    */
   refreshIncompleteList(): void {
-    const incompleteTasks: Assignment[] = this.incompleteTasks;
+    const incompleteTasks: Task[] = this.incompleteTasks;
     this.incompleteTasks = [];
     setTimeout(() => this.incompleteTasks = incompleteTasks, 1);
   } // End refreshIncompleteList()
@@ -333,11 +332,11 @@ export class ToDoComponent implements OnInit {
   /**
    * Sends a message to subscribers about the task
    * and row that was chosen in the incomplete section
-   * @param {Assignment} _task the task for the given row that was clicked
+   * @param {Task} _task the task for the given row that was clicked
    * @param {number} _index the 0-based index representing the row
    * that was clicked on in the row of tasks in the incomplete section
    */
-  publishDatePick(_task: Assignment, _index: number): void {
+  publishDatePick(_task: Task, _index: number): void {
     this.MESSAGING.publish(new TaskDatePicked(_task, _index));
   } // End publishDatePick
 
@@ -366,16 +365,16 @@ export class ToDoComponent implements OnInit {
 
       const onSetForExistingTask: Function = (context) => {
         let index: number;
-        let task: Assignment;
+        let task: Task;
 
         // Try and get the data from the message that was sent when the date picker was opened
         if (
           self.UTILS.hasValue(taskRowMessage) &&
           self.UTILS.hasValue(taskRowMessage.getIndex()) &&
-          self.UTILS.hasValue(taskRowMessage.getAssignment())
+          self.UTILS.hasValue(taskRowMessage.getTask())
         ) {
           index = taskRowMessage.getIndex();
-          task = taskRowMessage.getAssignment();
+          task = taskRowMessage.getTask();
         } else {
           index = -1;
           task = null;
@@ -467,11 +466,11 @@ export class ToDoComponent implements OnInit {
 
   /**
    * Refreshes and configures all HTML select elements in the current day modal
-   * @param {Assignment} _task the task that serves as the model
+   * @param {Task} _task the task that serves as the model
    * for when a specific select input field changes it's value.
    * NOTE: this is only a work around for a current Materialize bug
    */
-  refreshSelectElements(_task?: Assignment): void {
+  refreshSelectElements(_task?: Task): void {
     // $('select').material_select('destroy');
     $('select').material_select();
     $('select').on('change', (changeEvent: any) => {
@@ -486,7 +485,7 @@ export class ToDoComponent implements OnInit {
    * Renitializes all forms for the new task to be created
    */
   resetNewTaskFields(): void {
-    this.newTask = new Assignment();
+    this.newTask = new Task();
     $('#createTaskForm').trigger('reset');
     this.taskDatePickerInit();
     this.refreshSelectElements(this.newTask);
@@ -510,7 +509,7 @@ export class ToDoComponent implements OnInit {
     } else {
       this.newTask.setCompleted(false);
       this.TASKS.create(this.newTask)
-        .then((newTask: Assignment) => {
+        .then((newTask: Task) => {
           if (this.errors['incompleteTasks']['occurred']) this.resetIncompleteError();
           if (this.errors['general']['occurred']) this.resetToDoError();
 
@@ -580,9 +579,9 @@ export class ToDoComponent implements OnInit {
 
   /**
    * Sends a request to delete a task through the API
-   * @param {Assignment} _task the task to delete
+   * @param {Task} _task the task to delete
    */
-  deleteRemoteTask(_task: Assignment): void {
+  deleteRemoteTask(_task: Task): void {
     this.disableEditing(_task);
     this.TASKS.delete(_task.getId())
       .then(() => this.deleteLocalTask(_task))
@@ -601,11 +600,11 @@ export class ToDoComponent implements OnInit {
   /**
    * Removes a task from it's respective array
    * based on whether it is completed or incomplete
-   * @param {Assignment} _task the task to delete
+   * @param {Task} _task the task to delete
    */
-  deleteLocalTask(_task: Assignment): void {
+  deleteLocalTask(_task: Task): void {
     if (this.UTILS.hasValue(_task)) {
-      const tasks: Assignment[] = _task.getCompleted() ? this.completeTasks : this.incompleteTasks;
+      const tasks: Task[] = _task.getCompleted() ? this.completeTasks : this.incompleteTasks;
       const index: number = tasks.indexOf(_task);
       if (index !== -1) tasks.splice(index, 1);
     }
@@ -614,10 +613,10 @@ export class ToDoComponent implements OnInit {
   /**
    * Saves a deep copy of the given task to a class variable,
    * along with the index of that task in the incomplete task list
-   * @param {Assignment} _task the task to cache
+   * @param {Task} _task the task to cache
    * @param {number} _index the index of the task in the incomplete task list
    */
-  cacheTaskState(_task: Assignment, _index: number): void {
+  cacheTaskState(_task: Task, _index: number): void {
     this.currentEditingTaskCopy = _task.deepCopy();
     this.currentEditingTaskIndex = _index;
   } // End cacheTaskState()
@@ -645,11 +644,11 @@ export class ToDoComponent implements OnInit {
 
   /**
    * Enables a task within the HTML to be edited
-   * @param {Assignment} _task the task to enable editing for
+   * @param {Task} _task the task to enable editing for
    * @param {number} _index the index of the task in
    * it's respective array (incomplete or complete)
    */
-  displayEditableFields(_task: Assignment, _index: number): void {
+  displayEditableFields(_task: Task, _index: number): void {
     // Check if another task is already being edited
     if (_index !== this.currentEditingTaskIndex) {
       // Check if another task is already being edited
@@ -673,14 +672,14 @@ export class ToDoComponent implements OnInit {
    * immediately with a boolean false value. If the request succeeds,
    * the promise is resolved with a string value 'title'. If the request
    * is denied, the promise is rejected with a RemoteError object
-   * @param {Assignment} _oldTask the task object before it was updated
+   * @param {Task} _oldTask the task object before it was updated
    * (should be a deep copy of _oldTask before any updates were made)
-   * @param {Assignment} _newTask the task
+   * @param {Task} _newTask the task
    * to update with all edits already applied
    * @return {Promise<any>} the value indicating success or
    * failure after the service is called to update the task's title
    */
-  updateTitle(_oldTask: Assignment, _newTask: Assignment): Promise<any> {
+  updateTitle(_oldTask: Task, _newTask: Task): Promise<any> {
     const unchangedTitle: boolean = _newTask.getTitle() === _oldTask.getTitle();
 
     let promise;
@@ -703,14 +702,14 @@ export class ToDoComponent implements OnInit {
    * immediately with a boolean false value. If the request succeeds,
    * the promise is resolved with a string value 'dueDate'. If the
    * request is denied, the promise is rejected with a RemoteError object
-   * @param {Assignment} _oldTask the task object before it was updated
+   * @param {Task} _oldTask the task object before it was updated
    * (should be a deep copy of _oldTask before any updates were made)
-   * @param {Assignment} _newTask the task
+   * @param {Task} _newTask the task
    * to update with all edits already applied
    * @return {Promise<any>} the value indicating success or failure
    * after the service is called to update the task's due date
    */
-  updateDueDate(_oldTask: Assignment, _newTask: Assignment): Promise<any> {
+  updateDueDate(_oldTask: Task, _newTask: Task): Promise<any> {
     const unchangedDueDate: boolean = _newTask.getDueDateInUnixMilliseconds() === _oldTask.getDueDateInUnixMilliseconds();
 
     let promise;
@@ -733,14 +732,14 @@ export class ToDoComponent implements OnInit {
    * with a boolean false value. If the request succeeds, the
    * promise is resolved with a string value 'type'. If the request
    * is denied, the promise is rejected with a RemoteError object
-   * @param {Assignment} _oldTask the task object before it was updated
+   * @param {Task} _oldTask the task object before it was updated
    * (should be a deep copy of _newTask before any updates were made)
-   * @param {Assignment} _newTask the task
+   * @param {Task} _newTask the task
    * to update with all edits already applied
    * @return {Promise<any>} the value indicating success or
    * failure after the service is called to update the task's type
    */
-  updateType(_oldTask: Assignment, _newTask: Assignment): Promise<any> {
+  updateType(_oldTask: Task, _newTask: Task): Promise<any> {
     const unchangedType: boolean = _newTask.getType() === _oldTask.getType();
 
     let promise;
@@ -763,14 +762,14 @@ export class ToDoComponent implements OnInit {
    * immediately with a boolean false value. If the request succeeds,
    * the promise is resolved with a string value 'description'. If the
    * request is denied, the promise is rejected with a RemoteError object
-   * @param {Assignment} _oldTask the task object before it was updated
+   * @param {Task} _oldTask the task object before it was updated
    * (should be a deep copy of _newTask before any updates were made)
-   * @param {Assignment} _newTask the task
+   * @param {Task} _newTask the task
    * to update with all edits already applied
    * @return {Promise<any>} the value indicating success or failure
    * after the service is called to update the task's description
    */
-  updateDescription(_oldTask: Assignment, _newTask: Assignment): Promise<any> {
+  updateDescription(_oldTask: Task, _newTask: Task): Promise<any> {
     const unchangedDescription: boolean = _newTask.getDescription() === _oldTask.getDescription();
 
     let promise;
@@ -790,12 +789,12 @@ export class ToDoComponent implements OnInit {
   /**
    * Cancels the editing of a task and resets the task's
    * attributes to what they were before editing began
-   * @param {Assignment} _task the task that was edited
+   * @param {Task} _task the task that was edited
    * @param {number} _index the index of the task in it's respective array
    */
-  cancelEditingTask(_task: Assignment, _index: number): void {
+  cancelEditingTask(_task: Task, _index: number): void {
     if (this.isTaskCacheValid()) {
-      const oldTask: Assignment = this.currentEditingTaskCopy.deepCopy();
+      const oldTask: Task = this.currentEditingTaskCopy.deepCopy();
       this.disableEditing(oldTask);
       this.incompleteTasks[_index] = oldTask;
 
@@ -808,7 +807,7 @@ export class ToDoComponent implements OnInit {
    * @param {Assigment} _task the task to update
    * @param {number} _index the index of the task in it's respective array
    */
-  updateTask(_task: Assignment, _index: number): void {
+  updateTask(_task: Task, _index: number): void {
     this.disableEditing(_task);
 
     const invalidTitle: boolean = !this.UTILS.hasValue(_task.getTitle()) || _task.getTitle().trim() === '';
@@ -821,7 +820,7 @@ export class ToDoComponent implements OnInit {
       else errorMessage = `${errorMessage} title and due date.`;
 
       // Refresh the current task with the old, cached version
-      const oldTask: Assignment = this.currentEditingTaskCopy.deepCopy();
+      const oldTask: Task = this.currentEditingTaskCopy.deepCopy();
       this.disableEditing(oldTask);
       this.incompleteTasks[_index] = oldTask;
       this.clearTaskCache();
@@ -917,9 +916,9 @@ export class ToDoComponent implements OnInit {
 
   /**
    * Enables editing for any of a task's attributes through the HTML form
-   * @param {Assignment} _task the task to enable editing for
+   * @param {Task} _task the task to enable editing for
    */
-  enableEditing(_task: Assignment): void {
+  enableEditing(_task: Task): void {
     if (this.UTILS.hasValue(_task)) {
       _task.setEditModeType(true);
       _task.setEditModeDate(true);
@@ -934,10 +933,10 @@ export class ToDoComponent implements OnInit {
 
   /**
    * Disables editing for any of a task's attributes through the HTML form
-   * @param {Assignment} _task the task to disable editing for
+   * @param {Task} _task the task to disable editing for
    */
-  disableEditing(_task: Assignment): void {
-    if (this.UTILS.hasValue(_task) && _task instanceof Assignment) {
+  disableEditing(_task: Task): void {
+    if (this.UTILS.hasValue(_task) && _task instanceof Task) {
       _task.setEditModeType(false);
       _task.setEditModeDate(false);
       _task.setEditModeTitle(false);

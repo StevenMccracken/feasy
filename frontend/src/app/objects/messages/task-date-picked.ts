@@ -1,27 +1,28 @@
-import { Assignment } from '../assignment';
+// Import our files
+import { Task } from '../task';
 
 export class TaskDatePicked {
   private index: number;
-  private assignment: Assignment;
+  private task: Task;
 
-  constructor(private _assignment: Assignment, private _index: number) {
+  constructor(private _task: Task, private _index: number) {
     this.index = _index;
-    this.assignment = _assignment;
+    this.task = _task;
   }
 
   getIndex(): number {
     return this.index;
   }
 
-  getAssignment(): Assignment {
-    return this.assignment;
+  getTask(): Task {
+    return this.task;
   }
 
   setIndex(_index: number): void {
     this.index = _index;
   }
 
-  setAssignment(_assignment: Assignment): void {
-    this.assignment = _assignment;
+  setTask(_task: Task): void {
+    this.task = _task;
   }
 }

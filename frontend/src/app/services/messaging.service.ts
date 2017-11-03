@@ -1,9 +1,11 @@
 // Import Angular packages
+import { Injectable } from '@angular/core';
+
+// Import 3rd-party libraries
 import {
   Subject,
   Observable,
 } from 'rxjs/Rx';
-import { Injectable } from '@angular/core';
 
 // Import our files
 import { CommonUtilsService } from '../utils/common-utils.service';
