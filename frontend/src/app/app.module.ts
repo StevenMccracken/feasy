@@ -15,11 +15,11 @@ import {
   NG_GAPI_CONFIG,
   GoogleApiModule,
 } from 'ng-gapi';
-import 'hammerjs';
 
 // Import our files
 import { AppComponent } from './app.component';
 import { AuthGuard } from './router-guard/auth.guard';
+import { TaskService } from './services/task.service';
 import { UserService } from './services/user.service';
 import { FeasyService } from './services/feasy.service';
 import { ErrorService } from './services/error.service';
@@ -28,10 +28,9 @@ import { AvatarService } from './services/avatar.service';
 import { SignupComponent } from './signup/signup.component';
 import { LayoutComponent } from './layout/layout.component';
 import { MessagingService } from './services/messaging.service';
-import { AssignmentService } from './services/assignment.service';
 import { CommonUtilsService } from './utils/common-utils.service';
-import { LocalStorageService } from './utils/local-storage.service';
 import { AppRoutingModule } from './app-routing/app-routing.module';
+import { LocalStorageService } from './utils/local-storage.service';
 import { QuickSettingsService } from './services/quick-settings.service';
 import { PasswordResetComponent } from './password-reset/password-reset.component';
 
@@ -69,12 +68,12 @@ const gapiClientConfig: ClientConfig = {
   ],
   providers: [
     AuthGuard,
+    TaskService,
     UserService,
     FeasyService,
     ErrorService,
     AvatarService,
     MessagingService,
-    AssignmentService,
     CommonUtilsService,
     LocalStorageService,
     QuickSettingsService,

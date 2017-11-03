@@ -10,9 +10,6 @@ import {
 } from '@angular/router';
 import { Injectable } from '@angular/core';
 
-// Import 3rd party libraries
-import { Observable } from 'rxjs/Observable';
-
 // Import our files
 import { LocalStorageService } from '../utils/local-storage.service';
 

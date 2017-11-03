@@ -23,7 +23,7 @@ export const COLORS = {
     primary: '#BE50A6',
     secondary: '#DAA3CE',
   },
-  LIGHTBLUE: {
+  LIGHT_BLUE: {
     primary: '#46B3D2',
     secondary: '#BEE3EE',
   },

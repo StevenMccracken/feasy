@@ -13,8 +13,8 @@ export class RemoteError extends Error implements Serializable<RemoteError> {
   constructor(localSource?: string, requestId?: string, statusCode?: number) {
     super(localSource);
 
-    if (this.utils.hasValue(requestId)) this.requestId = requestId;
-    if (this.utils.hasValue(statusCode)) this.statusCode = statusCode;
+    if (this.UTILS.hasValue(requestId)) this.requestId = requestId;
+    if (this.UTILS.hasValue(statusCode)) this.statusCode = statusCode;
   }
 
   /**

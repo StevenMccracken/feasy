@@ -9,19 +9,19 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs/Subscription';
 
 // Import our files
+import { Task } from '../objects/task';
 import { Account } from '../objects/account';
-import { Assignment } from '../objects/assignment';
 import { RemoteError } from '../objects/remote-error';
+import { TaskService } from '../services/task.service';
 import { UserService } from '../services/user.service';
 import { ErrorService } from '../services/error.service';
 import { AvatarService } from '../services/avatar.service';
 import { MessagingService } from '../services/messaging.service';
-import { AssignmentService } from '../services/assignment.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
 import { TaskDatePicked } from '../objects/messages/task-date-picked';
 import { QuickSettingsService } from '../services/quick-settings.service';
-import { QuickAddAssignmentsCreated } from '../objects/messages/quick-add-assignments-created';
+import { QuickAddTasksCreated } from '../objects/messages/quick-add-tasks-created';
 
 declare var $: any;
 
@@ -37,7 +37,7 @@ export class LayoutComponent implements OnInit {
   avatars: Object[];
 
   // Array of tasks for the quick add modal
-  taskArray: Assignment[];
+  quickAddTasks: Task[];
 
   // Quick Settings variables
   quickSettingType: boolean;
@@ -83,13 +83,13 @@ export class LayoutComponent implements OnInit {
 
   constructor(
     private ROUTER: Router,
+    private TASKS: TaskService,
     private USERS: UserService,
     private ERROR: ErrorService,
     private AVATARS: AvatarService,
     private UTILS: CommonUtilsService,
     private MESSAGING: MessagingService,
     private STORAGE: LocalStorageService,
-    private TASKS: AssignmentService,
     private QUICK_SETTINGS: QuickSettingsService,
   ) {}
 
@@ -129,7 +129,6 @@ export class LayoutComponent implements OnInit {
       .catch((getError: RemoteError) => {
         if (this.ERROR.isInvalidRequestError(getError)) {
           this.displayName = 'User';
-          console.error(getError);
         } else this.handleUnknownError(getError);
       }); // End this.USERS.get()
   } // End ngOnInit()
@@ -177,11 +176,9 @@ export class LayoutComponent implements OnInit {
    */
   closeQuickAddModal(_followUpUrl?: string): void {
     $('#quickAdd').modal('close');
-    this.taskArray = null;
-
     $('#button-slide').sideNav('hide');
-    if (_followUpUrl === '/main/calendar') this.ROUTER.navigate([_followUpUrl]);
-  } // End closeSideNav()
+    if (_followUpUrl === '/main/calendar') setTimeout(() => this.ROUTER.navigate([_followUpUrl]), 500);
+  } // End closeQuickAddModal()
 
   /**
    * Toggles specific quick settings in the side nav
@@ -207,22 +204,25 @@ export class LayoutComponent implements OnInit {
    * Appends a new, empty task to the end of the task list
    */
   increaseTaskArraySize(): void {
-    const size = this.taskArray.length;
-    this.taskArray[size] = new Assignment();
+    const size = this.quickAddTasks.length;
+    this.quickAddTasks[size] = new Task();
 
     // Add the date picker functionality to the new entry in the array of tasks
-    this.quickAddFormInit()
+    this.quickAddDatePickerInit()
   } // End increaseTaskArraySize()
 
   /**
-   * Removes an task from the task list
+   * Removes a task from the task list
    * @param {number} _taskIndex the index of the task in the task list
    */
   removeTask(_taskIndex: number): void {
-    this.taskArray.splice(_taskIndex, 1);
+    this.quickAddTasks.splice(_taskIndex, 1);
 
     // Reset the first task if it was deleted
-    if (this.taskArray.length === 0) this.taskArray[0] = new Assignment();
+    if (this.quickAddTasks.length === 0) {
+      this.quickAddTasks = [new Task()];
+      this.quickAddDatePickerInit();
+    }
   } // End removeTask()
 
   /**
@@ -450,19 +450,19 @@ export class LayoutComponent implements OnInit {
    */
   openQuickAdd(): void {
     this.clearAllQuickAddMessages();
-    this.taskArray = [new Assignment()];
-    this.quickAddFormInit();
+    this.quickAddTasks = [new Task()];
+    this.quickAddDatePickerInit();
     $('#quickAdd').modal('open');
   } // End openQuickAdd()
 
   /**
    * Sends a message to subscribers about the task
    * and row that was chosen in the quick add modal
-   * @param {Assignment} _task the task for the given row that was clicked
+   * @param {Task} _task the task for the given row that was clicked
    * @param {number} _index the 0-based index representing the row
    * that was clicked on in the row of tasks in the quick add modal
    */
-  publishDatePick(_task: Assignment, _index: number): void {
+  publishDatePick(_task: Task, _index: number): void {
     this.MESSAGING.publish(new TaskDatePicked(_task, _index));
   } // End publishDatePick()
 
@@ -470,7 +470,7 @@ export class LayoutComponent implements OnInit {
    * Initializes the Materialize date picker for
    * the quick add modal's current set of rows
    */
-  quickAddFormInit(): void {
+  quickAddDatePickerInit(): void {
     const self = this;
     $(document).ready(() => {
       // Create a variable to hold the message that will be sent when the date field for a row is selected
@@ -485,23 +485,23 @@ export class LayoutComponent implements OnInit {
       };
 
       const onSet: Function = (context) => {
-        // Check if the user clicked on an actual date, not a range selection
         let index: number = -1;
         if (self.UTILS.hasValue(quickAddRowMessage) && self.UTILS.hasValue(quickAddRowMessage.getIndex())) {
           index = quickAddRowMessage.getIndex();
         }
 
+        // Check if the user clicked on an actual date, not a range selection
         if (self.UTILS.hasValue(context.select)) {
           if (index !== -1) {
             const unixMilliseconds: number = context.select;
             const dueDate: Date = new Date(unixMilliseconds + self.UTILS.getUnixMilliseconds12Hours());
 
             // Update the task's due date because it isn't in a valid format when first created
-            self.taskArray[index].setDueDate(dueDate);
+            self.quickAddTasks[index].setDueDate(dueDate);
           }
         } else if (context.hasOwnProperty('clear')) {
           // Reset the task's due date in the HTML form
-          if (index !== -1) self.taskArray[index].setDueDate(null);
+          if (index !== -1) self.quickAddTasks[index].setDueDate(null);
         }
       };
 
@@ -513,7 +513,7 @@ export class LayoutComponent implements OnInit {
       self.datePicker = self.configureDatePicker('.quickAddDatePicker', onOpen, onSet, onClose);
       self.datePicker.start();
     });
-  } // End quickAddFormInit()
+  } // End quickAddDatePickerInit()
 
   /**
    * Configures a Materialize date picker with standard date
@@ -574,7 +574,7 @@ export class LayoutComponent implements OnInit {
      * invalid, or null if it is valid. Then filter only the task
      * indexes who were invalid and display those in an error message
      */
-    const invalidTasks: number[] =  this.taskArray.map((task: Assignment) => {
+    const invalidTasks: number[] =  this.quickAddTasks.map((task: Task) => {
         const oneBasedIndex: number = iterator.next().value;
         /* tslint:disable max-line-length */
         if (!this.UTILS.hasValue(task.getDueDate()) || !this.UTILS.hasValue(task.getTitle()) ||  task.getTitle() === '') return oneBasedIndex;
@@ -605,16 +605,16 @@ export class LayoutComponent implements OnInit {
       this.scrollToQuickAddTop();
     } else {
       // All the tasks are valid, so send a reques to create them all
-      this.TASKS.bulkCreate(this.taskArray)
-        .then((createdTasks: Assignment[]) => {
+      this.TASKS.bulkCreate(this.quickAddTasks)
+        .then((createdTasks: Task[]) => {
           // Send a message that new tasks were created from the Quick Add modal
-          this.MESSAGING.publish(new QuickAddAssignmentsCreated(createdTasks));
+          this.MESSAGING.publish(new QuickAddTasksCreated(createdTasks));
 
           // Reset the task list
-          this.taskArray = [new Assignment()];
+          this.quickAddTasks = [new Task()];
 
           // Reset the date picker for the task list
-          this.quickAddFormInit();
+          this.quickAddDatePickerInit();
 
           this.displayQuickAddSuccess();
           this.scrollToQuickAddTop();
@@ -624,8 +624,11 @@ export class LayoutComponent implements OnInit {
           this.displayQuickAddError();
           this.scrollToQuickAddTop();
 
+          // Reset the date picker for the task list
+          this.quickAddDatePickerInit();
+
           console.error(bulkCreateError);
-          console.log(this.taskArray);
+          console.log(this.quickAddTasks);
         }); // End this.TASKS.bulkCreate()
       }
   } // End addTasksInBulk()

@@ -147,7 +147,7 @@
       </div>
       <div *ngIf="this.success.general.occurred" id="quickAddSuccess">
         <div class="card success-message">
-          <div class="card-content" (click)="this.closeQuickAddModal('main/calendar/')">
+          <div class="card-content" (click)="this.closeQuickAddModal('/main/calendar')">
             {{ this.success.general.message }}
           </div>
         </div>
@@ -159,21 +159,21 @@
               <h4>Due Date</h4>
             </td>
             <td>
-              <h4>Task Name</h4>
+              <h4>Task Title</h4>
             </td>
           </tr>
         </thead>
         <br><br><br>
-        <tbody *ngFor="let task of this.taskArray; let i = index" style="margin-top: 100px;">
+        <tbody *ngFor="let task of this.quickAddTasks; let i = index" style="margin-top: 100px;">
           <tr>
             <td class="tableContent center">
               <input type="text" placeholder="Click to select a date" class="form-control quickAddDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="task.dueDate | date:'fullDate'" (click)="this.publishDatePick(task, i)">
             </td>
             <td class="tableContent center">
-              <input type="text" placeholder="Task name" class="form-control taskName" [(ngModel)]="task.title">
+              <input type="text" placeholder="Title" class="form-control taskName" [(ngModel)]="task.title">
             </td>
             <td class="material-icons" style="padding-right: 20px;" (click)="this.removeTask(i)">delete_sweep</td>
-            <td class="material-icons" *ngIf="i === this.taskArray.length - 1" (click)="this.increaseTaskArraySize()">control_point</td>
+            <td class="material-icons" *ngIf="i === this.quickAddTasks.length - 1" (click)="this.increaseTaskArraySize()">control_point</td>
           </tr>
         </tbody>
       </table>

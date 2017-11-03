@@ -3,12 +3,8 @@ import {
   OnInit,
   Component,
 } from '@angular/core';
-import {
-  FormGroup,
-  Validators,
-  FormBuilder,
-} from '@angular/forms';
 import { Router } from '@angular/router';
+import { FormGroup } from '@angular/forms';
 
 // Import 3rd-party libraries
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
@@ -64,9 +60,6 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     // Check if there is a currentUser and token in local storage
     if (this.STORAGE.isValidItem('currentUser') && this.STORAGE.isValidItem('token')) {
-      // Both items exists, so there is no need to have the user enter their username/password
-      console.log('Got %s from browser local storage', this.STORAGE.getItem('currentUser'));
-
       // TODO: Move this to a more frequently used component
       // Try and refresh the auth token. Regardless of the result, route the user to the main page
       this.USER_SERVICE.refreshAuthToken()

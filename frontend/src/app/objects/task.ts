@@ -2,7 +2,7 @@ interface Serializable<T> {
   deserialize(_input: Object): T;
 }
 
-export class Assignment implements Serializable<Assignment> {
+export class Task implements Serializable<Task> {
   _id: string;
   googleId: string;
   title: string;
@@ -21,11 +21,11 @@ export class Assignment implements Serializable<Assignment> {
   editModeDescription: boolean = false;
 
   /**
-   * Converts a JSON representing an assignment to an Assignment object
-   * @param {Object} [_input = {}] JSON containing assignment information
-   * @return {Assignment} assignment with the attributes from the JSON input
+   * Converts a JSON representing a task to a task object
+   * @param {Object} [_input = {}] JSON containing task information
+   * @return {Task} task with the attributes from the JSON input
    */
-  deserialize(_input: Object = {}): Assignment {
+  deserialize(_input: Object = {}): Task {
     this._id = _input['_id'] || '';
     this.googleId = _input['googleId'] || '';
     this.title = _input['title'] || '';
@@ -46,11 +46,11 @@ export class Assignment implements Serializable<Assignment> {
 
   /**
    * Returns a completely new object with all of the same
-   * attributes of the assignment that the function was called on
-   * @return {Assignment} the deep-cloned assignment
+   * attributes of the task that the function was called on
+   * @return {Task} the deep-cloned task
    */
-  deepCopy(): Assignment {
-    const clone = new Assignment();
+  deepCopy(): Task {
+    const clone = new Task();
     clone._id = this._id;
     clone.googleId = this.googleId;
     clone.title = this.title;

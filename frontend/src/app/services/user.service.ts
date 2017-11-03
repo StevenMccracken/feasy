@@ -1,15 +1,9 @@
 // Import angular packages
-import {
-  NgZone,
-  Injectable,
-} from '@angular/core';
 import { Router } from '@angular/router';
 import { Response } from '@angular/http';
+import { Injectable } from '@angular/core';
 
 // Import 3rd-party libraries
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/catch';
-import 'rxjs/add/operator/toPromise';
 import { GoogleAuthService } from 'ng-gapi/lib/GoogleAuthService';
 
 // Import our files
