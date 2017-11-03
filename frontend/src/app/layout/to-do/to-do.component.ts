@@ -487,9 +487,9 @@ export class ToDoComponent implements OnInit {
    */
   resetNewTaskFields(): void {
     this.newTask = new Assignment();
+    $('#createTaskForm').trigger('reset');
     this.taskDatePickerInit();
     this.refreshSelectElements(this.newTask);
-    $('#createTaskForm').trigger('reset');
   } // End resetNewTaskFields()
 
   /**

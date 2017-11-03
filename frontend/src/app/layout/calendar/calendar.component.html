@@ -16,17 +16,17 @@
         </div>
       </div>
       <div class="col s12 cal-title">
-        <h3 class="calendar-title">{{ this.viewDate | calendarDate:(this.view + 'ViewTitle'):'en' }}</h3>
+        <h3 class="calendar-title">{{ this.viewDate | calendarDate:(this.calendarViewType + 'ViewTitle'):'en' }}</h3>
       </div>
       <div class="row col s12">
         <div class="col s12 center">
-            <a class="btn-floating btn-large btn-red waves-effect waves-light left" mwlCalendarPreviousView [view]="this.view" [(viewDate)]="this.viewDate">
+            <a class="btn-floating btn-large btn-red waves-effect waves-light left" mwlCalendarPreviousView [view]="this.calendarViewType" [(viewDate)]="this.viewDate">
               <i class="material-icons">arrow_back</i>
             </a>
             <div class="btn btn-red waves-effect waves-light" mwlCalendarToday [(viewDate)]="this.viewDate">
               Today
             </div>
-            <a class="btn-floating btn-large btn-red waves-effect waves-light right" mwlCalendarNextView [view]="this.view" [(viewDate)]="this.viewDate">
+            <a class="btn-floating btn-large btn-red waves-effect waves-light right" mwlCalendarNextView [view]="this.calendarViewType" [(viewDate)]="this.viewDate">
               <i class="material-icons">arrow_forward</i>
             </a>
         </div>
@@ -35,10 +35,10 @@
       <!-- TODO: Should we include this? -->
       <!-- <div class="col s4">
         <div class="btn-group">
-          <div class="btn btn-primary" (click)="view='month'" [class.active]="view === 'month'">
+          <div class="btn btn-primary" (click)="this.calendarViewType='month'" [class.active]="this.calendarViewType === 'month'">
             Month
           </div>
-          <div class="btn btn-primary" (click)="view='week'" [class.active]="view === 'week'">
+          <div class="btn btn-primary" (click)="this.calendarViewType='week'" [class.active]="this.calendarViewType === 'week'">
             Week
           </div>
         </div>
@@ -48,7 +48,7 @@
   </div>
   <br>
   <div class="row">
-    <div [ngSwitch]="this.view" class="col s12">
+    <div [ngSwitch]="this.calendarViewType" class="col s12">
       <mwl-calendar-month-view *ngSwitchCase="'month'" [viewDate]="this.viewDate" [events]="this.events" [refresh]="this.calendarState" [activeDayIsOpen]="this.activeDayIsOpen" (mousedown)="this.setEvent($event)" (dayClicked)="this.monthEventClick($event)" (eventClicked)="this.handleEvent('Clicked', $event.event)" (eventTimesChanged)="this.eventTimesChanged($event)">
       </mwl-calendar-month-view>
       <mwl-calendar-week-view *ngSwitchCase="'week'" [viewDate]="this.viewDate" [events]="this.events" [refresh]="this.calendarState"  (dayClicked)="this.dayEventClick($event)" (eventClicked)="this.handleEvent('Clicked', $event.event)" (eventTimesChanged)="this.eventTimesChanged($event)">
@@ -56,24 +56,24 @@
     </div>
   </div>
 
-  <div class="modal modal-fixed-footer row" id="currentDayModal">
-    <div class="modal-content row" id="currentDayModalTop">
-      <h4 align='center'>{{ this.currentDayDate | date:'fullDate' }}</h4>
-      <div *ngIf="this.errors.currentDay.occurred" id="currentDayError">
+  <div class="modal modal-fixed-footer row" id="selectedDayModal">
+    <div class="modal-content row" id="selectedDayModalTop">
+      <h4 align='center'>{{ this.selectedDayDate | date:'fullDate' }}</h4>
+      <div *ngIf="this.errors.selectedDay.occurred" id="selectedDayError">
         <div class="card error-message">
           <div class="card-content">
-            {{ this.errors.currentDay.message }}
+            {{ this.errors.selectedDay.message }}
           </div>
         </div>
       </div>
-      <div *ngIf="this.success.currentDay.occurred" id="currentDaySuccess">
+      <div *ngIf="this.success.selectedDay.occurred" id="selectedDaySuccess">
         <div class="card success-message">
           <div class="card-content">
-            {{ this.success.currentDay.message }}
+            {{ this.success.selectedDay.message }}
           </div>
         </div>
       </div>
-      <div *ngFor="let a of this.currentDayArray; let i = index;" class="col s12">
+      <div *ngFor="let a of this.selectedDayTasks; let i = index;" class="col s12">
         <table class="eventDisplay">
           <tr class="row">
             <td class="col s12 m4" align='center'>

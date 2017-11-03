@@ -4,6 +4,7 @@ import {
   OnInit,
   Component,
   OnDestroy,
+  ChangeDetectorRef,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { Router } from '@angular/router';
@@ -59,27 +60,26 @@ export class CalendarComponent implements OnInit {
   currentEditingTaskCopy: Assignment;
   newTask: Assignment = new Assignment();
 
-  // Set the default calendar view to month
-  view: string = 'month';
+  // Set the default calendar view type to month
+  calendarViewType: string = 'month';
 
   // Holds the tasks for a clicked day
-  currentDayArray: Assignment[];
+  selectedDayTasks: Assignment[];
 
-  // this allows the calendar to tell which date you are on. TODO: clarify this
+  // Allows calendar to tell which date is being viewed
   viewDate: Date = new Date();
-  currentDayDate: Date;
+  selectedDayDate: Date;
 
   // IMPORTANT! USE THIS TO STORE TARGET INTO A VARIABLE TODO: Clarify this comment
   e: any;
 
-  // USE THIS HASHMAP TO STORE A REFERENCE FOR TASK -> EVENTS, & EVENTS -> TASK. TODO: Remove these
-  eDescription: Map<CalendarEvent, Assignment> = new Map<CalendarEvent, Assignment>();
-  aDescription: Map<Assignment, CalendarEvent> = new Map<Assignment, CalendarEvent>();
-
-  // Stores all the events associated tasks for the calendar
+  // Event list for the calendar
   events: CalendarEvent[] = [];
-  tasks: Map<String, Assignment> = new Map<String, Assignment>();
-  calendarEvents: Map<CalendarEvent, Assignment> = new Map<CalendarEvent, Assignment>();
+
+  // Maps that associate a calendar event to a task (and vice versa) based on the task's ID
+  taskIdsToTasks: Map<string, Assignment>;
+  eventsToTaskIds: Map<CalendarEvent, string>;
+  taskIdsToEvents: Map<string, CalendarEvent>;
 
   // TODO: verify these
   activeDayIsOpen: boolean = false;
@@ -93,31 +93,13 @@ export class CalendarComponent implements OnInit {
   actions: CalendarEventAction[] = [{
     label: '<i class="material-icons edit">create</i>',
     onClick: ({ event }: { event: CalendarEvent }): void => {
-      this.handleEvent('Edited', event);
-      this.openModal('#createTasks');
+      console.log(event);
     },
   },
   {
     label: '<i class="material-icons delete">delete_sweep</i>',
     onClick: ({ event }: { event: CalendarEvent }): void => {
-      const task = this.eDescription.get(event);
-      this.TASKS.delete(task._id)
-        .then(() => {
-          for (let i = 0; i < this.currentDayArray.length; i++) {
-            if (this.currentDayArray[i] === task) {
-              this.currentDayArray.splice(i, 1);
-              break;
-            }
-          }
-
-          // Remove the event linked to the task
-          this.events = this.events.filter(iEvent => iEvent !== event);
-          this.handleEvent('Deleted', event);
-        })
-        .catch((deleteError: Response) => {
-          if (deleteError.status === 404) this.handle404Error(task);
-          else this.handleError(deleteError);
-        });
+      console.log(event);
     },
   }];
 
@@ -127,11 +109,13 @@ export class CalendarComponent implements OnInit {
   // Subscription used to receive messages about when tasks are added from the Quick Add modal
   quickAddTasksSubscription: Subscription;
 
-  // Subscription used to receive messages about when a date is picked for a task in the current day list
+  // Subscription used to receive messages about when a date is picked for a task in the selected day list
   taskRowSelectedSubscription: Subscription;
 
+  // The default amount of time (milliseconds) to display a message for
   defaultMessageDisplayTime: number = 5000;
 
+  // Standard error messages
   errorMessages: Object = {
     unableToCompleteTask: 'Unable to complmete that task right now. Please try again.',
     unableToIncompleteTask: 'Unable to mark that task as incomplete right now. Please try again.',
@@ -139,6 +123,7 @@ export class CalendarComponent implements OnInit {
     default: 'Something bad happened. Please try that again or contact us at feasyresponse@gmail.com.to fix this issue.',
   };
 
+  // Standard success messages
   successMessages: Object = {
     updatedTask: 'Your task has been updated.',
     createdTask: 'Your task has been created.',
@@ -150,7 +135,7 @@ export class CalendarComponent implements OnInit {
       message: '',
       defaultMessage: this.errorMessages['default'],
     },
-    currentDay: {
+    selectedDay: {
       occurred: false,
       message: '',
       defaultMessage: this.errorMessages['default'],
@@ -162,12 +147,13 @@ export class CalendarComponent implements OnInit {
       occurred: false,
       message: '',
     },
-    currentDay: {
+    selectedDay: {
       occurred: false,
       message: '',
     },
   };
 
+  // Mapping of variable names to regular words
   varToWordMap = {
     title: 'title',
     dueDate: 'due date',
@@ -179,12 +165,13 @@ export class CalendarComponent implements OnInit {
   constructor(
     private ROUTER: Router,
     private ERROR: ErrorService,
+    private TASKS: AssignmentService,
     private UTILS: CommonUtilsService,
     private MESSAGING: MessagingService,
     private STORAGE: LocalStorageService,
-    private TASKS: AssignmentService,
+    private CHANGE_DETECTOR: ChangeDetectorRef,
     private QUICK_SETTINGS: QuickSettingsService,
-  ) { }
+  ) {}
 
   ngOnDestroy() {
     // Unsubscribe to ensure no memory leaks
@@ -197,7 +184,7 @@ export class CalendarComponent implements OnInit {
       .subscribe((quickAddMessage) => {
         if (this.UTILS.hasValue(quickAddMessage)) {
           const newTasks: Assignment[] = quickAddMessage.getAssignments() || [];
-          this.populateCalendarEvents(newTasks);
+          this.populateCalendarWithEvents(newTasks);
           this.refreshCalendar();
         }
       });
@@ -216,35 +203,20 @@ export class CalendarComponent implements OnInit {
    */
   initializeCalendarData(): void {
     this.events = [];
-    this.eDescription = new Map<CalendarEvent, Assignment>();
-    this.aDescription = new Map<Assignment, CalendarEvent>();
+    this.taskIdsToTasks = new Map<string, Assignment>();
+    this.taskIdsToEvents = new Map<string, CalendarEvent>();
+    this.eventsToTaskIds = new Map<CalendarEvent, string>();
+
     this.TASKS.getAll()
       .then((tasks: Assignment[]) => {
-        this.populateCalendarEvents(tasks);
+        this.populateCalendarWithEvents(tasks);
         this.refreshCalendar();
-      })
+      }) // End then(tasks)
       .catch((getTasksError: RemoteError) => {
         this.handleUnknownError(false, getTasksError);
         this.scrollToCalendarTop();
-      });
+      }); // End this.TASKS.getAll()
   } // End initializeCalendarData()
-
-  /**
-   * Gets the CalendarEvent for the corresponding task based on
-   * the task's ID, not if it's the same object (a deep copy)
-   * @param {Assignment} _task the task to
-   * find the corresponding CalendarEvent for
-   * @return {CalendarEvent<any>} the CalendarEvent for the given
-   * task. Will be undefined if no CalendarEvent exists for the task
-   */
-  getEventFromTask(_task: Assignment): CalendarEvent<any> {
-    let calendarEvent: CalendarEvent<any>;
-    const allTasks: Assignment[] = Array.from(this.aDescription.keys());
-    const originalTask: Assignment = allTasks.find(task => task.getId() === _task.getId());
-
-    if (this.UTILS.hasValue(originalTask)) calendarEvent = this.aDescription.get(originalTask);
-    return calendarEvent;
-  } // End getEventFromTask()
 
   /**
    * Updates a CalendarEvent's color based on a given task's due date
@@ -252,7 +224,7 @@ export class CalendarComponent implements OnInit {
    * update the corresponding CalendarEvent for
    */
   refreshEventColor(_task: Assignment): void {
-    const event = this.getEventFromTask(_task);
+    const event = this.getEventForTask(_task);
     event.color = this.determineEventColor(_task);
   } // End refreshEventColor()
 
@@ -265,7 +237,7 @@ export class CalendarComponent implements OnInit {
   } // End refreshCalendar()
 
   /**
-   * Determines the color for a CalendarEvent based on
+   * Determines the color for a calendar event based on
    * a given task date's relation to the current date
    * @param {Assignment} _task the task of the
    * CalendarEvent to determine the color for
@@ -292,20 +264,21 @@ export class CalendarComponent implements OnInit {
   } // End determineEventColor()
 
   /**
-   * Creates a list of calendar events from a given
-   * list of tasks and adds them to the calendar
+   * Creates a list of calendar events from a given list of
+   * tasks and adds them to the calendar and all data structures
    * @param {Assignment[]} _tasks the tasks to create calendar events for
    */
-  populateCalendarEvents(_tasks: Assignment[]): void {
+  populateCalendarWithEvents(_tasks: Assignment[]): void {
     _tasks.forEach((task) => {
-      const event: CalendarEvent = this.calendarEventFactory(task);
-      this.events.push(event);
+      const taskId: string = task.getId();
+      const event: CalendarEvent = this.createEventForTask(task);
 
-      // Add the task and event to the maps
-      this.eDescription.set(event, task);
-      this.aDescription.set(task, event);
+      this.events.push(event);
+      this.taskIdsToTasks.set(taskId, task);
+      this.taskIdsToEvents.set(taskId, event);
+      this.eventsToTaskIds.set(event, taskId);
     });
-  } // End populateCalendarEvents()
+  } // End populateCalendarWithEvents()
 
   // TODO: Add formal documentation
   monthEventClick(event: any) {
@@ -315,11 +288,15 @@ export class CalendarComponent implements OnInit {
     this.onetime = !this.onetime;
     const dateClicked: Date = event.day.date;
     if (this.onetime) {
-      const currentDayEvents: CalendarEvent[] = event.day.events;
-      this.currentDayArray = currentDayEvents.map(calendarEvent => this.eDescription.get(calendarEvent));
+      const selectedDayEvents: CalendarEvent[] = event.day.events;
+      this.selectedDayTasks = selectedDayEvents.map((calendarEvent) => {
+        const taskId: string = this.eventsToTaskIds.get(calendarEvent);
+        const task: Assignment = this.taskIdsToTasks.get(taskId);
+        return task;
+      });
 
       // Display a popup if there is more than one task
-      if (this.currentDayArray.length !== 0) {
+      if (this.selectedDayTasks.length !== 0) {
         this.timer = setTimeout(
           () => {
             this.displayPopUp();
@@ -328,19 +305,20 @@ export class CalendarComponent implements OnInit {
           300);
       } else {
         this.onetime = !this.onetime;
-        this.openCurrentDayView(dateClicked);
+        this.openSelectedDayView(dateClicked);
       }
     } else {
       // User double-clicked on the date
       clearTimeout(this.timer);
-      this.openCurrentDayView(dateClicked);
+      this.openSelectedDayView(dateClicked);
     }
   } // End monthEventClick()
 
   /**
-   * This is used to display the popup shown on the calendar. The first click
-   * is used to show a list of events for the day clicked. The second click will
-   * show a list of events in a view that allows users to edit or add events. TODO: verify
+   * This is used to display the popup shown on the calendar.
+   * The first click is used to show a list of events for the day
+   * clicked. The second click will show a list of events in a
+   * view that allows users to edit or add events. TODO: verify
    */
   displayPopUp(): void {
     if (this.UTILS.hasValue(this.e)) {
@@ -351,7 +329,7 @@ export class CalendarComponent implements OnInit {
       } else {
         $(this.e).attr('id', 'popup');
         let data = `<div id='popup' class='popuptext show'>`;
-        this.currentDayArray.forEach(task => data += `${task.title}<br>`);
+        this.selectedDayTasks.forEach(task => data += `${task.title}<br>`);
         data += '</div>';
 
         $(this.e).addClass('popup');
@@ -364,7 +342,7 @@ export class CalendarComponent implements OnInit {
   } // End displayPopUp()
 
   /**
-   * Refreshes and configures all HTML select elements in the current day modal
+   * Refreshes and configures all HTML select elements in the selected day modal
    * @param {Assignment} _task the task that serves as the model
    * for when a specific select input field changes it's value.
    * NOTE: this is only a work around for a current Materialize bug
@@ -383,29 +361,29 @@ export class CalendarComponent implements OnInit {
   } // End refreshSelectElements()
 
   /**
-   * Opens the current day list modal
-   * @param {Date} _currentDayDate the date to open the current day modal for
+   * Opens the selected day list modal
+   * @param {Date} _selectedDayDate the date to open the selected day modal for
    */
-  openCurrentDayView(_currentDayDate: Date): void {
-    this.currentDayDate = _currentDayDate;
+  openSelectedDayView(_selectedDayDate: Date): void {
+    this.selectedDayDate = _selectedDayDate;
 
     this.newTask = new Assignment();
-    this.newTask.setDueDate(_currentDayDate);
+    this.newTask.setDueDate(_selectedDayDate);
 
     // Ensure no tasks are displayed as editable at first
-    this.currentDayArray.forEach(task => this.disableEditing(task));
+    this.selectedDayTasks.forEach(task => this.disableEditing(task));
 
     this.clearTaskCache();
     this.refreshSelectElements(this.newTask);
-    $('#currentDayModal').modal('open');
-  } // End openCurrentDayView()
+    $('#selectedDayModal').modal('open');
+  } // End openSelectedDayView()
 
   /**
    * Sends a message to subscribers about the task
-   * and row that was chosen in the current day list
+   * and row that was chosen in the selected day list
    * @param {Assignment} _task the task for the given row that was clicked
    * @param {number} _index the 0-based index representing the row
-   * that was clicked on in the row of tasks in the current day list
+   * that was clicked on in the row of tasks in the selected day list
    */
   publishDatePick(_task: Assignment, _index: number): void {
     this.MESSAGING.publish(new TaskDatePicked(_task, _index));
@@ -414,7 +392,7 @@ export class CalendarComponent implements OnInit {
   /**
    * Configures the functions that are called when the date
    * picker for a task is clicked on. NOTE: Must be called every
-   * time one of the rows in the current day list is updated
+   * time one of the rows in the selected day list is updated
    */
   taskDatePickerInit(): void {
     const self = this;
@@ -457,10 +435,10 @@ export class CalendarComponent implements OnInit {
             const newDueDate: Date = new Date(unixMilliseconds + self.UTILS.getUnixMilliseconds12Hours());
 
             // Update the task's due date because it isn't in a valid format when first created
-            self.currentDayArray[index].setDueDate(newDueDate);
+            self.selectedDayTasks[index].setDueDate(newDueDate);
           } else if (context.hasOwnProperty('clear')) {
             // Reset the task's due date in the HTML form
-            self.currentDayArray[index].setDueDate(new Date(self.currentEditingTaskCopy.getDueDateInUnixMilliseconds()));
+            self.selectedDayTasks[index].setDueDate(new Date(self.currentEditingTaskCopy.getDueDateInUnixMilliseconds()));
           }
         }
       };
@@ -533,7 +511,7 @@ export class CalendarComponent implements OnInit {
   /**
    * Enables a task within the HTML to be edited
    * @param {Assignment} _task the task to enable editing for
-   * @param {number} _index the index of the task in the current day of tasks
+   * @param {number} _index the index of the task in the selected day of tasks
    */
   displayEditableFields(_task: Assignment, _index: number): void {
     // If the same task was clicked on to edit multiple times, don't do anything
@@ -541,10 +519,12 @@ export class CalendarComponent implements OnInit {
       // Check if another task is already being edited
       if (this.isTaskCacheValid()) {
         // Update the UI for that task by disabling any editing
-        this.disableEditing(this.currentDayArray[this.currentEditingTaskIndex]);
+        this.disableEditing(this.selectedDayTasks[this.currentEditingTaskIndex]);
 
         // Undo any edits to that edited task if it's copy was saved
-        this.currentDayArray[this.currentEditingTaskIndex] = this.currentEditingTaskCopy.deepCopy();
+        const oldTask: Assignment = this.currentEditingTaskCopy.deepCopy();
+        this.taskIdsToTasks.set(oldTask.getId(), oldTask);
+        this.selectedDayTasks[this.currentEditingTaskIndex] = oldTask;
       }
 
       this.cacheTaskState(_task, _index);
@@ -555,9 +535,9 @@ export class CalendarComponent implements OnInit {
 
   /**
    * Saves a deep copy of the given task to a class variable,
-   * along with the index of that task in the current day array
+   * along with the index of that task in the selected day list
    * @param {Assignment} _task the task to cache
-   * @param {number} _index the index of the task in the current day array
+   * @param {number} _index the index of the task in the selected day list
    */
   cacheTaskState(_task: Assignment, _index: number): void {
     this.currentEditingTaskCopy = _task.deepCopy();
@@ -572,7 +552,7 @@ export class CalendarComponent implements OnInit {
   isTaskCacheValid(): boolean {
     const taskIndex: number = this.currentEditingTaskIndex;
     const validTask: boolean = this.UTILS.hasValue(this.currentEditingTaskCopy);
-    const validIndex: boolean = this.UTILS.hasValue(taskIndex) && taskIndex >= 0 && taskIndex < this.currentDayArray.length;
+    const validIndex: boolean = this.UTILS.hasValue(taskIndex) && taskIndex >= 0 && taskIndex < this.selectedDayTasks.length;
 
     return validTask && validIndex;
   } // End isTaskCacheValid()
@@ -589,14 +569,14 @@ export class CalendarComponent implements OnInit {
    * Cancels the editing of a task and resets the task's
    * attributes to what they were before editing began
    * @param {Assignment} _task the task that was edited
-   * @param {number} _index the index of the task in the current day array
+   * @param {number} _index the index of the task in the selected day list
    */
   cancelEditingTask(_task: Assignment, _index: number): void {
     if (this.isTaskCacheValid()) {
       const oldTask: Assignment = this.currentEditingTaskCopy.deepCopy();
+      this.taskIdsToTasks.set(oldTask.getId(), oldTask);
+      this.selectedDayTasks[_index] = oldTask;
       this.disableEditing(oldTask);
-      this.currentDayArray[_index] = oldTask;
-
       this.clearTaskCache();
     }
   } // End cancelEditingTask()
@@ -632,6 +612,28 @@ export class CalendarComponent implements OnInit {
   } // End disableEditing()
 
   /**
+   * Gets a task for a given calendar event
+   * @param {CalendarEvent} _event the calendar event to get the task for
+   * @return {Assignment} the task associated with the calendar event
+   */
+  getTaskForEvent(_event: CalendarEvent): Assignment {
+    let task: Assignment;
+    const taskId: string = this.eventsToTaskIds.get(_event);
+    if (this.UTILS.hasValue(taskId)) task = this.taskIdsToTasks.get(taskId);
+
+    return task;
+  } // End getTaskForEvent()
+
+  /**
+   * Gets a calendar event for a given task
+   * @param {Assignment} _task the task to get the calendar event for
+   * @return {CalendarEvent} the calendar event associated with the task
+   */
+  getEventForTask(_task: Assignment): CalendarEvent {
+    return this.taskIdsToEvents.get(_task.getId());
+  } // End getEventForTask()
+
+  /**
    * Handles the event of a calendar event being dropped on the
    * calendar. If the drop date is different from the source
    * date of the drag, an API call will be made to update that
@@ -640,10 +642,11 @@ export class CalendarComponent implements OnInit {
    * change event with the calendar event and new start and end dates
    */
   eventTimesChanged(_timesChangedEvent: CalendarEventTimesChangedEvent): void {
-    const taskForEvent = this.eDescription.get(_timesChangedEvent.event);
+    const taskForEvent: Assignment = this.getTaskForEvent(_timesChangedEvent.event);
     if (!isSameDay(taskForEvent.getDueDate(), _timesChangedEvent.newEnd)) {
       this.TASKS.updateDueDate(taskForEvent.getId(), _timesChangedEvent.newEnd)
         .then(() => {
+          taskForEvent.setDueDate(new Date(_timesChangedEvent.newEnd.getTime()));
           _timesChangedEvent.event.start = _timesChangedEvent.newEnd;
           _timesChangedEvent.event.end = _timesChangedEvent.newEnd;
           _timesChangedEvent.event.color = this.determineEventColor(taskForEvent);
@@ -658,12 +661,10 @@ export class CalendarComponent implements OnInit {
           this.resetCalendarError();
           this.resetCalendarSuccess();
 
-          const updatedUpdateError: RemoteError = this.handleUpdateError2(updateError, 'dueDate');
+          const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'dueDate');
           if (this.ERROR.isResourceDneError(updateError)) {
             this.displayCalendarError(updatedUpdateError.getCustomProperty('detailedErrorMessage'));
-
-            this.eDescription.delete(_timesChangedEvent.event);
-            this.aDescription.delete(taskForEvent);
+            this.deleteLocalTask(taskForEvent);
             this.refreshCalendar();
           } else this.handleUnknownError(false, updatedUpdateError);
         }); // End this.TASKS.updateDueDate()
@@ -671,10 +672,10 @@ export class CalendarComponent implements OnInit {
   } // End eventTimesChanged()
 
   /**
-   * Deletes a task through the API and removes it from all local sources
-   * (current day list and calendar events) upon successful deletion
+   * Deletes a task through the API and removes it from
+   * all local data structures upon successful deletion
    * @param {Assignment} _task the task to delete
-   * @param {number} _index the index of the task in the current day list
+   * @param {number} _index the index of the task in the selected day list
    */
   deleteRemoteTask(_task: Assignment, _index: number): void {
     this.disableEditing(_task);
@@ -685,42 +686,39 @@ export class CalendarComponent implements OnInit {
       }) // End then()
       .catch((deleteError: RemoteError) => {
         if (this.ERROR.isResourceDneError(deleteError)) {
-          this.displayCurrentDayError(this.errors['taskDoesNotExist']['defaultMessage']);
+          this.displaySelectedDayError(this.errorMessages['taskDoesNotExist']);
 
           this.deleteLocalTask(_task, _index);
           this.refreshCalendar();
         } else this.handleUnknownError(true, deleteError);
 
-        this.scrollToCurrentDayTop();
+        this.scrollToSelectedDayTop();
       }); // End this.TASKS.delete()
   } // End deleteRemoteTask()
 
   /**
-   * Removes a task from the current day of tasks and calendar events
+   * Removes a task and it's associated event from all data structures
    * @param {Assignment} _task the task to delete
-   * @param {number} _index the index of the task in the current day list
+   * @param {number} _index the index of the task in the selected day list
    */
-  deleteLocalTask(_task: Assignment, _index: number): void {
-    this.currentDayArray.splice(_index, 1);
-    if (this.UTILS.hasValue(_task)) {
-      const event: CalendarEvent<any> = this.getEventFromTask(_task);
-      if (this.UTILS.hasValue(event)) {
-        this.eDescription.delete(event);
+  deleteLocalTask(_task: Assignment, _index: number = -1): void {
+    if (_index !== -1) this.selectedDayTasks.splice(_index, 1);
 
-        const task: Assignment = this.eDescription.get(event);
-        if (this.UTILS.hasValue(task)) this.aDescription.delete(task);
+    const event: CalendarEvent = this.getEventForTask(_task);
+    this.eventsToTaskIds.delete(event);
+    this.taskIdsToEvents.delete(_task.getId());
 
-        const eventIndex: number = this.events.findIndex(anEvent => anEvent === event);
-        if (eventIndex !== -1) this.events.splice(eventIndex, 1);
-      }
-    }
+    this.taskIdsToTasks.delete(_task.getId());
+
+    const eventIndex: number = this.events.findIndex(anEvent => anEvent === event);
+    if (eventIndex !== -1) this.events.splice(eventIndex, 1);
   } // End deleteLocalTask()
 
   /**
    * Updates a task's completed attribute through
    * the API to the opposite of what it currently is
    * @param {Assignment} _task the task to update
-   * @param {number} _index the index of the task in the current day list
+   * @param {number} _index the index of the task in the selected day list
    */
   updateCompleted(_task: Assignment, _index: number): void {
     const newCompletedValue: boolean = !_task.getCompleted();
@@ -738,13 +736,13 @@ export class CalendarComponent implements OnInit {
       }) // End then()
       .catch((updateError: RemoteError) => {
         if (this.ERROR.isResourceDneError(updateError)) {
-          this.displayCurrentDayError(this.errors['taskDoesNotExist']['defaultMessage']);
+          this.displaySelectedDayError(this.errorMessages['taskDoesNotExist']);
           this.deleteLocalTask(_task, _index);
           this.refreshCalendar();
         } else this.handleUnknownError(true, updateError);
 
-        this.scrollToCurrentDayTop();
-      });
+        this.scrollToSelectedDayTop();
+      }); // End this.TASKS.updateCompleted()
   } // End updateCompleted()
 
   /**
@@ -769,7 +767,7 @@ export class CalendarComponent implements OnInit {
       promise = this.TASKS.updateTitle(_newTask.getId(), _newTask.getTitle())
         .then(() => Promise.resolve('title'))
         .catch((updateError: RemoteError) => {
-          const updatedUpdateError: RemoteError = this.handleUpdateError2(updateError, 'title');
+          const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'title');
           Promise.reject(updatedUpdateError);
         }); // End this.TASKS.updateTitle()
     }
@@ -799,7 +797,7 @@ export class CalendarComponent implements OnInit {
       promise = this.TASKS.updateDueDate(_newTask.getId(), _newTask.getDueDate())
         .then(() => Promise.resolve('dueDate'))
         .catch((updateError: RemoteError) => {
-          const updatedUpdateError: RemoteError = this.handleUpdateError2(updateError, 'dueDate');
+          const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'dueDate');
           Promise.reject(updatedUpdateError);
         }); // End this.TASKS.updateDueDate()
     }
@@ -829,7 +827,7 @@ export class CalendarComponent implements OnInit {
       promise = this.TASKS.updateType(_newTask.getId(), _newTask.getType())
         .then(() => Promise.resolve('type'))
         .catch((updateError: RemoteError) => {
-          const updatedUpdateError: RemoteError = this.handleUpdateError2(updateError, 'type');
+          const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'type');
           Promise.reject(updatedUpdateError);
         }); // End this.TASKS.updateType()
     }
@@ -859,7 +857,7 @@ export class CalendarComponent implements OnInit {
       promise = this.TASKS.updateDescription(_newTask.getId(), _newTask.getDescription())
         .then(() => Promise.resolve('description'))
         .catch((updateError: RemoteError) => {
-          const updatedUpdateError: RemoteError = this.handleUpdateError2(updateError, 'description');
+          const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'description');
           Promise.reject(updatedUpdateError);
         }); // End this.TASKS.updateDescription()
     }
@@ -870,7 +868,7 @@ export class CalendarComponent implements OnInit {
   /**
    * Updates a task's changed attributes by making a service request to the API
    * @param {Assigment} _task the task to update
-   * @param {number} _index the index of the task in it's respective array
+   * @param {number} _index the index of the task in the selected day list
    */
   updateTask(_task: Assignment, _index: number): void {
     this.disableEditing(_task);
@@ -886,12 +884,14 @@ export class CalendarComponent implements OnInit {
 
       // Refresh the current task with the old, cached version
       const oldTask: Assignment = this.currentEditingTaskCopy.deepCopy();
-      this.disableEditing(oldTask);
-      this.currentDayArray[_index] = oldTask;
       this.clearTaskCache();
 
-      this.displayCurrentDayError(errorMessage);
-      this.scrollToCurrentDayTop();
+      this.disableEditing(oldTask);
+      this.selectedDayTasks[_index] = oldTask;
+      this.taskIdsToTasks.set(oldTask.getId(), oldTask);
+
+      this.displaySelectedDayError(errorMessage);
+      this.scrollToSelectedDayTop();
     } else {
       // Updated fields are validated locally. Create promise variables to hold promises of service requests to update the task
       const updateTitlePromise = this.updateTitle(this.currentEditingTaskCopy, _task);
@@ -914,30 +914,30 @@ export class CalendarComponent implements OnInit {
 
         if (unknownErrors.length > 0) {
           this.handleUnknownError(true);
-          this.scrollToCurrentDayTop();
+          this.scrollToSelectedDayTop();
           this.enableEditing(_task);
           unknownErrors.forEach(unknownError => console.error(unknownError));
         } else if (errors.length > 0) {
           const errorMessages: string[] = errors.map(error => error.getCustomProperty('detailedErrorMessage'));
           const errorMessage: string = `${errorMessages.join('. ')}.`;
 
-          this.displayCurrentDayError(errorMessage);
-          this.scrollToCurrentDayTop();
+          this.displaySelectedDayError(errorMessage);
+          this.scrollToSelectedDayTop();
           this.enableEditing(_task);
         } else {
           // No errors occurred so reset any previous errors
-          this.resetCurrentDayError();
+          this.resetSelectedDayError();
 
           // Check if attributes were actually updated
           const actuallyUpdated: string[] = resolutions.filter(resolution => typeof resolution === 'string');
           if (actuallyUpdated.length > 0) {
             // TODO: Display inline success icon
 
-            // If the due date was updated, remove it from the current day array
+            // If the due date was updated, remove it from the selected day list
             if (actuallyUpdated.some(attribute => attribute === 'dueDate')) {
-              this.currentDayArray.splice(_index, 1);
+              this.selectedDayTasks.splice(_index, 1);
 
-              const event: CalendarEvent<any> = this.getEventFromTask(_task);
+              const event: CalendarEvent = this.getEventForTask(_task);
               event.start = _task.getDueDate();
               event.end = _task.getDueDate();
               event.color = this.determineEventColor(_task);
@@ -954,14 +954,14 @@ export class CalendarComponent implements OnInit {
   } // End updateTask()
 
   /**
-   * Scrolls to the top of the current day modal window with animation
+   * Scrolls to the top of the selected day modal window with animation
    * @param {number} _duration the number of
    * milliseconds for the duration of the animation
    */
-  scrollToCurrentDayTop(_duration?: number): void {
+  scrollToSelectedDayTop(_duration?: number): void {
     const duration: number = this.UTILS.hasValue(_duration) ? _duration : 375;
-    $('#currentDayModalTop').animate({ scrollTop: 0 }, duration);
-  } // End scrollToCurrentDayTop()
+    $('#selectedDayModalTop').animate({ scrollTop: 0 }, duration);
+  } // End scrollToSelectedDayTop()
 
   /**
    * Scrolls to the top of the calendar section with animation
@@ -984,25 +984,25 @@ export class CalendarComponent implements OnInit {
 
   /**
    * Creates a task through the API for the given new task
-   * form in the current day list modal. The task is added
-   * to the current day list and set of calendar events
+   * form in the selected day list modal. The task is added
+   * to the selected day list and set of calendar events
    */
   createTask(): void {
-    // Create a date from the current day modal view and set the time to 12 pm for the new task
-    const dueDate = new Date(this.currentDayDate.getTime());
+    // Create a date from the selected day modal view and set the time to 12 pm for the new task
+    const dueDate = new Date(this.selectedDayDate.getTime());
     dueDate.setHours(12, 0, 0, 0);
     this.newTask.setDueDate(dueDate);
 
     this.TASKS.create(this.newTask)
       .then((newTask: Assignment) => {
         this.displayCreateTaskSuccess();
+        this.scrollToSelectedDayTop();
 
         // Reset the new task form
         this.newTask = new Assignment();
-
-        this.currentDayArray.push(newTask);
         this.refreshSelectElements(this.newTask);
 
+        this.selectedDayTasks.push(newTask);
         this.addCalendarEvent(newTask);
         this.refreshCalendar();
       }) // End then(newTask)
@@ -1031,21 +1031,24 @@ export class CalendarComponent implements OnInit {
             /* tslint:enable max-line-length */
           }
 
-          this.scrollToCurrentDayTop();
-          this.displayCurrentDayError(errorMessage);
+          this.scrollToSelectedDayTop();
+          this.displaySelectedDayError(errorMessage);
         } else this.handleUnknownError(true, createError as RemoteError);
       }); // End this.TASKS.create()
   } // End createTask()
 
   /**
-   * Adds a task to the calendar events
+   * Adds a task to the calendar events and all data structures
    * @param {Assignment} _task the task to create the calendar event for
    */
   addCalendarEvent(_task: Assignment): void {
-    const calendarEvent: CalendarEvent = this.calendarEventFactory(_task);
+    const taskId: string = _task.getId();
+    const calendarEvent: CalendarEvent = this.createEventForTask(_task);
+
     this.events.push(calendarEvent);
-    this.eDescription.set(calendarEvent, _task);
-    this.aDescription.set(_task, calendarEvent);
+    this.taskIdsToTasks.set(taskId, _task);
+    this.taskIdsToEvents.set(taskId, calendarEvent);
+    this.eventsToTaskIds.set(calendarEvent, taskId);
   } // End addCalendarEvent()
 
   /**
@@ -1054,7 +1057,7 @@ export class CalendarComponent implements OnInit {
    * title, start/end date, and color of the calendar event
    * @return {CalendarEvent} the calendar event corresponding to the given task
    */
-  calendarEventFactory(_task: Assignment): CalendarEvent {
+  createEventForTask(_task: Assignment): CalendarEvent {
     const calendarEvent: CalendarEvent = {
       title: _task.getTitle(),
       start: _task.getDueDate(),
@@ -1069,7 +1072,7 @@ export class CalendarComponent implements OnInit {
     };
 
     return calendarEvent;
-  } // End calendarEventFactory()
+  } // End createEventForTask()
 
   // TODO: verify
   openModal(_id: string): void {
@@ -1122,23 +1125,26 @@ export class CalendarComponent implements OnInit {
   resetCalendarError(): void {
     this.errors['general']['occurred'] = false
     this.errors['general']['message'] = '';
+    this.CHANGE_DETECTOR.detectChanges();
   } // End resetCalendarError()
 
   /**
-   * Resets any error in the current day modal section
+   * Resets any error in the selected day modal section
    */
-  resetCurrentDayError(): void {
-    this.errors['currentDay']['occurred'] = false;
-    this.errors['currentDay']['message'] = '';
-  } // End resetCurrentDayError()
+  resetSelectedDayError(): void {
+    this.errors['selectedDay']['occurred'] = false;
+    this.errors['selectedDay']['message'] = '';
+    this.CHANGE_DETECTOR.detectChanges();
+  } // End resetSelectedDayError()
 
   /**
-   * Resets any success message at the top of the current day modal section
+   * Resets any success message at the top of the selected day modal section
    */
-  resetCurrentDaySuccess(): void {
-    this.success['currentDay']['occurred'] = false;
-    this.success['currentDay']['message'] = '';
-  } // End resetCurrentDaySuccess()
+  resetSelectedDaySuccess(): void {
+    this.success['selectedDay']['occurred'] = false;
+    this.success['selectedDay']['message'] = '';
+    this.CHANGE_DETECTOR.detectChanges();
+  } // End resetSelectedDaySuccess()
 
   /**
    * Resets any success message at the top of the calendar section
@@ -1146,31 +1152,34 @@ export class CalendarComponent implements OnInit {
   resetCalendarSuccess(): void {
     this.success['general']['occurred'] = false;
     this.success['general']['message'] = '';
+    this.CHANGE_DETECTOR.detectChanges();
   } // End resetCalendarSuccess()
 
   /**
-   * Displays a success message in the current day modal section
+   * Displays a success message in the selected day modal section
    * @param {string} _message a custom message to display. If no value is
    * passed, the default message for successfully creating a task will be used
    */
   displayCreateTaskSuccess(_message?: string): void {
     const message: string = this.UTILS.hasValue(_message) ? _message : this.successMessages['createdTask'];
-    this.success['currentDay']['occurred'] = true;
-    this.success['currentDay']['message'] = message;
-    setTimeout(() => this.resetCurrentDaySuccess(), this.defaultMessageDisplayTime);
+    this.success['selectedDay']['occurred'] = true;
+    this.success['selectedDay']['message'] = message;
+    this.CHANGE_DETECTOR.detectChanges();
+    setTimeout(() => this.resetSelectedDaySuccess(), this.defaultMessageDisplayTime);
   } // End displayCreateTaskSuccess()
 
   /**
-   * Displays an error message in the current day modal section
+   * Displays an error message in the selected day modal section
    * @param {string} _message a custom message to display. If no value is
    * passed, the default error message for creating a task will be used
    */
-  displayCurrentDayError(_message?: string): void {
-    const message: string = this.UTILS.hasValue(_message) ? _message : this.errors['currentDay']['defaultMessage'];
-    this.errors['currentDay']['occurred'] = true;
-    this.errors['currentDay']['message'] = message;
-    setTimeout(() => this.resetCurrentDayError(), this.defaultMessageDisplayTime);
-  } // End displayCurrentDayError()
+  displaySelectedDayError(_message?: string): void {
+    const message: string = this.UTILS.hasValue(_message) ? _message : this.errors['selectedDay']['defaultMessage'];
+    this.errors['selectedDay']['occurred'] = true;
+    this.errors['selectedDay']['message'] = message;
+    this.CHANGE_DETECTOR.detectChanges();
+    setTimeout(() => this.resetSelectedDayError(), this.defaultMessageDisplayTime);
+  } // End displaySelectedDayError()
 
   /**
    * Displays an error message in the calendar section
@@ -1181,6 +1190,7 @@ export class CalendarComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : this.errors['general']['defaultMessage'];
     this.errors['general']['occurred'] = true;
     this.errors['general']['message'] = message;
+    this.CHANGE_DETECTOR.detectChanges();
     setTimeout(() => this.resetCalendarError(), this.defaultMessageDisplayTime);
   } // End displayCalendarError()
 
@@ -1193,29 +1203,21 @@ export class CalendarComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : this.successMessages['updatedTask'];
     this.success['general']['occurred'] = true;
     this.success['general']['message'] = message;
+    this.CHANGE_DETECTOR.detectChanges();
     setTimeout(() => this.resetCalendarSuccess(), this.defaultMessageDisplayTime);
   } // End displayCalendarSuccess()
 
-  ////////////////////////////////////////////////////////////////////
-  //
-  // Error Handler
-  //
-  // Helper functions used to handle all or any error that comes
-  // during the use of the service.
-  //
-  ////////////////////////////////////////////////////////////////////
-
   /**
-   * Handles remote errors from the API that are
-   * received when an update to a task fails
-   * @param {RemoteError} _error the remote error that contains
-   * information about why updating the task failed
+   * Handles remote errors from the API that
+   * are received when an update to a task fails
+   * @param {RemoteError} _error the remote error that
+   * contains information about why updating the task failed
    * @param {string} [_attribute = 'attribute']
    * the attribute that tried to be updated
    * @return {RemoteError} the same RemoteError object with more
    * detailed information about why the request failed attached
    */
-  handleUpdateError2(_error: RemoteError, _attribute: string = 'attribute'): RemoteError {
+  handleUpdateError(_error: RemoteError, _attribute: string = 'attribute'): RemoteError {
     // Make a shallow copy to avoid using the input argument variable
     const updateError: RemoteError = _error;
 
@@ -1226,22 +1228,22 @@ export class CalendarComponent implements OnInit {
       const prettyAttribute: string = this.varToWordMap[_attribute] || 'attribute';
       if (unchangedParams.length > 0) errorMessage = `Your task's ${prettyAttribute} is unchanged`;
       else unknownError = true;
-    } else if (this.ERROR.isResourceDneError(updateError)) errorMessage = this.errors['taskDoesNotExist']['defaultMessage'];
+    } else if (this.ERROR.isResourceDneError(updateError)) errorMessage = this.errorMessages['taskDoesNotExist'];
     else unknownError = true;
 
     if (unknownError) updateError.setCustomProperty('unknownError', true);
     else updateError.setCustomProperty('detailedErrorMessage', errorMessage);
 
     return updateError;
-  } // End handleUpdateError2()
+  } // End handleUpdateError()
 
   /**
    * Handles errors that can't be determined elsewhere and logs the error
-   * @param {boolean} _isForCurrentDayModal whether or not the
-   * unknown error is for the current day modal or calendar section
+   * @param {boolean} _isForSelectedDayModal whether or not the
+   * unknown error is for the selected day modal or calendar section
    * @param {RemoteError} [_error = new RemoteError()] the unknown error
    */
-  private handleUnknownError(_isForCurrentDayModal: boolean, _error: RemoteError = new RemoteError()): void {
+  private handleUnknownError(_isForSelectedDayModal: boolean, _error: RemoteError = new RemoteError()): void {
     console.error(_error);
     if (this.ERROR.isAuthError(_error)) {
       this.STORAGE.deleteItem('token');
@@ -1250,68 +1252,8 @@ export class CalendarComponent implements OnInit {
       this.STORAGE.setItem('expiredToken', 'true');
       this.ROUTER.navigate(['/login']);
     } else {
-      if (_isForCurrentDayModal) this.displayCurrentDayError(this.errors['currentDay']['defaultMessage']);
+      if (_isForSelectedDayModal) this.displaySelectedDayError(this.errors['selectedDay']['defaultMessage']);
       else this.displayCalendarError(this.errors['general']['defaultMessage']);
     }
   } // End handleUnknownError()
-
-  /**
-   * Handles error that are received from API calls
-   * @param {Reponse} _error the error from the API call
-   * TODO: remove this
-   */
-  private handleError(_error: Response): void {
-    if (_error.status === 401) {
-      // Token is stale. Clear the user and token local storage, route them to login screen
-      this.STORAGE.deleteItem('token');
-      this.STORAGE.deleteItem('currentUser');
-
-      // Add the reason for re-routing to login
-      this.STORAGE.setItem('expiredToken', 'true');
-
-      // Route to the login page
-      this.ROUTER.navigate(['/login']);
-    } else {
-      // API error, server could be down/crashed
-      console.error(_error);
-    }
-  }
-
-  /**
-   * Handles error that comes when a task does not exist or is not found
-   * @param {Assigment} _task the task that was attempted to use with the API
-   * TODO: REMOVE THIS
-   */
-  private handle404Error(_task: Assignment): void {
-    // Find the task in the current day array
-    for (let i = 0; i < this.currentDayArray.length; i++) {
-      if (this.currentDayArray[i] === _task) {
-        this.currentDayArray.splice(i, 1);
-        break;
-      }
-    }
-
-    // Remove the event linked to the task
-    const event: CalendarEvent = this.aDescription.get(_task);
-    this.events = this.events.filter(iEvent => iEvent !== event);
-  }
-
-  /**
-   * Handles error that comes during an update API call
-   * @param {string} _attribute a part of the object that couldn't be updated
-   * @param {string} _reason why the attribute couldn't be updated.
-   * TODO: remove
-   */
-  private handleUpdateError(_attribute: string, _reason: string): void {
-    switch (_reason) {
-      case 'invalid':
-        console.error('New %s was malformed', _attribute);
-        break;
-      case 'unchanged':
-        console.error('New %s was unchanged', _attribute);
-        break;
-      default:
-        console.error('New %s was invalid in some way', _attribute);
-    }
-  }
 }
