@@ -1,5 +1,5 @@
-<div class="main">
-  <div  class="navbar-fixed">
+<div class="main" id="topOfPage">
+  <div class="navbar-fixed">
     <nav>
       <div class="nav-wrapper primary">
         <a href="#" data-activates="slide-out" class="btn-flat circle" id="button-slide">
@@ -18,17 +18,17 @@
         <div class="background secondary">
         </div>
         <div class="user-setting">
-          <img class="circle avatar" [src]="avatarUrl" (click)="displayAvatarSelection()">
+          <img class="circle avatar" [src]="this.avatarUrl" (click)="this.displayAvatarSelection()">
         </div>
-        <p class="white-text">Hey, {{ displayName }}</p>
+        <p class="white-text">Hey, {{ this.displayName }}</p>
         <div class="action">
-          <div class="logout" (click)="logUserOut()">Logout</div>
+          <div class="logout" (click)="this.logUserOut()">Logout</div>
           <div class="settings">Settings</div>
         </div>
       </div>
     </li>
     <li>
-      <a (click)="closeSideNav('/main/calendar')">
+      <a (click)="this.closeSideNav('/main/calendar')">
         <table>
           <tr>
             <td class="icon-menu">
@@ -42,7 +42,7 @@
       </a>
     </li>
     <li>
-      <a routerLink="/main/todo" (click)="closeSideNav()">
+      <a routerLink="/main/todo" (click)="this.closeSideNav()">
         <table>
           <tr>
             <td class="icon-menu">
@@ -69,6 +69,20 @@
         </table>
       </a>
     </li>
+    <li>
+      <a>
+        <table>
+          <tr (click)="this.emailFeasy()">
+            <td class="icon-menu">
+              <p class="material-icons">email</p>
+            </td>
+            <td>
+              <h6>Contact Us</h6>
+            </td>
+          </tr>
+        </table>
+      </a>
+    </li>
 
     <div class="container">
       <div class="quick-settings">
@@ -81,7 +95,7 @@
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="quickSettingColors" value="true" (click)="toggleQuickSettings('color')">
+                    <input type="checkbox" [(ngModel)]="this.quickSettingColors" value="true" (click)="this.toggleQuickSettings('color')">
                     <span class="lever"></span>
                     On
                   </label>
@@ -92,7 +106,7 @@
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="quickSettingType" value="true" (click)="toggleQuickSettings('type')">
+                    <input type="checkbox" [(ngModel)]="this.quickSettingType" value="true" (click)="this.toggleQuickSettings('type')">
                     <span class="lever"></span>
                     On
                   </label>
@@ -103,7 +117,7 @@
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="quickSettingDescription" value="true" (click)="toggleQuickSettings('description')">
+                    <input type="checkbox" [(ngModel)]="this.quickSettingDescription" value="true" (click)="this.toggleQuickSettings('description')">
                     <span class="lever"></span>
                     On
                   </label>
@@ -115,7 +129,7 @@
       </div>
     </div>
 
-    <div class="container center upload-button" (click)="openQuickAdd()">
+    <div class="container center upload-button" (click)="this.openQuickAdd()">
       <label class="waves-effect waves-light btn blue">
         Quick Add
       </label>
@@ -133,7 +147,7 @@
       </div>
       <div *ngIf="this.success.general.occurred" id="quickAddSuccess">
         <div class="card success-message">
-          <div class="card-content" (click)="closeQuickAddModal('main/calendar/')">
+          <div class="card-content" (click)="this.closeQuickAddModal('main/calendar/')">
             {{ this.success.general.message }}
           </div>
         </div>
@@ -150,26 +164,26 @@
           </tr>
         </thead>
         <br><br><br>
-        <tbody *ngFor="let task of taskArray; let i = index" style="margin-top: 100px;">
+        <tbody *ngFor="let task of this.taskArray; let i = index" style="margin-top: 100px;">
           <tr>
             <td class="tableContent center">
-              <input type="text" placeholder="Click to select a date" class="form-control quickAddDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="task.dueDate | date: 'fullDate'" (click)="publishDatePick(task, i)">
+              <input type="text" placeholder="Click to select a date" class="form-control quickAddDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="task.dueDate | date:'fullDate'" (click)="this.publishDatePick(task, i)">
             </td>
             <td class="tableContent center">
               <input type="text" placeholder="Task name" class="form-control taskName" [(ngModel)]="task.title">
             </td>
-            <td class="material-icons" style="padding-right: 20px;" (click)="removeTask(i)">delete_sweep</td>
-            <td class="material-icons" *ngIf="i === taskArray.length - 1" (click)="increaseTaskArraySize()">control_point</td>
+            <td class="material-icons" style="padding-right: 20px;" (click)="this.removeTask(i)">delete_sweep</td>
+            <td class="material-icons" *ngIf="i === this.taskArray.length - 1" (click)="this.increaseTaskArraySize()">control_point</td>
           </tr>
         </tbody>
       </table>
     </div>
     <div class="modal-footer">
-      <a class="waves-effect waves-green btn-flat" (click)="addTasksInBulk()">Add to Calendar</a>
+      <a class="waves-effect waves-green btn-flat" (click)="this.addTasksInBulk()">Add to Calendar</a>
     </div>
   </div>
 
-  <!-- Modal Structure -->
+  <!-- Avatar modal -->
   <div id="avatarSelect" class="modal">
     <div class="modal-content center">
       <h4>Choose Your Avatar</h4>
@@ -188,8 +202,8 @@
         </div>
       </div>
       <div class="row">
-        <div class="col s4" *ngFor="let image of avatars">
-            <img class="circle avatar-select col s12" [src]="image.url" (click)="updateAvatar(image.url, image.name)">
+        <div class="col s4" *ngFor="let image of this.avatars">
+            <img class="circle avatar-select col s12" [src]="this.image.url" (click)="this.updateAvatar(image.url, image.name)">
         </div>
       </div>
     </div>

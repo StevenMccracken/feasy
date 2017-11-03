@@ -1,30 +1,44 @@
 <div class="calendar-app">
   <div class="row text-center">
     <div class="col s12">
+      <div *ngIf="this.errors.general.occurred" id="generalCalendarError">
+        <div class="card error-message">
+          <div class="card-content">
+            {{ this.errors.general.message }}
+          </div>
+        </div>
+      </div>
+      <div *ngIf="this.success.general.occurred" id="generalCalendarSuccess">
+        <div class="card success-message">
+          <div class="card-content">
+            {{ this.success.general.message }}
+          </div>
+        </div>
+      </div>
       <div class="col s12 cal-title">
-        <h3 class="calendar-title" (click)="debug()"> {{ viewDate | calendarDate:(view + 'ViewTitle'):'en' }}</h3>
+        <h3 class="calendar-title">{{ this.viewDate | calendarDate:(this.calendarViewType + 'ViewTitle'):'en' }}</h3>
       </div>
       <div class="row col s12">
         <div class="col s12 center">
-            <a class="btn-floating btn-large btn-red waves-effect waves-light left" mwlCalendarPreviousView [view]="view" [(viewDate)]="viewDate">
+            <a class="btn-floating btn-large btn-red waves-effect waves-light left" mwlCalendarPreviousView [view]="this.calendarViewType" [(viewDate)]="this.viewDate">
               <i class="material-icons">arrow_back</i>
             </a>
-            <div class="btn btn-red waves-effect waves-light" mwlCalendarToday [(viewDate)]="viewDate">
+            <div class="btn btn-red waves-effect waves-light" mwlCalendarToday [(viewDate)]="this.viewDate">
               Today
             </div>
-            <a class="btn-floating btn-large btn-red waves-effect waves-light right" mwlCalendarNextView [view]="view" [(viewDate)]="viewDate">
+            <a class="btn-floating btn-large btn-red waves-effect waves-light right" mwlCalendarNextView [view]="this.calendarViewType" [(viewDate)]="this.viewDate">
               <i class="material-icons">arrow_forward</i>
             </a>
         </div>
       </div>
 
-      <!-- open for descussion later -->
+      <!-- TODO: Should we include this? -->
       <!-- <div class="col s4">
         <div class="btn-group">
-          <div class="btn btn-primary" (click)="view = 'month'" [class.active]="view === 'month'">
+          <div class="btn btn-primary" (click)="this.calendarViewType='month'" [class.active]="this.calendarViewType === 'month'">
             Month
           </div>
-          <div class="btn btn-primary" (click)="view = 'week'" [class.active]="view === 'week'">
+          <div class="btn btn-primary" (click)="this.calendarViewType='week'" [class.active]="this.calendarViewType === 'week'">
             Week
           </div>
         </div>
@@ -34,92 +48,140 @@
   </div>
   <br>
   <div class="row">
-    <div [ngSwitch]="view" class="col s12">
-      <mwl-calendar-month-view *ngSwitchCase="'month'" [viewDate]="viewDate" [events]="events" [refresh]="refresh" [activeDayIsOpen]="activeDayIsOpen" (mousedown)="setEvent($event)" (dayClicked)="monthEventClick($event)" (eventClicked)="handleEvent('Clicked', $event.event)" (eventTimesChanged)="eventTimesChanged($event)">
+    <div [ngSwitch]="this.calendarViewType" class="col s12">
+      <mwl-calendar-month-view *ngSwitchCase="'month'" [viewDate]="this.viewDate" [events]="this.events" [refresh]="this.calendarState" [activeDayIsOpen]="this.activeDayIsOpen" (mousedown)="this.setEvent($event)" (dayClicked)="this.monthEventClick($event)" (eventClicked)="this.handleEvent('Clicked', $event.event)" (eventTimesChanged)="this.eventTimesChanged($event)">
       </mwl-calendar-month-view>
-      <mwl-calendar-week-view *ngSwitchCase="'week'" [viewDate]="viewDate" [events]="events" [refresh]="refresh"  (dayClicked)="dayEventClick($event)" (eventClicked)="handleEvent('Clicked', $event.event)" (eventTimesChanged)="eventTimesChanged($event)">
+      <mwl-calendar-week-view *ngSwitchCase="'week'" [viewDate]="this.viewDate" [events]="this.events" [refresh]="this.calendarState"  (dayClicked)="this.dayEventClick($event)" (eventClicked)="this.handleEvent('Clicked', $event.event)" (eventTimesChanged)="this.eventTimesChanged($event)">
       </mwl-calendar-week-view>
     </div>
   </div>
 
+  <div class="modal modal-fixed-footer row" id="selectedDayModal">
+    <div class="modal-content row" id="selectedDayModalTop">
+      <h4 align='center'>{{ this.selectedDayDate | date:'fullDate' }}</h4>
+      <div *ngIf="this.errors.selectedDay.occurred" id="selectedDayError">
+        <div class="card error-message">
+          <div class="card-content">
+            {{ this.errors.selectedDay.message }}
+          </div>
+        </div>
+      </div>
+      <div *ngIf="this.success.selectedDay.occurred" id="selectedDaySuccess">
+        <div class="card success-message">
+          <div class="card-content">
+            {{ this.success.selectedDay.message }}
+          </div>
+        </div>
+      </div>
+      <div *ngFor="let a of this.selectedDayTasks; let i = index;" class="col s12">
+        <table class="eventDisplay">
+          <tr class="row">
+            <td class="col s12 m4" align='center'>
+              <div class="collection-head">
+                <div *ngIf="!a.getEditModeTitle()">
+                  <h5>{{ a.getTitle() }}</h5>
+                </div>
+                <div [style.display]="a.getEditModeTitle() ? 'inline' : 'none'">
+                  <input [id]="'titleEdit' + i" name="titleEdit" type="text" [(ngModel)]="a.title">
+                  <label [for]="'titleEdit' + i">Title</label>
+                </div>
+              </div>
+            </td>
+            <td class="col s7 m2" align='center' *ngIf="this.shouldDisplayTaskType() && !a.getEditModeType()" [style.display]="a.getType() ? 'inline': 'none'">
+              <div class="chip">{{ a.getType() }}</div>
+            </td>
+            <td class="col s2 m1" align='center'>
+              <p class="material-icons action" (click)="this.displayEditableFields(a, i)">create</p>
+            </td>
+            <td class="col s2 m1" align='center' [ngClass]="a.getCompleted() ? 'complete' : 'incomplete'">
+              <input type="checkbox" [id]="'completed' + i" class="filled-in" [checked]="a.getCompleted()" (click)="this.updateCompleted(a, i)"/>
+              <label [for]="'completed' + i"></label>
+              <div *ngIf="a.getCompleted()">Completed</div>
+              <div *ngIf="!a.getCompleted()">Incomplete</div>
+            </td>
+            <td class="col s2 m1" align='center'>
+              <p class="material-icons action" (click)="this.deleteRemoteTask(a, i)">delete_sweep</p>
+            </td>
+          </tr>
+          <tr class="row" *ngIf="this.shouldDisplayTaskType()" [style.display]="a.getEditModeType() ? 'inline': 'none'">
+            <td>
+              <div class="input-field col s12" id="type-row">
+                <select id="type" name="type" [(ngModel)]="a.type" #type="ngModel">
+                  <option value="" selected>None</option>
+                  <option value="Homework">Homework</option>
+                  <option value="Quiz">Quiz</option>
+                  <option value="Exam">Exam</option>
+                  <option value="Project">Project</option>
+                </select>
+                <label for="type">Type</label>
+              </div>
+            </td>
+          </tr>
+          <tr class="row" [style.display]="a.getEditModeDate() ? 'inline': 'none'" >
+            <div class="col s8">
+              <input required type="text" placeholder="Due Date" class="form-control existingTaskDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="a.dueDate | date: 'fullDate'" (click)="this.publishDatePick(a, i)">
+            </div>
+          </tr>
+          <tr class="row" *ngIf="this.shouldDisplayTaskDescription()">
+            <div *ngIf="!a.getEditModeDescription() && (a.getDescription() || '').trim() !== ''" class="col s12">
+             <pre>{{ a.getDescription() }}</pre>
+            </div>
+            <div [style.display]="a.getEditModeDescription() ? 'inline' : 'none'">
+              <div class="row">
+                <div class="input-field col s8">
+                  <textarea [id]="'descriptionEdit' + i" name="descriptionEdit" class="materialize-textarea col s12" [(ngModel)]="a.description"></textarea>
+                  <label [for]="'descriptionEdit' + i">Description</label>
+                </div>
+              </div>
+            </div>
+          </tr>
+          <tr class="row" [style.display]="a.getEditModeDate() ? 'inline' : 'none'">
+            <button class="btn btn-flat add-todo" (click)="this.updateTask(a, i)">Update</button>
+            <button class="btn btn-flat add-todo" (click)="this.cancelEditingTask(a, i)">Cancel</button>
+          </tr>
+        </table>
+      </div>
 
- <div class="modal modal-fixed-footer row" id="viewEvent">
-   <div class="modal-content row" id="mainForm">
-     <div *ngFor="let a of currentDayArray; let i = index;" class="col s12">
-         <table class="eventDisplay">
-           <tr class = "row">
-             <td class="col s12 m4" align='center'>
-               <div class="collection-head">
-                 <div *ngIf="!a.editModeTitle" (mousedown)="enableEdit(a, i, 'title')"><h5>{{ a.title }}</h5></div>
-                 <div [style.display]="(a.editModeTitle)?'inline':'none'"><input [id]="'titleEdit'+i" name="titleEdit" type="text" [(ngModel)]="a.title" (blur)="updateTitle(a)"></div>
-               </div>
-             </td>
-             <td class="col s12 m2" align='center' *ngIf="formLabel">
-               <div class="chip">{{ a.type }}</div>
-             </td>
-             <td class="col s2 m1" align='center'>
-               <p class="material-icons action" (mousedown)="enableEdit(a, i, 'all')">create</p>
-             </td>
-             <td class="col s2 m1" align='center'>
-               <p class="material-icons action" (mousedown)="this.deleteEventAction(a, i)">delete_sweep</p>
-             </td>
-             <td class="col s2 m1" align='center' [ngClass]="(a.completed) ? 'complete': 'incomplete'">
-               <p class="material-icons action" (click)="updateCompleted(a)">check_circle</p>
-               <div *ngIf="a.completed">completed</div>
-               <div *ngIf="!a.completed">incomplete</div>
-             </td>
-           </tr>
-           <tr class="row" [style.display]="(a.editModeDate) ? 'inline': 'none'" >
-             <div class="col s8">
-               <input placeholder="Due Date" [id]="'datetime'+i" class="datepicker" type="text" name="datetime" required>
-             </div>
-           </tr>
-           <tr class="row" *ngIf="formDescription">
-             <div *ngIf="!a.editModeDescription" class="col s12" (mousedown)="enableEdit(a, i, 'description')">
-              <pre>{{ a.description }}</pre>
-             </div>
-             <div [style.display] = "(a.editModeDescription) ? 'inline' : 'none'">
-               <div class="row">
-                 <div class="input-field col s12">
-                   <textarea [id]="'descriptionEdit'+i" name="descriptionEdit" class="materialize-textarea col s12" (blur)="updateDescription(a)" [(ngModel)]="a.description" placeholder="Edit event description..."></textarea>
-                 </div>
-               </div>
-             </div>
-            </tr>
-            <tr class="row" [style.display]="(a.editModeDate) ? 'inline': 'none'">
-              <button class="btn btn-flat update-todo blue" (click)="updateTask(a, i)">Update</button>
-            </tr>
-         </table>
-     </div>
-     <div class="col s12">
-         <form class="add-form col s12" #taskForm="ngForm">
-           <div class="row row-add">
-             <div class="input-field col s12">
-               <input placeholder="Task Name" id="title" type="text" name="title" [(ngModel)]="assignment.title" required #title="ngModel">
-             </div>
-           </div>
-           <div class="row row-add" *ngIf="formLabel">
-             <div class="label_assignment col s12">Assignment Type</div>
-             <div class="input-field col s12" id="type-row">
-               <select id="type" class="browser-default" name="type" [(ngModel)]="assignment.type" #type="ngModel">
-                 <option value="" disabled selected>What type of assignment will this be?</option>
-                 <option value="Homework">Homework</option>
-                 <option value="Quiz">Quiz</option>
-                 <option value="Exam">Exam</option>
-                 <option value="Project">Project</option>
-               </select>
-             </div>
-           </div>
-           <div class="row row-add">
-             <div class="input-field col s12" *ngIf="formDescription">
-               <textarea id="description" name="description" class="materialize-textarea" [(ngModel)]="assignment.description" #description="ngModel"></textarea>
-               <label for="description">Description</label>
-             </div>
-           </div>
-           <div class="row">
-             <button class="btn btn-flat add-todo" [class.disabled]="!taskForm.form.valid" (click)="addAssignment()"><b>Add</b></button>
-           </div>
-         </form>
-     </div>
-   </div>
+      <!-- New task creation section -->
+      <div class="col s12">
+        <form class="add-form col s12" #taskForm="ngForm">
+          <div class="row row-add">
+            <div class="input-field col s12">
+              <input required id="title" type="text" name="title" [(ngModel)]="this.newTask.title" #title="ngModel">
+              <label for="title">Title</label>
+            </div>
+          </div>
+          <div class="row row-add">
+            <div class="input-field col s12">
+              <input type="checkbox" id="completed" name="completed" [(ngModel)]="this.newTask.completed" #completed="ngModel" />
+              <label for="completed">Already completed this task?</label>
+            </div>
+          </div>
+          <div class="row row-add" *ngIf="this.shouldDisplayTaskType()">
+            <div class="input-field col s12" id="type-row">
+              <select id="type" name="type" [(ngModel)]="this.newTask.type" #type="ngModel">
+                <option value="" selected>None</option>
+                <option value="Homework">Homework</option>
+                <option value="Quiz">Quiz</option>
+                <option value="Exam">Exam</option>
+                <option value="Project">Project</option>
+              </select>
+              <label for="type">Type</label>
+            </div>
+          </div>
+          <div class="row row-add">
+            <div class="input-field col s12" *ngIf="this.shouldDisplayTaskDescription()">
+              <textarea id="description" name="description" class="materialize-textarea" [(ngModel)]="this.newTask.description" #description="ngModel"></textarea>
+              <label for="description">Description</label>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn btn-flat add-todo" [class.disabled]="!taskForm.form.valid" (click)="this.createTask()">
+              <b>Add</b>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>

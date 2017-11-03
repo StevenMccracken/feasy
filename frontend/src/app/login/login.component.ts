@@ -15,6 +15,7 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 
 // Import our files
 import { Error } from '../objects/error';
+import { LocalError } from '../objects/local-error';
 import { RemoteError } from '../objects/remote-error';
 import { UserService } from '../services/user.service';
 import { ErrorService } from '../services/error.service';
@@ -159,13 +160,18 @@ export class LoginComponent implements OnInit {
             .then((loginInfo: Object) => {
               // Signal that Google authentication inside the popup window is done to close it
               googleAuthSource.next(true);
+              if (this.UTILS.hasValue(loginInfo)) {
+                // Add the token and username data to local storage
+                this.STORAGE.setItem('token', loginInfo['token']);
+                this.STORAGE.setItem('currentUser', loginInfo['username']);
 
-              // Add the token and username data to local storage
-              this.STORAGE.setItem('token', loginInfo['token']);
-              this.STORAGE.setItem('currentUser', loginInfo['username']);
-
-              // Route the user into the application
-              this.ROUTER.navigate(['main']);
+                // Route the user into the application
+                this.ROUTER.navigate(['main']);
+              } else {
+                const error: LocalError = new LocalError();
+                error.setCustomProperty('emptyResponse', 'The response was empty but did not throw an error');
+                Promise.reject(error);
+              }
             }) // End then(loginInfo)
             .catch((loginError: Error) => {
               // Signal that Google authentication inside the popup window is done to close it
