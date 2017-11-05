@@ -388,7 +388,7 @@ export class CalendarComponent implements OnInit {
    */
   taskDatePickerInit(): void {
     const self = this;
-    // $(document).ready(() => {
+    $(document).ready(() => {
       // Holds the message that will be received when the date picker for existing tasks is open
       let pickerMessage;
       const onOpen: Function = () => {
@@ -437,7 +437,7 @@ export class CalendarComponent implements OnInit {
 
       self.datePicker = self.configureDatePicker('.existingTaskDatePicker', onOpen, onSet, onClose);
       self.datePicker.start();
-    // });
+    });
   } // End taskDatePickerInit()
 
   /**
