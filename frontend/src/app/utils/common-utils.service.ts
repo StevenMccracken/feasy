@@ -82,4 +82,23 @@ export class CommonUtilsService {
   getUnixMilliseconds12Hours(): number {
     return this.getUnixMillisecondsFromHours(12);
   } // End getUnixMilliseconds12Hours()
+
+  /**
+   * Generates an object with default options
+   * for the Materialize/jQuery date picker
+   * @return {Object} the default date picker configuration object
+   */
+  generateDefaultDatePickerOptions(): Object {
+    const defaultOptions: Object = {
+      min: new Date(1970, 0, 1), // Set the min selectable date as 01/01/1970
+      max: false, // Max date is not constrained
+      selectMonths: true, // Creates a dropdown to quick select the month
+      selectYears: 25, // Creates a dropdown of 25 years at a time to quick select the year
+      format: 'dddd, mmmm d, yyyy', // Display format once a date has been selected
+      formatSubmit: 'yyyy/mm/dd', // Date format that is provided to the onSet method
+      hiddenName: true, // Ensures that submitted format is used in the onSet method, not regular format
+    };
+
+    return defaultOptions;
+  } // End generateDefaultDatePickerOptions()
 }

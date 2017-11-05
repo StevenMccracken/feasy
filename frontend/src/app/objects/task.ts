@@ -54,10 +54,10 @@ export class Task implements Serializable<Task> {
     clone._id = this._id;
     clone.googleId = this.googleId;
     clone.title = this.title;
-    clone.dueDate = this.dueDate instanceof Date ? new Date(this.dueDate.getTime()) : this.dueDate;
+    clone.dueDate = this.dueDate instanceof Date ? new Date(this.dueDate.getTime()) : null;
     clone.completed = this.completed;
     clone.class = this.class;
-    clone.dateCreated = this.dateCreated instanceof Date ? new Date(this.dateCreated.getTime()) : this.dateCreated;
+    clone.dateCreated = this.dateCreated instanceof Date ? new Date(this.dateCreated.getTime()) : null;
     clone.type = this.type;
     clone.description = this.description;
 

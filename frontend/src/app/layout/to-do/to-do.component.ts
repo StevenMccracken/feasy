@@ -31,14 +31,16 @@ declare var $: any;
 })
 export class ToDoComponent implements OnInit {
   today: Date = new Date();
+
   newTask: Task;
   currentEditingTaskCopy: Task;
   currentEditingTaskIndex: number;
 
-  showList: boolean = false;
-  doneSorting: boolean = false;
+  showBothLists: boolean = false;
+  showCompletedList: boolean = false;
+  showIncompleteList: boolean = false;
 
-  completeTasks: Task[];
+  completedTasks: Task[];
   incompleteTasks: Task[];
 
   // Materialize date-picker holder
@@ -123,7 +125,7 @@ export class ToDoComponent implements OnInit {
    */
   toDoInit(): void {
     this.newTask = new Task();
-    this.completeTasks = [];
+    this.completedTasks = [];
     this.incompleteTasks = [];
 
     // Fetch all the user's tasks
@@ -131,12 +133,14 @@ export class ToDoComponent implements OnInit {
       .then((tasks: Task[]) => {
         // Filter the tasks into complete and incomplete arrays
         tasks.forEach((task) => {
-          if (task.getCompleted()) this.completeTasks.push(task);
+          if (task.getCompleted()) this.completedTasks.push(task);
           else this.incompleteTasks.push(task);
         });
 
         this.sortAllTasks();
-        this.showList = true;
+        this.showBothLists = true;
+        this.showCompletedList = true;
+        this.showIncompleteList = true;
         this.resetNewTaskFields();
       }) // End then(tasks)
       .catch((getError: RemoteError) => {
@@ -185,9 +189,9 @@ export class ToDoComponent implements OnInit {
 
     if (destinationIsCompletedList) {
       tasksSource = this.incompleteTasks;
-      tasksDestination = this.completeTasks;
+      tasksDestination = this.completedTasks;
     } else {
-      tasksSource = this.completeTasks;
+      tasksSource = this.completedTasks;
       tasksDestination = this.incompleteTasks;
     }
 
@@ -215,31 +219,26 @@ export class ToDoComponent implements OnInit {
 
           // Refresh the appropriate list
           if (task.getCompleted()) {
-            this.refreshCompletedList();
             this.displayCompletedListSuccess();
             this.scrollToTop();
-          } else this.refreshIncompleteList();
+          }
         }) // End then()
         .catch((error: RemoteError) => {
           if (this.ERROR.isResourceDneError(error)) {
-            if (destinationIsCompletedList) {
-              this.displayIncompleteListError(this.errors['taskDoesNotExist']['defaultMessage']);
-              this.refreshIncompleteList();
-            } else {
-              this.displayCompletedListError(this.errors['taskDoesNotExist']['defaultMessage']);
-              this.refreshCompletedList();
-            }
+            if (destinationIsCompletedList) this.displayIncompleteListError(this.errors['taskDoesNotExist']['defaultMessage']);
+            else this.displayCompletedListError(this.errors['taskDoesNotExist']['defaultMessage']);
 
             this.deleteLocalTask(task);
-          } else {
-            this.handleUnknownError(error);
-
-            if (destinationIsCompletedList) this.refreshIncompleteList();
-            else this.refreshCompletedList();
-          }
+          } else this.handleUnknownError(error);
 
           this.scrollToTop();
         }); //  End this.TASKS.updateCompleted()
+    } else if (destinationIsCompletedList) {
+      this.TASKS.sort(this.completedTasks);
+      this.refreshCompletedList();
+    } else {
+      this.TASKS.sort(this.incompleteTasks);
+      this.refreshIncompleteList();
     }
   } // End onDrop()
 
@@ -280,30 +279,28 @@ export class ToDoComponent implements OnInit {
   } // End displayIncompleteListError()
 
   /**
-   * Forces a UI update of the completed section
+   * Forces a UI update of both the completed and incomplete sections
    */
-  refreshCompletedList(): void {
-    const completeTasks: Task[] = this.completeTasks;
-    this.completeTasks = [];
-    setTimeout(() => this.completeTasks = completeTasks, 1);
-  } // End refreshCompletedList()
+  refreshToDoLists(): void {
+    this.showBothLists = false;
+    setTimeout(() => this.showBothLists = true, 1);
+  } // End refreshToDoLists()
 
   /**
    * Forces a UI update of the incomplete section
    */
   refreshIncompleteList(): void {
-    const incompleteTasks: Task[] = this.incompleteTasks;
-    this.incompleteTasks = [];
-    setTimeout(() => this.incompleteTasks = incompleteTasks, 1);
+    this.showIncompleteList = false;
+    setTimeout(() => this.showIncompleteList = true, 1);
   } // End refreshIncompleteList()
 
   /**
-   * Forces a UI update of both the completed and incomplete sections
+   * Forces a UI update of the completed section
    */
-  refreshToDoLists(): void {
-    this.showList = false;
-    setTimeout(() => this.showList = true, 1);
-  } // End refreshToDoLists()
+  refreshCompletedList(): void {
+    this.showCompletedList = false;
+    setTimeout(() => this.showCompletedList = true, 1);
+  } // End refreshCompletedList()
 
   /**
    * Scrolls to a specific HTML element on the page with animation
@@ -388,7 +385,7 @@ export class ToDoComponent implements OnInit {
             const newDueDate: Date = new Date(unixMilliseconds + self.UTILS.getUnixMilliseconds12Hours());
 
             // Update the Task's due date because it isn't in a valid format when first created
-            if (task.getCompleted()) self.completeTasks[index].setDueDate(newDueDate)
+            if (task.getCompleted()) self.completedTasks[index].setDueDate(newDueDate)
             else self.incompleteTasks[index].setDueDate(newDueDate);
           }
         } else if (context.hasOwnProperty('clear')) {
@@ -431,37 +428,18 @@ export class ToDoComponent implements OnInit {
    * @param {Function} _onSet a custom onSet
    * function, requires one parameter/argument
    * @param {Function} _onClose a custom onClose function
-   * @return {Object} the date picker object
+   * @return {any} the date picker object
    */
-  configureDatePicker(_identifier: string = '', _onOpen?: Function, _onSet?: Function, _onClose?: Function) {
-    const input = $(_identifier).pickadate({
-      onOpen: _onOpen,
-      onSet: _onSet,
-      onClose: _onClose,
+  configureDatePicker(_identifier: string = '', _onOpen?: Function, _onSet?: Function, _onClose?: Function): any {
+    const datePickerOptions: Object = this.UTILS.generateDefaultDatePickerOptions();
 
-      // Set the min selectable date as 01/01/1970
-      min: new Date(1970, 0, 1),
+    // Configure custom functions for the open, set, and close events
+    datePickerOptions['onOpen'] = _onOpen;
+    datePickerOptions['onSet'] = _onSet;
+    datePickerOptions['onClose'] = _onClose;
 
-      // Max date is not constrained
-      max: false,
-
-      // Creates a dropdown to quick select the month
-      selectMonths: true,
-
-      // Creates a dropdown of 25 years at a time to quick select the year
-      selectYears: 25,
-
-      // Display format once a date has been selected
-      format: 'dddd, mmmm d, yyyy',
-
-      // Date format that is provided to the onSet method
-      formatSubmit: 'yyyy/mm/dd',
-
-      // Ensures that submitted format is used in the onSet method, not regular format
-      hiddenName: true,
-    });
-
-    return input.pickadate('picker');
+    const jQueryObject = $(_identifier).pickadate(datePickerOptions);
+    return jQueryObject.pickadate('picker');
   } // End configureDatePicker()
 
   /**
@@ -604,7 +582,7 @@ export class ToDoComponent implements OnInit {
    */
   deleteLocalTask(_task: Task): void {
     if (this.UTILS.hasValue(_task)) {
-      const tasks: Task[] = _task.getCompleted() ? this.completeTasks : this.incompleteTasks;
+      const tasks: Task[] = _task.getCompleted() ? this.completedTasks : this.incompleteTasks;
       const index: number = tasks.indexOf(_task);
       if (index !== -1) tasks.splice(index, 1);
     }
@@ -797,7 +775,6 @@ export class ToDoComponent implements OnInit {
       const oldTask: Task = this.currentEditingTaskCopy.deepCopy();
       this.disableEditing(oldTask);
       this.incompleteTasks[_index] = oldTask;
-
       this.clearTaskCache();
     }
   } // End cancelEditingTask()
@@ -850,7 +827,6 @@ export class ToDoComponent implements OnInit {
         if (unknownErrors.length > 0) {
           this.handleUnknownError();
           this.scrollToTop();
-          this.refreshIncompleteList();
           this.enableEditing(_task);
           unknownErrors.forEach(unknownError => console.error(unknownError));
         } else if (errors.length > 0) {
@@ -859,7 +835,6 @@ export class ToDoComponent implements OnInit {
 
           this.displayIncompleteListError(errorMessage, 7.5);
           this.scrollToTop();
-          this.refreshIncompleteList();
           this.enableEditing(_task);
         } else {
           // No errors occurred so reset any previous errors
@@ -871,10 +846,7 @@ export class ToDoComponent implements OnInit {
             // TODO: Display inline success icon
 
             // If the due date was updated, re-sort the list
-            if (actuallyUpdated.some(attribute => attribute === 'dueDate')) {
-              this.sortIncompleteTasks();
-              this.refreshIncompleteList();
-            }
+            if (actuallyUpdated.some(attribute => attribute === 'dueDate')) this.TASKS.sort(this.incompleteTasks);
           } else console.log('No task attributes were actually different');
 
           this.clearTaskCache();
@@ -945,35 +917,11 @@ export class ToDoComponent implements OnInit {
   } // End disableEditing()
 
   /**
-   * Sorts the completed tasks by their due date
-   * @param {boolean} [_disableDoneSortingUpdates = false] Determines whether
-   * or not the doneSorting class variable will be updated inside this method
-   */
-  sortCompletedTasks(_disableDoneSortingUpdates: boolean = false): void {
-    if (!_disableDoneSortingUpdates) this.doneSorting = false;
-    this.TASKS.sort(this.completeTasks);
-    if (!_disableDoneSortingUpdates) this.doneSorting = true;
-  } // End sortCompletedTasks()
-
-  /**
-   * Sorts the completed tasks by their due date
-   * @param {boolean} [_disableDoneSortingUpdates = false] Determines whether
-   * or not the doneSorting class variable will be updated inside this method
-   */
-  sortIncompleteTasks(_disableDoneSortingUpdates: boolean = false): void {
-    if (!_disableDoneSortingUpdates) this.doneSorting = false;
-    this.TASKS.sort(this.incompleteTasks);
-    if (!_disableDoneSortingUpdates) this.doneSorting = true;
-  } // End sortIncompleteTasks()
-
-  /**
    * Sorts all tasks, complete and incomplete, by their due date
    */
   sortAllTasks(): void {
-    this.doneSorting = false;
-    this.sortIncompleteTasks(true);
-    this.sortCompletedTasks(true);
-    this.doneSorting = true;
+    this.TASKS.sort(this.completedTasks);
+    this.TASKS.sort(this.incompleteTasks);
   } // End sortAllTasks()
 
   /**

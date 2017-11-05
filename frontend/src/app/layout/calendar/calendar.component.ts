@@ -197,6 +197,7 @@ export class CalendarComponent implements OnInit {
    */
   initializeCalendarData(): void {
     this.events = [];
+    this.selectedDayTasks = [];
     this.taskIdsToTasks = new Map<string, Task>();
     this.taskIdsToEvents = new Map<string, CalendarEvent>();
     this.eventsToTaskIds = new Map<CalendarEvent, string>();
@@ -233,8 +234,7 @@ export class CalendarComponent implements OnInit {
   /**
    * Determines the color for a calendar event based on
    * a given task date's relation to the current date
-   * @param {Task} _task the task of the
-   * CalendarEvent to determine the color for
+   * @param {Task} _task the task of the CalendarEvent to determine the color for
    * @return {any} JSON of the color attributes
    */
   determineEventColor(_task: Task): any {
@@ -276,17 +276,15 @@ export class CalendarComponent implements OnInit {
 
   // TODO: Add formal documentation
   monthEventClick(event: any) {
-    console.log('monthEventClick');
-    console.log(event.day);
-
     this.onetime = !this.onetime;
     const dateClicked: Date = event.day.date;
     if (this.onetime) {
       const selectedDayEvents: CalendarEvent[] = event.day.events;
-      this.selectedDayTasks = selectedDayEvents.map((calendarEvent) => {
+      this.selectedDayTasks.length = 0;
+      selectedDayEvents.forEach((calendarEvent) => {
         const taskId: string = this.eventsToTaskIds.get(calendarEvent);
         const task: Task = this.taskIdsToTasks.get(taskId);
-        return task;
+        this.selectedDayTasks.push(task);
       });
 
       // Display a popup if there is more than one task
@@ -337,9 +335,9 @@ export class CalendarComponent implements OnInit {
 
   /**
    * Refreshes and configures all HTML select elements in the selected day modal
-   * @param {Task} _task the task that serves as the model
-   * for when a specific select input field changes it's value.
-   * NOTE: this is only a work around for a current Materialize bug
+   * @param {Task} _task the task that serves as the model for
+   * when a specific select input field changes it's value. NOTE:
+   * this is only a work around for a current Materialize bug
    */
   refreshSelectElements(_task?: Task): void {
     $('select').material_select('destroy');
@@ -390,16 +388,16 @@ export class CalendarComponent implements OnInit {
    */
   taskDatePickerInit(): void {
     const self = this;
-    $(document).ready(() => {
+    // $(document).ready(() => {
       // Holds the message that will be received when the date picker for existing tasks is open
-      let taskRowMessage;
+      let pickerMessage;
       const onOpen: Function = () => {
         /*
          * When the date picker opens, subscribe to receive a message
          * about which index was clicked on to open the date picker
          */
         self.taskRowSelectedSubscription = self.MESSAGING.messagesOf(TaskDatePicked)
-          .subscribe(message => taskRowMessage = message);
+          .subscribe(message => pickerMessage = message);
       };
 
       const onClose: Function = () => {
@@ -413,12 +411,12 @@ export class CalendarComponent implements OnInit {
 
         // Try and get the data from the message that was sent when the date picker was opened
         if (
-          self.UTILS.hasValue(taskRowMessage) &&
-          self.UTILS.hasValue(taskRowMessage.getIndex()) &&
-          self.UTILS.hasValue(taskRowMessage.getTask())
+          self.UTILS.hasValue(pickerMessage) &&
+          self.UTILS.hasValue(pickerMessage.getIndex()) &&
+          self.UTILS.hasValue(pickerMessage.getTask())
         ) {
-          index = taskRowMessage.getIndex();
-          task = taskRowMessage.getTask();
+          task = pickerMessage.getTask();
+          index = pickerMessage.getIndex();
         }
 
         if (index !== -1 && self.UTILS.hasValue(task)) {
@@ -439,7 +437,7 @@ export class CalendarComponent implements OnInit {
 
       self.datePicker = self.configureDatePicker('.existingTaskDatePicker', onOpen, onSet, onClose);
       self.datePicker.start();
-    });
+    // });
   } // End taskDatePickerInit()
 
   /**
@@ -454,34 +452,15 @@ export class CalendarComponent implements OnInit {
    * @return {any} the date picker object
    */
   configureDatePicker(_identifier: string = '', _onOpen?: Function, _onSet?: Function, _onClose?: Function): any {
-    const input = $(_identifier).pickadate({
-      onOpen: _onOpen,
-      onSet: _onSet,
-      onClose: _onClose,
+    const datePickerOptions: Object = this.UTILS.generateDefaultDatePickerOptions();
 
-      // Set the min selectable date as 01/01/1970
-      min: new Date(1970, 0, 1),
+    // Configure custom functions for the open, set, and close events
+    datePickerOptions['onOpen'] = _onOpen;
+    datePickerOptions['onSet'] = _onSet;
+    datePickerOptions['onClose'] = _onClose;
 
-      // Max date is not constrained
-      max: false,
-
-      // Creates a dropdown to quick select the month
-      selectMonths: true,
-
-      // Creates a dropdown of 25 years at a time to quick select the year
-      selectYears: 25,
-
-      // Display format once a date has been selected
-      format: 'dddd, mmmm d, yyyy',
-
-      // Date format that is provided to the onSet method
-      formatSubmit: 'yyyy/mm/dd',
-
-      // Ensures that submitted format is used in the onSet method, not regular format
-      hiddenName: true,
-    });
-
-    return input.pickadate('picker');
+    const jQueryObject = $(_identifier).pickadate(datePickerOptions);
+    return jQueryObject.pickadate('picker');
   } // End configureDatePicker()
 
   /**
@@ -655,6 +634,8 @@ export class CalendarComponent implements OnInit {
           const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'dueDate');
           if (this.ERROR.isResourceDneError(updateError)) {
             this.displayCalendarError(updatedUpdateError.getCustomProperty('detailedErrorMessage'));
+            this.scrollToCalendarTop();
+
             this.deleteLocalTask(taskForEvent);
             this.refreshCalendar();
           } else this.handleUnknownError(false, updatedUpdateError);
@@ -1244,9 +1225,12 @@ export class CalendarComponent implements OnInit {
 
       this.STORAGE.setItem('expiredToken', 'true');
       this.ROUTER.navigate(['/login']);
+    } else if (_isForSelectedDayModal) {
+        this.displaySelectedDayError(this.errors['selectedDay']['defaultMessage']);
+        this.scrollToSelectedDayTop();
     } else {
-      if (_isForSelectedDayModal) this.displaySelectedDayError(this.errors['selectedDay']['defaultMessage']);
-      else this.displayCalendarError(this.errors['general']['defaultMessage']);
+      this.displayCalendarError(this.errors['general']['defaultMessage']);
+      this.scrollToCalendarTop();
     }
   } // End handleUnknownError()
 }

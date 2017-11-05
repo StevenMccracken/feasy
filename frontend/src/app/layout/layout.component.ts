@@ -94,6 +94,8 @@ export class LayoutComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.quickAddTasks = [];
+
     // Populate all the possible avatars
     this.avatars = this.AVATARS.getAllAvatars();
 
@@ -220,7 +222,7 @@ export class LayoutComponent implements OnInit {
 
     // Reset the first task if it was deleted
     if (this.quickAddTasks.length === 0) {
-      this.quickAddTasks = [new Task()];
+      this.quickAddTasks.push(new Task());
       this.quickAddDatePickerInit();
     }
   } // End removeTask()
@@ -450,7 +452,8 @@ export class LayoutComponent implements OnInit {
    */
   openQuickAdd(): void {
     this.clearAllQuickAddMessages();
-    this.quickAddTasks = [new Task()];
+    this.quickAddTasks.length = 0;
+    this.quickAddTasks.push(new Task());
     this.quickAddDatePickerInit();
     $('#quickAdd').modal('open');
   } // End openQuickAdd()
@@ -527,34 +530,15 @@ export class LayoutComponent implements OnInit {
    * @return {any} the date picker object
    */
   configureDatePicker(_identifier: string = '', _onOpen?: Function, _onSet?: Function, _onClose?: Function): any {
-    const input = $(_identifier).pickadate({
-      onOpen: _onOpen,
-      onSet: _onSet,
-      onClose: _onClose,
+    const datePickerOptions: Object = this.UTILS.generateDefaultDatePickerOptions();
 
-      // Set the min selectable date as 01/01/1970
-      min: new Date(1970, 0, 1),
+    // Configure custom functions for the open, set, and close events
+    datePickerOptions['onOpen'] = _onOpen;
+    datePickerOptions['onSet'] = _onSet;
+    datePickerOptions['onClose'] = _onClose;
 
-      // Max date is not constrained
-      max: false,
-
-      // Creates a dropdown to quick select the month
-      selectMonths: true,
-
-      // Creates a dropdown of 25 years at a time to quick select the year
-      selectYears: 25,
-
-      // Display format once a date has been selected
-      format: 'dddd, mmmm d, yyyy',
-
-      // Date format that is provided to the onSet method
-      formatSubmit: 'yyyy/mm/dd',
-
-      // Ensures that submitted format is used in the onSet method, not regular format
-      hiddenName: true,
-    });
-
-    return input.pickadate('picker');
+    const jQueryObject = $(_identifier).pickadate(datePickerOptions);
+    return jQueryObject.pickadate('picker');
   } // End configureDatePicker()
 
   /**
@@ -611,7 +595,8 @@ export class LayoutComponent implements OnInit {
           this.MESSAGING.publish(new QuickAddTasksCreated(createdTasks));
 
           // Reset the task list
-          this.quickAddTasks = [new Task()];
+          this.quickAddTasks.length = 0;
+          this.quickAddTasks.push(new Task());
 
           // Reset the date picker for the task list
           this.quickAddDatePickerInit();
