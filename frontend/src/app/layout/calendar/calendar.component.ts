@@ -67,6 +67,10 @@ export class CalendarComponent implements OnInit {
   // IMPORTANT! USE THIS TO STORE TARGET INTO A VARIABLE TODO: Clarify this comment
   e: any;
 
+  /*
+   * Determines whether or not events should display different colors
+   * based on their task's due date, or all just show the same color
+   */
   displayEventColors: boolean;
 
   // Event list for the calendar
@@ -108,6 +112,7 @@ export class CalendarComponent implements OnInit {
   // Subscription used to receive messages about when a date is picked for a task in the selected day list
   taskRowSelectedSubscription: Subscription;
 
+  // Subscription used to receive messages about when the quick setting Show Colors is toggled on or off
   showColorsSubscription: Subscription;
 
   // The default amount of time (milliseconds) to display a message for
@@ -192,10 +197,10 @@ export class CalendarComponent implements OnInit {
     this.showColorsSubscription = this.MESSAGING.messagesOf(QuickSettingsColorToggle)
       .subscribe((showColorsMessage) => {
         if (this.UTILS.hasValue(showColorsMessage)) {
-          this.displayEventColors = showColorsMessage.shouldDisplayColors();
           const tasks: Task[] = Array.from(this.taskIdsToTasks.values());
-          tasks.forEach(task => this.refreshEventColor(task));
 
+          this.displayEventColors = showColorsMessage.shouldDisplayColors();
+          tasks.forEach(task => this.refreshEventColor(task));
           this.refreshCalendar();
         }
       });
