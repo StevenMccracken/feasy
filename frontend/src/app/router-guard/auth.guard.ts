@@ -23,10 +23,8 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
     else {
       this.STORAGE.deleteItem('token');
       this.STORAGE.deleteItem('currentUser');
-
       this.ROUTER.navigate(['/login']);
 
-      // TODO: Does this statement even get evaluated?
       return false;
     }
   } // End canActivate()

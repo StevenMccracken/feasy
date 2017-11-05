@@ -80,13 +80,14 @@ export class PasswordResetComponent implements OnInit {
           this.passwordResetDetailsErrorMessage += '. You will be redirected to send another reset email shortly'
 
           // Display the initial reset form after 5 seconds
-          /* tslint:disable align */
-          setTimeout(() => {
-              this.passwordResetDetailsError = false;
-              this.passwordResetDetailsErrorMessage = '';
-              this.showInitialResetForm = true;
-            }, 5000);
-            /* tslint:enable align */
+          const self = this;
+          setTimeout(
+            () => {
+              self.passwordResetDetailsError = false;
+              self.passwordResetDetailsErrorMessage = '';
+              self.showInitialResetForm = true;
+            },
+            5000);
         }); // End this.getPasswordResetDetails()
     } else this.showInitialResetForm = true;
   } // End ngOnInit()
@@ -185,7 +186,8 @@ export class PasswordResetComponent implements OnInit {
         // Show the success info and route back to the login screen after 5 seconds
         this.showFinalResetForm = false;
         this.showSuccess = true;
-        setTimeout(() => this.ROUTER.navigate(['/login']), 5000);
+        const self = this;
+        setTimeout(() => self.ROUTER.navigate(['/login']), 5000);
       }) // End then()
       .catch((resetPasswordError: RemoteError) => {
         this.finalResetError = true;

@@ -309,10 +309,11 @@ export class CalendarComponent implements OnInit {
 
       // Display a popup if there is more than one task
       if (this.selectedDayTasks.length !== 0) {
+        const self = this;
         this.timer = setTimeout(
           () => {
-            this.displayPopUp();
-            this.onetime = !this.onetime;
+            self.displayPopUp();
+            self.onetime = !self.onetime;
           },
           300);
       } else {
@@ -1158,8 +1159,9 @@ export class CalendarComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : '';
     this.success['selectedDay']['occurred'] = true;
     this.success['selectedDay']['message'] = _message;
-    this.CHANGE_DETECTOR.detectChanges();
-    setTimeout(() => this.resetSelectedDaySuccess(), this.defaultMessageDisplayTime);
+
+    const self = this;
+    setTimeout(() => self.resetSelectedDaySuccess(), this.defaultMessageDisplayTime);
   } // End displaySelectedDaySuccess()
 
   /**
@@ -1171,8 +1173,9 @@ export class CalendarComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : this.errors['selectedDay']['defaultMessage'];
     this.errors['selectedDay']['occurred'] = true;
     this.errors['selectedDay']['message'] = message;
-    this.CHANGE_DETECTOR.detectChanges();
-    setTimeout(() => this.resetSelectedDayError(), this.defaultMessageDisplayTime);
+
+    const self = this;
+    setTimeout(() => self.resetSelectedDayError(), this.defaultMessageDisplayTime);
   } // End displaySelectedDayError()
 
   /**
@@ -1184,8 +1187,9 @@ export class CalendarComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : this.errors['general']['defaultMessage'];
     this.errors['general']['occurred'] = true;
     this.errors['general']['message'] = message;
-    this.CHANGE_DETECTOR.detectChanges();
-    setTimeout(() => this.resetCalendarError(), this.defaultMessageDisplayTime);
+
+    const self = this;
+    setTimeout(() => self.resetCalendarError(), this.defaultMessageDisplayTime);
   } // End displayCalendarError()
 
   /**
@@ -1197,8 +1201,9 @@ export class CalendarComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : this.successMessages['updatedTask'];
     this.success['general']['occurred'] = true;
     this.success['general']['message'] = message;
-    this.CHANGE_DETECTOR.detectChanges();
-    setTimeout(() => this.resetCalendarSuccess(), this.defaultMessageDisplayTime);
+
+    const self = this;
+    setTimeout(() => self.resetCalendarSuccess(), this.defaultMessageDisplayTime);
   } // End displayCalendarSuccess()
 
   /**

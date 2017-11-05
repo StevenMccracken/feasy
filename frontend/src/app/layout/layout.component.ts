@@ -96,6 +96,8 @@ export class LayoutComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.USERS.startTokenAutoRefresh();
+
     this.quickAddTasks = [];
 
     // Populate all the possible avatars
@@ -181,7 +183,10 @@ export class LayoutComponent implements OnInit {
   closeQuickAddModal(_followUpUrl?: string): void {
     $('#quickAdd').modal('close');
     $('#button-slide').sideNav('hide');
-    if (_followUpUrl === '/main/calendar') setTimeout(() => this.ROUTER.navigate([_followUpUrl]), 500);
+    if (_followUpUrl === '/main/calendar') {
+      const self = this;
+      setTimeout(() => self.ROUTER.navigate([_followUpUrl]), 500);
+    }
   } // End closeQuickAddModal()
 
   /**
@@ -189,21 +194,22 @@ export class LayoutComponent implements OnInit {
    * @param {string} _settingName the name of the quick setting to toggle
    */
   toggleQuickSettings(_settingName: string): void {
+    const self = this;
     switch (_settingName) {
       case 'color':
         setTimeout(
           () => {
-            this.QUICK_SETTINGS.toggleShowColors();
-            const shouldDisplayColors: boolean = this.QUICK_SETTINGS.getShowColors();
-            this.MESSAGING.publish(new QuickSettingsColorToggle(shouldDisplayColors));
+            self.QUICK_SETTINGS.toggleShowColors();
+            const shouldDisplayColors: boolean = self.QUICK_SETTINGS.getShowColors();
+            self.MESSAGING.publish(new QuickSettingsColorToggle(shouldDisplayColors));
           },
           this.defaultQuickSettingToggleTime);
         break;
       case 'type':
-        setTimeout(() => this.QUICK_SETTINGS.toggleShowType(), this.defaultQuickSettingToggleTime);
+        setTimeout(() => self.QUICK_SETTINGS.toggleShowType(), this.defaultQuickSettingToggleTime);
         break;
       case 'description':
-        setTimeout(() => this.QUICK_SETTINGS.toggleShowDescription(), this.defaultQuickSettingToggleTime);
+        setTimeout(() => self.QUICK_SETTINGS.toggleShowDescription(), this.defaultQuickSettingToggleTime);
         break;
       default:
         console.error('Can\'t toggle unknown settings type \'%s\'', _settingName);

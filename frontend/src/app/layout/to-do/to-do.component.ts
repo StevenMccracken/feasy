@@ -252,10 +252,11 @@ export class ToDoComponent implements OnInit {
     this.errors['completedTasks']['message'] = _message || this.errors['completedTasks']['defaultMessage'];
 
     const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.defaultMessageDisplayTime;
+    const self = this;
     setTimeout(
       () => {
-        this.errors['completedTasks']['occurred'] = false;
-        this.errors['completedTasks']['message'] = '';
+        self.errors['completedTasks']['occurred'] = false;
+        self.errors['completedTasks']['message'] = '';
       },
       duration);
   } // End displayCompletedListError()
@@ -270,10 +271,11 @@ export class ToDoComponent implements OnInit {
     this.errors['incompleteTasks']['message'] = _message || this.errors['incompleteTasks']['defaultMessage'];
 
     const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.defaultMessageDisplayTime;
+    const self = this;
     setTimeout(
       () => {
-        this.errors['incompleteTasks']['occurred'] = false;
-        this.errors['incompleteTasks']['message'] = '';
+        self.errors['incompleteTasks']['occurred'] = false;
+        self.errors['incompleteTasks']['message'] = '';
       },
       duration);
   } // End displayIncompleteListError()
@@ -283,7 +285,8 @@ export class ToDoComponent implements OnInit {
    */
   refreshToDoLists(): void {
     this.showBothLists = false;
-    setTimeout(() => this.showBothLists = true, 1);
+    const self = this;
+    setTimeout(() => self.showBothLists = true, 1);
   } // End refreshToDoLists()
 
   /**
@@ -291,7 +294,8 @@ export class ToDoComponent implements OnInit {
    */
   refreshIncompleteList(): void {
     this.showIncompleteList = false;
-    setTimeout(() => this.showIncompleteList = true, 1);
+    const self = this;
+    setTimeout(() => self.showIncompleteList = true, 1);
   } // End refreshIncompleteList()
 
   /**
@@ -299,7 +303,8 @@ export class ToDoComponent implements OnInit {
    */
   refreshCompletedList(): void {
     this.showCompletedList = false;
-    setTimeout(() => this.showCompletedList = true, 1);
+    const self = this;
+    setTimeout(() => self.showCompletedList = true, 1);
   } // End refreshCompletedList()
 
   /**
@@ -982,7 +987,8 @@ export class ToDoComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : this.success['taskCreated']['defaultMessage'];
     this.success['taskCreated']['occurred'] = true;
     this.success['taskCreated']['message'] = message;
-    setTimeout(() => this.resetCreateTaskMessage(), this.defaultMessageDisplayTime);
+    const self = this;
+    setTimeout(() => self.resetCreateTaskMessage(), this.defaultMessageDisplayTime);
   } // End displayCreateTaskSuccess()
 
   /**
@@ -994,7 +1000,8 @@ export class ToDoComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : this.success['completedTasks']['defaultMessage'];
     this.success['completedTasks']['occurred'] = true;
     this.success['completedTasks']['message'] = message;
-    setTimeout(() => this.resetCompleteTaskMessage(), this.defaultMessageDisplayTime);
+    const self = this;
+    setTimeout(() => self.resetCompleteTaskMessage(), this.defaultMessageDisplayTime);
   } // End displayCompletedListSuccess()
 
   /**
@@ -1012,10 +1019,12 @@ export class ToDoComponent implements OnInit {
     } else {
       this.errors['general']['occurred'] = true;
       this.errors['general']['message'] = this.errors['general']['defaultMessage'];
+
+      const self = this;
       setTimeout(
         () => {
-          this.errors['general']['occurred'] = false;
-          this.errors['general']['message'] = '';
+          self.errors['general']['occurred'] = false;
+          self.errors['general']['message'] = '';
         },
         this.defaultMessageDisplayTime);
     }

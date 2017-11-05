@@ -19,6 +19,9 @@ import { InvalidRequestError } from '../objects/invalid-request-error';
 
 @Injectable()
 export class UserService {
+  private autoRefreshTokenTimerId: number;
+  private autoRefreshTokenTimerInterval: number = 30000;
+
   constructor(
     private ROUTER: Router,
     private ERROR: ErrorService,
@@ -227,7 +230,58 @@ export class UserService {
   } // End getAuthToken()
 
   /**
-   * Sends an existing token from local storage to the /login/refresh API route to refresh the token
+   * Starts a repeating API call to refresh the JWT
+   * authentication token to ensure auto-login does not expire
+   * @return {boolean} whether or not the call to this
+   * method actually started the auto-refresh API call.
+   * This will return false if the timer has already started
+   */
+  startTokenAutoRefresh(): boolean {
+    let startedAutoRefresh: boolean = false;
+    if (!this.UTILS.hasValue(this.autoRefreshTokenTimerId)) {
+      const self = this;
+      this.autoRefreshTokenTimerId = window.setInterval(
+        () => {
+          self.refreshAuthToken()
+            .then((token: string) => self.STORAGE.setItem('token', token))
+            .catch((refreshTokenError: Error) => console.error(refreshTokenError));
+        },
+        this.autoRefreshTokenTimerInterval);
+
+      startedAutoRefresh = true;
+    }
+
+    return startedAutoRefresh;
+  } // End startTokenAutoRefresh()
+
+  /**
+   * Determines whether or not the token auto-refresh timer is running or not
+   * @return {boolean} the status of the token auto-refresh timer
+   */
+  isTokenAutoRefreshRunning(): boolean {
+    return this.UTILS.hasValue(this.autoRefreshTokenTimerId);
+  } // End isTokenAutoRefreshRunning()
+
+  /**
+   * Stops the repeating API call to refresh the JWT authentication token
+   * @return {boolean} whether or not the call to this
+   * method actually stopped the auto-refresh API call. This
+   * will return false if the timer was not already running
+   */
+  stopTokenAutoRefresh(): boolean {
+    let stoppedAutoRefresh: boolean = false;
+    if (this.UTILS.hasValue(this.autoRefreshTokenTimerId)) {
+      clearInterval(this.autoRefreshTokenTimerId);
+      this.autoRefreshTokenTimerId = null;
+      stoppedAutoRefresh = true;
+    }
+
+    return stoppedAutoRefresh;
+  } // End stopTokenAutoRefresh()
+
+  /**
+   * Sends an existing token from local storage to
+   * the /login/refresh API route to refresh the token
    * @return {Promise<string>} the token to authenticate subsequent requests
    */
   refreshAuthToken(): Promise<string> {
