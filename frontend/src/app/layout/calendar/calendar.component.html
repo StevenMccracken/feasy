@@ -20,15 +20,15 @@
       </div>
       <div class="row col s12">
         <div class="col s12 center">
-            <a class="btn-floating btn-large btn-red waves-effect waves-light left" mwlCalendarPreviousView [view]="this.calendarViewType" [(viewDate)]="this.viewDate">
-              <i class="material-icons">arrow_back</i>
-            </a>
-            <div class="btn btn-red waves-effect waves-light" mwlCalendarToday [(viewDate)]="this.viewDate">
-              Today
-            </div>
-            <a class="btn-floating btn-large btn-red waves-effect waves-light right" mwlCalendarNextView [view]="this.calendarViewType" [(viewDate)]="this.viewDate">
-              <i class="material-icons">arrow_forward</i>
-            </a>
+          <a class="btn-floating btn-large btn-red waves-effect waves-light left" mwlCalendarPreviousView [view]="this.calendarViewType" [(viewDate)]="this.viewDate">
+            <i class="material-icons">arrow_back</i>
+          </a>
+          <div class="btn btn-red waves-effect waves-light" mwlCalendarToday [(viewDate)]="this.viewDate">
+            Today
+          </div>
+          <a class="btn-floating btn-large btn-red waves-effect waves-light right" mwlCalendarNextView [view]="this.calendarViewType" [(viewDate)]="this.viewDate">
+            <i class="material-icons">arrow_forward</i>
+          </a>
         </div>
       </div>
 
@@ -43,7 +43,6 @@
           </div>
         </div>
       </div> -->
-
     </div>
   </div>
   <br>
@@ -124,7 +123,7 @@
           </tr>
           <tr class="row" *ngIf="this.shouldDisplayTaskDescription()">
             <div *ngIf="!a.getEditModeDescription() && (a.getDescription() || '').trim() !== ''" class="col s12">
-             <pre>{{ a.getDescription() }}</pre>
+              <pre>{{ a.getDescription() }}</pre>
             </div>
             <div [style.display]="a.getEditModeDescription() ? 'inline' : 'none'">
               <div class="row">

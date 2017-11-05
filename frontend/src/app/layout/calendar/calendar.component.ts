@@ -233,8 +233,6 @@ export class CalendarComponent implements OnInit {
   /**
    * Determines the color for a calendar event based on
    * a given task date's relation to the current date
-   * @param {Task} _task the task of the
-   * CalendarEvent to determine the color for
    * @return {any} JSON of the color attributes
    */
   determineEventColor(_task: Task): any {
@@ -337,9 +335,6 @@ export class CalendarComponent implements OnInit {
 
   /**
    * Refreshes and configures all HTML select elements in the selected day modal
-   * @param {Task} _task the task that serves as the model
-   * for when a specific select input field changes it's value.
-   * NOTE: this is only a work around for a current Materialize bug
    */
   refreshSelectElements(_task?: Task): void {
     $('select').material_select('destroy');
@@ -392,14 +387,12 @@ export class CalendarComponent implements OnInit {
     const self = this;
     $(document).ready(() => {
       // Holds the message that will be received when the date picker for existing tasks is open
-      let taskRowMessage;
       const onOpen: Function = () => {
         /*
          * When the date picker opens, subscribe to receive a message
          * about which index was clicked on to open the date picker
          */
         self.taskRowSelectedSubscription = self.MESSAGING.messagesOf(TaskDatePicked)
-          .subscribe(message => taskRowMessage = message);
       };
 
       const onClose: Function = () => {
@@ -413,12 +406,7 @@ export class CalendarComponent implements OnInit {
 
         // Try and get the data from the message that was sent when the date picker was opened
         if (
-          self.UTILS.hasValue(taskRowMessage) &&
-          self.UTILS.hasValue(taskRowMessage.getIndex()) &&
-          self.UTILS.hasValue(taskRowMessage.getTask())
         ) {
-          index = taskRowMessage.getIndex();
-          task = taskRowMessage.getTask();
         }
 
         if (index !== -1 && self.UTILS.hasValue(task)) {
@@ -454,34 +442,9 @@ export class CalendarComponent implements OnInit {
    * @return {any} the date picker object
    */
   configureDatePicker(_identifier: string = '', _onOpen?: Function, _onSet?: Function, _onClose?: Function): any {
-    const input = $(_identifier).pickadate({
-      onOpen: _onOpen,
-      onSet: _onSet,
-      onClose: _onClose,
 
-      // Set the min selectable date as 01/01/1970
-      min: new Date(1970, 0, 1),
 
-      // Max date is not constrained
-      max: false,
 
-      // Creates a dropdown to quick select the month
-      selectMonths: true,
-
-      // Creates a dropdown of 25 years at a time to quick select the year
-      selectYears: 25,
-
-      // Display format once a date has been selected
-      format: 'dddd, mmmm d, yyyy',
-
-      // Date format that is provided to the onSet method
-      formatSubmit: 'yyyy/mm/dd',
-
-      // Ensures that submitted format is used in the onSet method, not regular format
-      hiddenName: true,
-    });
-
-    return input.pickadate('picker');
   } // End configureDatePicker()
 
   /**

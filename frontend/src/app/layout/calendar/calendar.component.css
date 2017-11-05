@@ -19,10 +19,10 @@
 }
 
 .content-view {
-  padding: 3px 5px;
   background-color: #F5F5F5;
   border: thin solid #CCC;
   border-radius: 2px;
+  padding: 3px 5px;
 }
 
 .btn-group {
@@ -30,8 +30,8 @@
 }
 
 .btn-red {
-  color: #FFFFFF;
   background-color: #E57373;
+  color: #FFFFFF;
 }
 
 .cal-title {
@@ -56,38 +56,38 @@
 
 .action {
   cursor: pointer;
-  text-align: center;
   margin-left: 5px;
   margin-right: 5px;
+  text-align: center;
 }
 
 .eventDisplay {
-  border-radius: 19px;
   border: thin solid #E0E0EB;
+  border-radius: 19px;
   margin-bottom: 30px
 }
 
-.modal.modal-fixed-footer {
+.modal .modal-fixed-footer {
   height: 65%;
 }
 
 pre {
-  padding-top: 5px;
+  background-color: #E0E0EB;
+  border-radius: 8px;
   padding-bottom: 5px;
   padding-left: 3px;
-  border-radius: 8px;
-  background-color: #E0E0EB;
+  padding-top: 5px;
 }
 
 .add-todo {
   background-color: #BCE8F1;
-  color: #31708F;
-  border-radius: 8px;
   border: thin solid #31708F;
+  border-radius: 8px;
+  color: #31708F;
 }
 
 .row-add {
-  margin-bottom: 0px;
+  margin-bottom: 0;
 }
 
 .add-form {
@@ -111,9 +111,9 @@ select {
 }
 
 .update-todo {
-  margin-top: 10px;
   margin-bottom: 20px;
   margin-left: 11px;
+  margin-top: 10px;
 }
 
 .incomplete {
