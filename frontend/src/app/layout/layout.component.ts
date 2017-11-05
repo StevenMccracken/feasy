@@ -22,6 +22,7 @@ import { LocalStorageService } from '../utils/local-storage.service';
 import { TaskDatePicked } from '../objects/messages/task-date-picked';
 import { QuickSettingsService } from '../services/quick-settings.service';
 import { QuickAddTasksCreated } from '../objects/messages/quick-add-tasks-created';
+import { QuickSettingsColorToggle } from '../objects/messages/quick-settings-color-toggle';
 
 declare var $: any;
 
@@ -47,6 +48,7 @@ export class LayoutComponent implements OnInit {
   // Materialize date-picker holder
   datePicker: any;
 
+  defaultQuickSettingToggleTime: number = 150;
   defaultMessageDisplayTime: number = 5000;
 
   errors: Object = {
@@ -189,13 +191,19 @@ export class LayoutComponent implements OnInit {
   toggleQuickSettings(_settingName: string): void {
     switch (_settingName) {
       case 'color':
-        setTimeout(() => this.QUICK_SETTINGS.toggleShowColors(), 300);
+        setTimeout(
+          () => {
+            this.QUICK_SETTINGS.toggleShowColors();
+            const shouldDisplayColors: boolean = this.QUICK_SETTINGS.getShowColors();
+            this.MESSAGING.publish(new QuickSettingsColorToggle(shouldDisplayColors));
+          },
+          this.defaultQuickSettingToggleTime);
         break;
       case 'type':
-        setTimeout(() => this.QUICK_SETTINGS.toggleShowType(), 300);
+        setTimeout(() => this.QUICK_SETTINGS.toggleShowType(), this.defaultQuickSettingToggleTime);
         break;
       case 'description':
-        setTimeout(() => this.QUICK_SETTINGS.toggleShowDescription(), 300);
+        setTimeout(() => this.QUICK_SETTINGS.toggleShowDescription(), this.defaultQuickSettingToggleTime);
         break;
       default:
         console.error('Can\'t toggle unknown settings type \'%s\'', _settingName);

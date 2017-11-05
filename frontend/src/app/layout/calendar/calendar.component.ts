@@ -38,6 +38,7 @@ import { LocalStorageService } from '../../utils/local-storage.service';
 import { TaskDatePicked } from '../../objects/messages/task-date-picked';
 import { QuickSettingsService } from '../../services/quick-settings.service';
 import { QuickAddTasksCreated } from '../../objects/messages/quick-add-tasks-created';
+import { QuickSettingsColorToggle } from '../../objects/messages/quick-settings-color-toggle';
 
 declare var $: any;
 
@@ -65,6 +66,8 @@ export class CalendarComponent implements OnInit {
 
   // IMPORTANT! USE THIS TO STORE TARGET INTO A VARIABLE TODO: Clarify this comment
   e: any;
+
+  displayEventColors: boolean;
 
   // Event list for the calendar
   events: CalendarEvent[] = [];
@@ -104,6 +107,8 @@ export class CalendarComponent implements OnInit {
 
   // Subscription used to receive messages about when a date is picked for a task in the selected day list
   taskRowSelectedSubscription: Subscription;
+
+  showColorsSubscription: Subscription;
 
   // The default amount of time (milliseconds) to display a message for
   defaultMessageDisplayTime: number = 5000;
@@ -171,6 +176,7 @@ export class CalendarComponent implements OnInit {
     // Unsubscribe to ensure no memory leaks
     if (this.UTILS.hasValue(this.quickAddTasksSubscription)) this.quickAddTasksSubscription.unsubscribe();
     if (this.UTILS.hasValue(this.taskRowSelectedSubscription)) this.taskRowSelectedSubscription.unsubscribe();
+    if (this.UTILS.hasValue(this.showColorsSubscription)) this.showColorsSubscription.unsubscribe();
   }
 
   ngOnInit() {
@@ -182,6 +188,19 @@ export class CalendarComponent implements OnInit {
           this.refreshCalendar();
         }
       });
+
+    this.showColorsSubscription = this.MESSAGING.messagesOf(QuickSettingsColorToggle)
+      .subscribe((showColorsMessage) => {
+        if (this.UTILS.hasValue(showColorsMessage)) {
+          this.displayEventColors = showColorsMessage.shouldDisplayColors();
+          const tasks: Task[] = Array.from(this.taskIdsToTasks.values());
+          tasks.forEach(task => this.refreshEventColor(task));
+
+          this.refreshCalendar();
+        }
+      });
+
+    this.displayEventColors = this.QUICK_SETTINGS.getShowColors();
 
     // Populate the calendar with the user's tasks
     this.initializeCalendarData();
@@ -248,7 +267,8 @@ export class CalendarComponent implements OnInit {
      * than 14 days away from the current date. GREEN: Events that are compmleted.
      */
     let color;
-    if (_task.getCompleted()) color = COLORS.GREEN;
+    if (!this.displayEventColors) color = COLORS.LIGHT_BLUE;
+    else if (_task.getCompleted()) color = COLORS.GREEN;
     else if (endOfDay(dueDate) < now) color = COLORS.GRAY;
     else if (dueDate >= startOfDay(now) && endOfDay(dueDate) < startOfDay(addDays(now, 5))) color = COLORS.RED;
     else if (dueDate >= startOfDay(addDays(now, 5)) && endOfDay(dueDate) < startOfDay(addDays(now, 14))) color = COLORS.YELLOW;
