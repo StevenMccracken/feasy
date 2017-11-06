@@ -10,10 +10,11 @@ import { Injectable } from '@angular/core';
 
 // Import our files
 import { CommonUtilsService } from '../utils/common-utils.service';
+import { environment as ENVIRONMENT } from '../../environments/environment';
 
 @Injectable()
 export class FeasyService {
-  private baseUrl: string = 'http://localhost:8080'; // 'https://api.feasy-app.com';
+  private baseUrl: string = ENVIRONMENT.feasyApiUrl;
   private contentTypes: Object = {
     json: 'application/json',
     urlencoded: 'application/x-www-form-urlencoded',

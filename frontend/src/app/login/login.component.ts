@@ -35,6 +35,10 @@ export class LoginComponent implements OnInit {
   errorMessage: string;
   private standardErrorMessage: string = 'Something bad happened. Please try signing in again';
 
+  private times: Object = {
+    popupTimeout: 60000,
+  };
+
   // An JSON mapping variable names to more formal english words
   private varToWordMap: Object = {
     username: 'username',
@@ -51,8 +55,8 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private ROUTER: Router,
+    private USERS: UserService,
     private ERROR: ErrorService,
-    private USER_SERVICE: UserService,
     private UTILS: CommonUtilsService,
     private STORAGE: LocalStorageService,
   ) {}
@@ -60,36 +64,30 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     // Check if there is a currentUser and token in local storage
     if (this.STORAGE.isValidItem('currentUser') && this.STORAGE.isValidItem('token')) {
-      // TODO: Move this to a more frequently used component
-      // Try and refresh the auth token. Regardless of the result, route the user to the main page
-      this.USER_SERVICE.refreshAuthToken()
-        .then((token: string) => {
-          this.STORAGE.setItem('token', token);
-          this.ROUTER.navigate(['main']);
-        })
-        .catch((refreshTokenError: Error) => {
-          console.error(refreshTokenError);
-          this.ROUTER.navigate(['main']);
-        });
-
-    } else if (this.STORAGE.isValidItem('expiredToken') && this.STORAGE.getItem('expiredToken') === 'true') {
-      /*
-       * Somewhere else in the app updated this storage item to indicate
-       * that the user currently logged in has an expired token. Remove
-       * their current token and prompt them to enter their username
-       * and password. TODO: Use the messaging service for this
-       */
-      this.STORAGE.deleteItem('expiredToken');
-
-      // Update the login screen error
-      this.error = true;
-      this.errorMessage = 'Please sign in again to continue';
-      this.googleSignInImageSource = this.googleSignInImageSourceDefault;
+      this.USERS.startTokenAutoRefresh();
+      this.ROUTER.navigate(['main']);
     } else {
-      // There is no token in storage currently, so don't display errors. Just display the main login form
-      this.error = false;
-      this.errorMessage = '';
-      this.googleSignInImageSource = this.googleSignInImageSourceDefault;
+      if (this.STORAGE.isValidItem('expiredToken') && this.STORAGE.getItem('expiredToken') === 'true') {
+        /*
+         * Somewhere else in the app updated this storage item to indicate
+         * that the user currently logged in has an expired token. Remove
+         * their current token and prompt them to enter their username
+         * and password. TODO: Use the messaging service for this
+         */
+        this.STORAGE.deleteItem('expiredToken');
+
+        // Update the login screen error
+        this.error = true;
+        this.errorMessage = 'Please sign in again to continue';
+        this.googleSignInImageSource = this.googleSignInImageSourceDefault;
+      } else {
+        // There is no token in storage currently, so don't display errors. Just display the main login form
+        this.error = false;
+        this.errorMessage = '';
+        this.googleSignInImageSource = this.googleSignInImageSourceDefault;
+      }
+
+      this.USERS.stopTokenAutoRefresh();
     }
   } // End ngOnInit()
 
@@ -122,7 +120,7 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
 
     // Get the Google OAuth2.0 authentication URL for Feasy
-    this.USER_SERVICE.getAuthorizationUrl()
+    this.USERS.getAuthorizationUrl()
       .then((authUrl: string) => {
         // Update the Google sign-in button styling
         this.googleSignInImageSource = this.googleSignInImageSourceDefault;
@@ -135,7 +133,7 @@ export class LoginComponent implements OnInit {
           console.error('Opening Google OAuth2.0 window returned null');
         } else {
           // Automatically close the popup window after 1 minute
-          setTimeout(() => popup.close(), 60000);
+          setTimeout(() => popup.close(), this.times['popupTimeout']);
 
           /**
            * Subscribe to an event for when the user finishes Google
@@ -149,7 +147,7 @@ export class LoginComponent implements OnInit {
           });
 
           // Fetch the login credentials for the Google account the user selects
-          this.USER_SERVICE.authenticateGoogle(this._alphaCode)
+          this.USERS.authenticateGoogle(this._alphaCode)
             .then((loginInfo: Object) => {
               // Signal that Google authentication inside the popup window is done to close it
               googleAuthSource.next(true);
@@ -157,6 +155,8 @@ export class LoginComponent implements OnInit {
                 // Add the token and username data to local storage
                 this.STORAGE.setItem('token', loginInfo['token']);
                 this.STORAGE.setItem('currentUser', loginInfo['username']);
+
+                this.USERS.startTokenAutoRefresh();
 
                 // Route the user into the application
                 this.ROUTER.navigate(['main']);
@@ -202,14 +202,14 @@ export class LoginComponent implements OnInit {
               } else unknownError = true;
 
               if (unknownError) this.handleUnknownError(loginError);
-            }); // End this.USER_SERVICE.authenticateGoogle()
+            }); // End this.USERS.authenticateGoogle()
         }
       }) // End then(authUrl)
       .catch((getAuthUrlError: Error) => {
         // Update the Google sign-in button styling
         this.googleSignInImageSource = this.googleSignInImageSourceDefault;
         this.handleUnknownError(getAuthUrlError);
-      }); // End this.USER_SERVICE.getAuthorizationUrl()
+      }); // End this.USERS.getAuthorizationUrl()
   } // End googleSignIn()
 
   /**
@@ -240,11 +240,13 @@ export class LoginComponent implements OnInit {
     } else {
       // Username needs to be saved for closure created with service call to set local storage
       const username: string = this._username;
-      this.USER_SERVICE.getAuthToken(this._username, this._password)
+      this.USERS.getAuthToken(this._username, this._password)
         .then((token: string) => {
           // Add the token and username data to local storage
           this.STORAGE.setItem('token', token);
           this.STORAGE.setItem('currentUser', username);
+
+          this.USERS.startTokenAutoRefresh();
 
           // Route the user into the application
           this.ROUTER.navigate(['main']);
@@ -268,7 +270,7 @@ export class LoginComponent implements OnInit {
           } else unknownError = true;
 
           if (unknownError) this.handleUnknownError(loginError);
-        }); // End this.USER_SERVICE.getAuthToken()
+        }); // End this.USERS.getAuthToken()
     }
   } // End signIn()
 
@@ -320,8 +322,8 @@ export class LoginComponent implements OnInit {
    * @param {Error} _error the error of an unknown type
    */
   private handleUnknownError(_error: Error): void {
+    console.error(_error);
     this.error = true;
     this.errorMessage = this.standardErrorMessage;
-    console.error(_error);
   } // End handleUnknownError()
 }

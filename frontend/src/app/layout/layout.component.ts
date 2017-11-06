@@ -22,6 +22,7 @@ import { LocalStorageService } from '../utils/local-storage.service';
 import { TaskDatePicked } from '../objects/messages/task-date-picked';
 import { QuickSettingsService } from '../services/quick-settings.service';
 import { QuickAddTasksCreated } from '../objects/messages/quick-add-tasks-created';
+import { QuickSettingsColorToggle } from '../objects/messages/quick-settings-color-toggle';
 
 declare var $: any;
 
@@ -47,7 +48,12 @@ export class LayoutComponent implements OnInit {
   // Materialize date-picker holder
   datePicker: any;
 
-  defaultMessageDisplayTime: number = 5000;
+  private times: Object = {
+    quickSettingToggle: 150,
+    displayMessage: 5000,
+    routeToCalendar: 500,
+    scrollDuration: 250,
+  };
 
   errors: Object = {
     avatar: {
@@ -94,6 +100,10 @@ export class LayoutComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.USERS.startTokenAutoRefresh();
+
+    this.quickAddTasks = [];
+
     // Populate all the possible avatars
     this.avatars = this.AVATARS.getAllAvatars();
 
@@ -177,7 +187,10 @@ export class LayoutComponent implements OnInit {
   closeQuickAddModal(_followUpUrl?: string): void {
     $('#quickAdd').modal('close');
     $('#button-slide').sideNav('hide');
-    if (_followUpUrl === '/main/calendar') setTimeout(() => this.ROUTER.navigate([_followUpUrl]), 500);
+    if (_followUpUrl === '/main/calendar') {
+      const self = this;
+      setTimeout(() => self.ROUTER.navigate([_followUpUrl]), self.times['routeToCalendar']);
+    }
   } // End closeQuickAddModal()
 
   /**
@@ -185,15 +198,22 @@ export class LayoutComponent implements OnInit {
    * @param {string} _settingName the name of the quick setting to toggle
    */
   toggleQuickSettings(_settingName: string): void {
+    const self = this;
     switch (_settingName) {
       case 'color':
-        setTimeout(() => this.QUICK_SETTINGS.toggleShowColors(), 300);
+        setTimeout(
+          () => {
+            self.QUICK_SETTINGS.toggleShowColors();
+            const shouldDisplayColors: boolean = self.QUICK_SETTINGS.getShowColors();
+            self.MESSAGING.publish(new QuickSettingsColorToggle(shouldDisplayColors));
+          },
+          this.times['quickSettingToggle']);
         break;
       case 'type':
-        setTimeout(() => this.QUICK_SETTINGS.toggleShowType(), 300);
+        setTimeout(() => self.QUICK_SETTINGS.toggleShowType(), this.times['quickSettingToggle']);
         break;
       case 'description':
-        setTimeout(() => this.QUICK_SETTINGS.toggleShowDescription(), 300);
+        setTimeout(() => self.QUICK_SETTINGS.toggleShowDescription(), this.times['quickSettingToggle']);
         break;
       default:
         console.error('Can\'t toggle unknown settings type \'%s\'', _settingName);
@@ -220,7 +240,7 @@ export class LayoutComponent implements OnInit {
 
     // Reset the first task if it was deleted
     if (this.quickAddTasks.length === 0) {
-      this.quickAddTasks = [new Task()];
+      this.quickAddTasks.push(new Task());
       this.quickAddDatePickerInit();
     }
   } // End removeTask()
@@ -282,16 +302,15 @@ export class LayoutComponent implements OnInit {
    * be displayed. Needs to be value in either the errors/success class JSON
    * @param {string} _message the message to display. If no
    * value is given, the default message for _source will be used
-   * @param {number} _duration the amount of seconds to display
-   * the message for. If no value is given, the default duration
-   * will be used (class variable: defaultMessageDisplayTime)
+   * @param {number} _duration the amount of seconds to display the
+   * message for. If no value is given, the default duration will be used
    */
   private displayMessage(_messageIsError: boolean, _source: string, _message?: string, _duration?: number): void {
     const messageType: Object = _messageIsError ? this.errors : this.success;
     messageType[_source]['occurred'] = true;
     messageType[_source]['message'] = _message || messageType[_source]['defaultMessage'];
 
-    const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.defaultMessageDisplayTime;
+    const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.times['displayMessage'];
     setTimeout(
       () => {
         messageType[_source]['occurred'] = false;
@@ -450,7 +469,8 @@ export class LayoutComponent implements OnInit {
    */
   openQuickAdd(): void {
     this.clearAllQuickAddMessages();
-    this.quickAddTasks = [new Task()];
+    this.quickAddTasks.length = 0;
+    this.quickAddTasks.push(new Task());
     this.quickAddDatePickerInit();
     $('#quickAdd').modal('open');
   } // End openQuickAdd()
@@ -527,34 +547,15 @@ export class LayoutComponent implements OnInit {
    * @return {any} the date picker object
    */
   configureDatePicker(_identifier: string = '', _onOpen?: Function, _onSet?: Function, _onClose?: Function): any {
-    const input = $(_identifier).pickadate({
-      onOpen: _onOpen,
-      onSet: _onSet,
-      onClose: _onClose,
+    const datePickerOptions: Object = this.UTILS.generateDefaultDatePickerOptions();
 
-      // Set the min selectable date as 01/01/1970
-      min: new Date(1970, 0, 1),
+    // Configure custom functions for the open, set, and close events
+    datePickerOptions['onOpen'] = _onOpen;
+    datePickerOptions['onSet'] = _onSet;
+    datePickerOptions['onClose'] = _onClose;
 
-      // Max date is not constrained
-      max: false,
-
-      // Creates a dropdown to quick select the month
-      selectMonths: true,
-
-      // Creates a dropdown of 25 years at a time to quick select the year
-      selectYears: 25,
-
-      // Display format once a date has been selected
-      format: 'dddd, mmmm d, yyyy',
-
-      // Date format that is provided to the onSet method
-      formatSubmit: 'yyyy/mm/dd',
-
-      // Ensures that submitted format is used in the onSet method, not regular format
-      hiddenName: true,
-    });
-
-    return input.pickadate('picker');
+    const jQueryObject = $(_identifier).pickadate(datePickerOptions);
+    return jQueryObject.pickadate('picker');
   } // End configureDatePicker()
 
   /**
@@ -611,7 +612,8 @@ export class LayoutComponent implements OnInit {
           this.MESSAGING.publish(new QuickAddTasksCreated(createdTasks));
 
           // Reset the task list
-          this.quickAddTasks = [new Task()];
+          this.quickAddTasks.length = 0;
+          this.quickAddTasks.push(new Task());
 
           // Reset the date picker for the task list
           this.quickAddDatePickerInit();
@@ -641,7 +643,7 @@ export class LayoutComponent implements OnInit {
    * milliseconds for the duration of the animation
    */
   scrollToModalTop(_identifier: string = '', _duration?: number): void {
-    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 250;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['scrollDuration'];
     $(_identifier).animate({ scrollTop: 0 }, duration);
   } // End scrollToModalTop()
 

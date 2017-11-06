@@ -40,15 +40,20 @@ export class PasswordResetComponent implements OnInit {
   finalResetError: boolean;
   finalResetErrorMessage: string;
 
+  private times: Object = {
+    formResetDuration: 5000,
+    routeToLoginDelay: 5000,
+  };
+
   /* tslint:disable max-line-length */
   defaultErrorMessage: string = 'We apologize, but we are unable to help you reset your password right now. Please email us at feasyresponse@gmail.com to resolve this issue';
   /* tslint:enable max-line-length */
 
   constructor(
     private ROUTER: Router,
+    private USERS: UserService,
     private ERROR: ErrorService,
     private UTILS: CommonUtilsService,
-    private USER_SERVICE: UserService,
   ) {}
 
   ngOnInit() {
@@ -79,14 +84,15 @@ export class PasswordResetComponent implements OnInit {
 
           this.passwordResetDetailsErrorMessage += '. You will be redirected to send another reset email shortly'
 
-          // Display the initial reset form after 5 seconds
-          /* tslint:disable align */
-          setTimeout(() => {
-              this.passwordResetDetailsError = false;
-              this.passwordResetDetailsErrorMessage = '';
-              this.showInitialResetForm = true;
-            }, 5000);
-            /* tslint:enable align */
+          // Display the initial reset form after a short delay
+          const self = this;
+          setTimeout(
+            () => {
+              self.passwordResetDetailsError = false;
+              self.passwordResetDetailsErrorMessage = '';
+              self.showInitialResetForm = true;
+            },
+            this.times['formResetDuration']);
         }); // End this.getPasswordResetDetails()
     } else this.showInitialResetForm = true;
   } // End ngOnInit()
@@ -124,7 +130,7 @@ export class PasswordResetComponent implements OnInit {
    * email to the email the user entered in the form
    */
   sendResetEmail(): void {
-    const promise = this.USER_SERVICE.sendPasswordResetEmail(this._emailAddress)
+    const promise = this.USERS.sendPasswordResetEmail(this._emailAddress)
       .then(() => {
         this.showInitialResetForm = false;
         this.showEmailSentMessage = true;
@@ -136,7 +142,7 @@ export class PasswordResetComponent implements OnInit {
         } else if (this.ERROR.isResourceDneError(sendEmailError)) {
           this.initialPasswordResetErrorMessage = 'That email address does not exist';
         } else this.initialPasswordResetErrorMessage = this.defaultErrorMessage
-      }); // End this.USER_SERVICE.sendPasswordResetEmail()
+      }); // End this.USERS.sendPasswordResetEmail()
   } // End sendResetEmail()
 
   /**
@@ -147,7 +153,7 @@ export class PasswordResetComponent implements OnInit {
    * userId and username, and possibly first name & last name
    */
   getPasswordResetDetails(_code: string = ''): Promise<Object> {
-    const promise = this.USER_SERVICE.getPasswordResetDetails(_code)
+    const promise = this.USERS.getPasswordResetDetails(_code)
       .then((userDetails: Object) => Promise.resolve(userDetails)) // End then(userDetails)
       .catch((getDetailsError: Error) => {
         let errorMessage: string;
@@ -170,7 +176,7 @@ export class PasswordResetComponent implements OnInit {
 
         if (unknownError) return Promise.reject(getDetailsError);
         else return Promise.reject(errorMessage);
-      }); // End this.USER_SERVICE.getPasswordResetDetails()
+      }); // End this.USERS.getPasswordResetDetails()
 
     return promise;
   } // End getPasswordResetDetails()
@@ -180,12 +186,13 @@ export class PasswordResetComponent implements OnInit {
    * the user ID, and the password reset code to reset the user's password
    */
   resetPassword(): void {
-    const promise = this.USER_SERVICE.resetPassword(this.escapedResetCode, this.userId, this._newPassword)
+    const promise = this.USERS.resetPassword(this.escapedResetCode, this.userId, this._newPassword)
       .then(() => {
-        // Show the success info and route back to the login screen after 5 seconds
+        // Show the success info and route back to the login screen after a delay
         this.showFinalResetForm = false;
         this.showSuccess = true;
-        setTimeout(() => this.ROUTER.navigate(['/login']), 5000);
+        const self = this;
+        setTimeout(() => self.ROUTER.navigate(['/login']), this.times['routeToLoginDelay']);
       }) // End then()
       .catch((resetPasswordError: RemoteError) => {
         this.finalResetError = true;
@@ -235,6 +242,6 @@ export class PasswordResetComponent implements OnInit {
         }
 
         this.finalResetErrorMessage = errorMessage;
-      }); // End this.USER_SERVICE.resetPassword()
+      }); // End this.USERS.resetPassword()
   } // End resetPassword()
 }

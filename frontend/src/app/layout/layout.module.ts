@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
-// Import 3rd party libraries
+// Import 3rd-party libraries
 import {
   DragulaModule,
   DragulaService,

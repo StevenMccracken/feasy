@@ -38,6 +38,7 @@ import { LocalStorageService } from '../../utils/local-storage.service';
 import { TaskDatePicked } from '../../objects/messages/task-date-picked';
 import { QuickSettingsService } from '../../services/quick-settings.service';
 import { QuickAddTasksCreated } from '../../objects/messages/quick-add-tasks-created';
+import { QuickSettingsColorToggle } from '../../objects/messages/quick-settings-color-toggle';
 
 declare var $: any;
 
@@ -66,6 +67,12 @@ export class CalendarComponent implements OnInit {
   // IMPORTANT! USE THIS TO STORE TARGET INTO A VARIABLE TODO: Clarify this comment
   e: any;
 
+  /*
+   * Determines whether or not events should display different colors
+   * based on their task's due date, or all just show the same color
+   */
+  displayEventColors: boolean;
+
   // Event list for the calendar
   events: CalendarEvent[] = [];
 
@@ -82,20 +89,6 @@ export class CalendarComponent implements OnInit {
   // Manages UI updates for the calendar
   calendarState: Subject<any> = new Subject();
 
-  // TODO: Don't think these are necessary
-  actions: CalendarEventAction[] = [{
-    label: '<i class="material-icons edit">create</i>',
-    onClick: ({ event }: { event: CalendarEvent }): void => {
-      console.log(event);
-    },
-  },
-  {
-    label: '<i class="material-icons delete">delete_sweep</i>',
-    onClick: ({ event }: { event: CalendarEvent }): void => {
-      console.log(event);
-    },
-  }];
-
   // Materialize date-picker holder
   datePicker: any;
 
@@ -105,8 +98,21 @@ export class CalendarComponent implements OnInit {
   // Subscription used to receive messages about when a date is picked for a task in the selected day list
   taskRowSelectedSubscription: Subscription;
 
-  // The default amount of time (milliseconds) to display a message for
-  defaultMessageDisplayTime: number = 5000;
+  // Subscription used to receive messages about when the quick setting Show Colors is toggled on or off
+  showColorsSubscription: Subscription;
+
+  private times: Object = {
+    displayMessage: 5000,
+    popupDelay: 300,
+    displayPopup: 3000,
+    scrollDuration: 375,
+  };
+
+  // Amount of days that indicate the status of a task in terms of it's due date
+  maxDaysAway: Object = {
+    urgent: 5,
+    warning: 14,
+  };
 
   // Standard error messages
   errorMessages: Object = {
@@ -171,6 +177,7 @@ export class CalendarComponent implements OnInit {
     // Unsubscribe to ensure no memory leaks
     if (this.UTILS.hasValue(this.quickAddTasksSubscription)) this.quickAddTasksSubscription.unsubscribe();
     if (this.UTILS.hasValue(this.taskRowSelectedSubscription)) this.taskRowSelectedSubscription.unsubscribe();
+    if (this.UTILS.hasValue(this.showColorsSubscription)) this.showColorsSubscription.unsubscribe();
   }
 
   ngOnInit() {
@@ -182,6 +189,19 @@ export class CalendarComponent implements OnInit {
           this.refreshCalendar();
         }
       });
+
+    this.showColorsSubscription = this.MESSAGING.messagesOf(QuickSettingsColorToggle)
+      .subscribe((showColorsMessage) => {
+        if (this.UTILS.hasValue(showColorsMessage)) {
+          const tasks: Task[] = Array.from(this.taskIdsToTasks.values());
+
+          this.displayEventColors = showColorsMessage.shouldDisplayColors();
+          tasks.forEach(task => this.refreshEventColor(task));
+          this.refreshCalendar();
+        }
+      });
+
+    this.displayEventColors = this.QUICK_SETTINGS.getShowColors();
 
     // Populate the calendar with the user's tasks
     this.initializeCalendarData();
@@ -197,6 +217,7 @@ export class CalendarComponent implements OnInit {
    */
   initializeCalendarData(): void {
     this.events = [];
+    this.selectedDayTasks = [];
     this.taskIdsToTasks = new Map<string, Task>();
     this.taskIdsToEvents = new Map<string, CalendarEvent>();
     this.eventsToTaskIds = new Map<CalendarEvent, string>();
@@ -233,26 +254,30 @@ export class CalendarComponent implements OnInit {
   /**
    * Determines the color for a calendar event based on
    * a given task date's relation to the current date
-   * @param {Task} _task the task of the
-   * CalendarEvent to determine the color for
+   * @param {Task} _task the task of the CalendarEvent to determine the color for
    * @return {any} JSON of the color attributes
    */
   determineEventColor(_task: Task): any {
     const now = new Date();
     const dueDate = _task.getDueDate();
+    const daysAwayUrgent: number = this.maxDaysAway['urgent'];
+    const daysAwayWarning: number = this.maxDaysAway['warning'];
 
-    /*
-     * GRAY: Events that were before the current date. RED: Events that are within
-     * 5 days of the current date. YELLOW: Events that are more than 5 days away
-     * but less than 14 days from the current date. BLUE: Events that are more
-     * than 14 days away from the current date. GREEN: Events that are compmleted.
-     */
     let color;
-    if (_task.getCompleted()) color = COLORS.GREEN;
+    if (!this.displayEventColors) color = COLORS.LIGHT_BLUE;
+    else if (_task.getCompleted()) color = COLORS.GREEN;
     else if (endOfDay(dueDate) < now) color = COLORS.GRAY;
-    else if (dueDate >= startOfDay(now) && endOfDay(dueDate) < startOfDay(addDays(now, 5))) color = COLORS.RED;
-    else if (dueDate >= startOfDay(addDays(now, 5)) && endOfDay(dueDate) < startOfDay(addDays(now, 14))) color = COLORS.YELLOW;
-    else color = COLORS.BLUE;
+    else if (
+      dueDate >= startOfDay(now) &&
+      endOfDay(dueDate) < startOfDay(addDays(now, daysAwayUrgent))
+    ) {
+      color = COLORS.RED;
+    } else if (
+      dueDate >= startOfDay(addDays(now, daysAwayUrgent)) &&
+      endOfDay(dueDate) < startOfDay(addDays(now, daysAwayWarning))
+    ) {
+      color = COLORS.YELLOW;
+    } else color = COLORS.BLUE;
 
     return color;
   } // End determineEventColor()
@@ -276,27 +301,26 @@ export class CalendarComponent implements OnInit {
 
   // TODO: Add formal documentation
   monthEventClick(event: any) {
-    console.log('monthEventClick');
-    console.log(event.day);
-
     this.onetime = !this.onetime;
     const dateClicked: Date = event.day.date;
     if (this.onetime) {
       const selectedDayEvents: CalendarEvent[] = event.day.events;
-      this.selectedDayTasks = selectedDayEvents.map((calendarEvent) => {
+      this.selectedDayTasks.length = 0;
+      selectedDayEvents.forEach((calendarEvent) => {
         const taskId: string = this.eventsToTaskIds.get(calendarEvent);
         const task: Task = this.taskIdsToTasks.get(taskId);
-        return task;
+        this.selectedDayTasks.push(task);
       });
 
       // Display a popup if there is more than one task
       if (this.selectedDayTasks.length !== 0) {
+        const self = this;
         this.timer = setTimeout(
           () => {
-            this.displayPopUp();
-            this.onetime = !this.onetime;
+            self.displayPopUp();
+            self.onetime = !self.onetime;
           },
-          300);
+          this.times['popupDelay']);
       } else {
         this.onetime = !this.onetime;
         this.openSelectedDayView(dateClicked);
@@ -319,7 +343,7 @@ export class CalendarComponent implements OnInit {
       if ($(this.e).is('#popup')) {
         $(this.e).children('.show').css('display', 'inline-block');
         const prev_e = this.e;
-        setTimeout(() => $(prev_e).children('.show').css('display', 'none'), 3000);
+        setTimeout(() => $(prev_e).children('.show').css('display', 'none'), this.times['displayPopup']);
       } else {
         $(this.e).attr('id', 'popup');
         let data = `<div id='popup' class='popuptext show'>`;
@@ -330,16 +354,16 @@ export class CalendarComponent implements OnInit {
         this.e.insertAdjacentHTML('afterbegin', data);
         const prev_e = this.e;
 
-        setTimeout(() => $(prev_e).children('.show').css('display', 'none'), 3000);
+        setTimeout(() => $(prev_e).children('.show').css('display', 'none'), this.times['displayPopup']);
       }
     }
   } // End displayPopUp()
 
   /**
    * Refreshes and configures all HTML select elements in the selected day modal
-   * @param {Task} _task the task that serves as the model
-   * for when a specific select input field changes it's value.
-   * NOTE: this is only a work around for a current Materialize bug
+   * @param {Task} _task the task that serves as the model for
+   * when a specific select input field changes it's value. NOTE:
+   * this is only a work around for a current Materialize bug
    */
   refreshSelectElements(_task?: Task): void {
     $('select').material_select('destroy');
@@ -392,14 +416,14 @@ export class CalendarComponent implements OnInit {
     const self = this;
     $(document).ready(() => {
       // Holds the message that will be received when the date picker for existing tasks is open
-      let taskRowMessage;
+      let pickerMessage;
       const onOpen: Function = () => {
         /*
          * When the date picker opens, subscribe to receive a message
          * about which index was clicked on to open the date picker
          */
         self.taskRowSelectedSubscription = self.MESSAGING.messagesOf(TaskDatePicked)
-          .subscribe(message => taskRowMessage = message);
+          .subscribe(message => pickerMessage = message);
       };
 
       const onClose: Function = () => {
@@ -413,12 +437,12 @@ export class CalendarComponent implements OnInit {
 
         // Try and get the data from the message that was sent when the date picker was opened
         if (
-          self.UTILS.hasValue(taskRowMessage) &&
-          self.UTILS.hasValue(taskRowMessage.getIndex()) &&
-          self.UTILS.hasValue(taskRowMessage.getTask())
+          self.UTILS.hasValue(pickerMessage) &&
+          self.UTILS.hasValue(pickerMessage.getIndex()) &&
+          self.UTILS.hasValue(pickerMessage.getTask())
         ) {
-          index = taskRowMessage.getIndex();
-          task = taskRowMessage.getTask();
+          task = pickerMessage.getTask();
+          index = pickerMessage.getIndex();
         }
 
         if (index !== -1 && self.UTILS.hasValue(task)) {
@@ -454,34 +478,15 @@ export class CalendarComponent implements OnInit {
    * @return {any} the date picker object
    */
   configureDatePicker(_identifier: string = '', _onOpen?: Function, _onSet?: Function, _onClose?: Function): any {
-    const input = $(_identifier).pickadate({
-      onOpen: _onOpen,
-      onSet: _onSet,
-      onClose: _onClose,
+    const datePickerOptions: Object = this.UTILS.generateDefaultDatePickerOptions();
 
-      // Set the min selectable date as 01/01/1970
-      min: new Date(1970, 0, 1),
+    // Configure custom functions for the open, set, and close events
+    datePickerOptions['onOpen'] = _onOpen;
+    datePickerOptions['onSet'] = _onSet;
+    datePickerOptions['onClose'] = _onClose;
 
-      // Max date is not constrained
-      max: false,
-
-      // Creates a dropdown to quick select the month
-      selectMonths: true,
-
-      // Creates a dropdown of 25 years at a time to quick select the year
-      selectYears: 25,
-
-      // Display format once a date has been selected
-      format: 'dddd, mmmm d, yyyy',
-
-      // Date format that is provided to the onSet method
-      formatSubmit: 'yyyy/mm/dd',
-
-      // Ensures that submitted format is used in the onSet method, not regular format
-      hiddenName: true,
-    });
-
-    return input.pickadate('picker');
+    const jQueryObject = $(_identifier).pickadate(datePickerOptions);
+    return jQueryObject.pickadate('picker');
   } // End configureDatePicker()
 
   /**
@@ -655,6 +660,8 @@ export class CalendarComponent implements OnInit {
           const updatedUpdateError: RemoteError = this.handleUpdateError(updateError, 'dueDate');
           if (this.ERROR.isResourceDneError(updateError)) {
             this.displayCalendarError(updatedUpdateError.getCustomProperty('detailedErrorMessage'));
+            this.scrollToCalendarTop();
+
             this.deleteLocalTask(taskForEvent);
             this.refreshCalendar();
           } else this.handleUnknownError(false, updatedUpdateError);
@@ -948,22 +955,21 @@ export class CalendarComponent implements OnInit {
 
   /**
    * Scrolls to the top of the selected day modal window with animation
-   * @param {number} _duration the number of
-   * milliseconds for the duration of the animation
+   * @param {number} _duration the number of milliseconds for the duration
+   * of the animation. If no value is given, the default value will be used
    */
   scrollToSelectedDayTop(_duration?: number): void {
-    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 375;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['scrollDuration'];
     $('#selectedDayModalTop').animate({ scrollTop: 0 }, duration);
   } // End scrollToSelectedDayTop()
 
   /**
    * Scrolls to the top of the calendar section with animation
-   * @param {number} _duration the number of milliseconds
-   * for the duration of the animation. If no value is
-   * given, the default value of 375 milliseconds is used
+   * @param {number} _duration the number of milliseconds for the duration
+   * of the animation. If no value is given, the default value will be used
    */
   scrollToCalendarTop(_duration?: number): void {
-    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 375;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['scrollDuration'];
     this.scrollToElement('#topOfPage', _duration);
   }
 
@@ -1061,7 +1067,6 @@ export class CalendarComponent implements OnInit {
         beforeStart: true,
         afterEnd: true,
       },
-      actions: this.actions,
     };
 
     return calendarEvent;
@@ -1101,11 +1106,11 @@ export class CalendarComponent implements OnInit {
    * Scrolls to a specific HTML element on the page with animation
    * @param {string} [_identifier = ''] the HTML tag
    * identifier for the page element to scroll to
-   * @param {number} _duration the number of
-   * milliseconds for the animation to last
+   * @param {number} _duration the number of milliseconds for the animation
+   * to last. If no value is given, the default value will be used
    */
   scrollToElement(_identifier: string = '', _duration?: number): void {
-    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 250;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['scrollDuration'];
     const isClass: boolean = _identifier.charAt(0) === '.';
 
     const element = isClass ? $(_identifier).first() : $(_identifier);
@@ -1157,8 +1162,9 @@ export class CalendarComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : '';
     this.success['selectedDay']['occurred'] = true;
     this.success['selectedDay']['message'] = _message;
-    this.CHANGE_DETECTOR.detectChanges();
-    setTimeout(() => this.resetSelectedDaySuccess(), this.defaultMessageDisplayTime);
+
+    const self = this;
+    setTimeout(() => self.resetSelectedDaySuccess(), this.times['displayMessage']);
   } // End displaySelectedDaySuccess()
 
   /**
@@ -1170,8 +1176,9 @@ export class CalendarComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : this.errors['selectedDay']['defaultMessage'];
     this.errors['selectedDay']['occurred'] = true;
     this.errors['selectedDay']['message'] = message;
-    this.CHANGE_DETECTOR.detectChanges();
-    setTimeout(() => this.resetSelectedDayError(), this.defaultMessageDisplayTime);
+
+    const self = this;
+    setTimeout(() => self.resetSelectedDayError(), this.times['displayMessage']);
   } // End displaySelectedDayError()
 
   /**
@@ -1183,8 +1190,9 @@ export class CalendarComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : this.errors['general']['defaultMessage'];
     this.errors['general']['occurred'] = true;
     this.errors['general']['message'] = message;
-    this.CHANGE_DETECTOR.detectChanges();
-    setTimeout(() => this.resetCalendarError(), this.defaultMessageDisplayTime);
+
+    const self = this;
+    setTimeout(() => self.resetCalendarError(), this.times['displayMessage']);
   } // End displayCalendarError()
 
   /**
@@ -1196,8 +1204,9 @@ export class CalendarComponent implements OnInit {
     const message: string = this.UTILS.hasValue(_message) ? _message : this.successMessages['updatedTask'];
     this.success['general']['occurred'] = true;
     this.success['general']['message'] = message;
-    this.CHANGE_DETECTOR.detectChanges();
-    setTimeout(() => this.resetCalendarSuccess(), this.defaultMessageDisplayTime);
+
+    const self = this;
+    setTimeout(() => self.resetCalendarSuccess(), this.times['displayMessage']);
   } // End displayCalendarSuccess()
 
   /**
@@ -1244,9 +1253,12 @@ export class CalendarComponent implements OnInit {
 
       this.STORAGE.setItem('expiredToken', 'true');
       this.ROUTER.navigate(['/login']);
+    } else if (_isForSelectedDayModal) {
+        this.displaySelectedDayError(this.errors['selectedDay']['defaultMessage']);
+        this.scrollToSelectedDayTop();
     } else {
-      if (_isForSelectedDayModal) this.displaySelectedDayError(this.errors['selectedDay']['defaultMessage']);
-      else this.displayCalendarError(this.errors['general']['defaultMessage']);
+      this.displayCalendarError(this.errors['general']['defaultMessage']);
+      this.scrollToCalendarTop();
     }
   } // End handleUnknownError()
 }

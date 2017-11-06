@@ -29,7 +29,7 @@ export class QuickSettingsService {
 
     if (this.STORAGE.isValidItem(this.colorsName)) {
       this.showColors = this.STORAGE.getItem(this.colorsName) === 'true';
-    } else this.turnShowColorsOff();
+    } else this.turnShowColorsOn();
 
     if (this.STORAGE.isValidItem(this.descriptionName)) {
       this.showDescription = this.STORAGE.getItem(this.descriptionName) === 'true';
