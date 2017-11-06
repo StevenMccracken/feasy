@@ -377,7 +377,7 @@ export class UserService {
         if (this.UTILS.hasValue(token)) authInfo['token'] = token;
         else validToken = false;
 
-        if (this.UTILS.hasValue(username)) authInfo['username'] = token;
+        if (this.UTILS.hasValue(username)) authInfo['username'] = username;
         else validUsername = false;
 
         if (validToken && validUsername) return Promise.resolve(authInfo);

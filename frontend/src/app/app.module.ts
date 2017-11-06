@@ -32,6 +32,7 @@ import { CommonUtilsService } from './utils/common-utils.service';
 import { AppRoutingModule } from './app-routing/app-routing.module';
 import { LocalStorageService } from './utils/local-storage.service';
 import { QuickSettingsService } from './services/quick-settings.service';
+import { environment as ENVIRONMENT } from '../environments/environment';
 import { PasswordResetComponent } from './password-reset/password-reset.component';
 
 // Configure client side Google API service
@@ -43,7 +44,7 @@ const gapiClientConfig: ClientConfig = {
     'https://www.googleapis.com/auth/plus.me',
     'https://www.googleapis.com/auth/calendar',
   ].join(' '),
-  redirect_uri: 'https://api.feasy-app.com/auth/google/exchange',
+  redirect_uri: `${ENVIRONMENT.feasyApiUrl}/auth/google/exchange`,
 };
 
 @NgModule({
