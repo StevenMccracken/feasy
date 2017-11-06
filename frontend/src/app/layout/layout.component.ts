@@ -48,8 +48,12 @@ export class LayoutComponent implements OnInit {
   // Materialize date-picker holder
   datePicker: any;
 
-  defaultQuickSettingToggleTime: number = 150;
-  defaultMessageDisplayTime: number = 5000;
+  private times: Object = {
+    quickSettingToggle: 150,
+    displayMessage: 5000,
+    routeToCalendar: 500,
+    scrollDuration: 250,
+  };
 
   errors: Object = {
     avatar: {
@@ -185,7 +189,7 @@ export class LayoutComponent implements OnInit {
     $('#button-slide').sideNav('hide');
     if (_followUpUrl === '/main/calendar') {
       const self = this;
-      setTimeout(() => self.ROUTER.navigate([_followUpUrl]), 500);
+      setTimeout(() => self.ROUTER.navigate([_followUpUrl]), self.times['routeToCalendar']);
     }
   } // End closeQuickAddModal()
 
@@ -203,13 +207,13 @@ export class LayoutComponent implements OnInit {
             const shouldDisplayColors: boolean = self.QUICK_SETTINGS.getShowColors();
             self.MESSAGING.publish(new QuickSettingsColorToggle(shouldDisplayColors));
           },
-          this.defaultQuickSettingToggleTime);
+          this.times['quickSettingToggle']);
         break;
       case 'type':
-        setTimeout(() => self.QUICK_SETTINGS.toggleShowType(), this.defaultQuickSettingToggleTime);
+        setTimeout(() => self.QUICK_SETTINGS.toggleShowType(), this.times['quickSettingToggle']);
         break;
       case 'description':
-        setTimeout(() => self.QUICK_SETTINGS.toggleShowDescription(), this.defaultQuickSettingToggleTime);
+        setTimeout(() => self.QUICK_SETTINGS.toggleShowDescription(), this.times['quickSettingToggle']);
         break;
       default:
         console.error('Can\'t toggle unknown settings type \'%s\'', _settingName);
@@ -298,16 +302,15 @@ export class LayoutComponent implements OnInit {
    * be displayed. Needs to be value in either the errors/success class JSON
    * @param {string} _message the message to display. If no
    * value is given, the default message for _source will be used
-   * @param {number} _duration the amount of seconds to display
-   * the message for. If no value is given, the default duration
-   * will be used (class variable: defaultMessageDisplayTime)
+   * @param {number} _duration the amount of seconds to display the
+   * message for. If no value is given, the default duration will be used
    */
   private displayMessage(_messageIsError: boolean, _source: string, _message?: string, _duration?: number): void {
     const messageType: Object = _messageIsError ? this.errors : this.success;
     messageType[_source]['occurred'] = true;
     messageType[_source]['message'] = _message || messageType[_source]['defaultMessage'];
 
-    const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.defaultMessageDisplayTime;
+    const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.times['displayMessage'];
     setTimeout(
       () => {
         messageType[_source]['occurred'] = false;
@@ -640,7 +643,7 @@ export class LayoutComponent implements OnInit {
    * milliseconds for the duration of the animation
    */
   scrollToModalTop(_identifier: string = '', _duration?: number): void {
-    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 250;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['scrollDuration'];
     $(_identifier).animate({ scrollTop: 0 }, duration);
   } // End scrollToModalTop()
 

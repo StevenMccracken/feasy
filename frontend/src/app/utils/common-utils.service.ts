@@ -9,6 +9,10 @@ import { v4 as uuid } from 'uuid';
  */
 @Injectable()
 export class CommonUtilsService {
+  private times: Object = {
+    millisecondsPerHour: 3600000,
+  };
+
   constructor() {}
 
   /**
@@ -72,7 +76,7 @@ export class CommonUtilsService {
    * @return {number} the number of milliseconds
    */
   getUnixMillisecondsFromHours(_hours: number): number {
-    return _hours * 3600000;
+    return _hours * this.times['millisecondsPerHour'];
   } // End getUnixMillisecondsFromHours()
 
   /**
@@ -90,7 +94,7 @@ export class CommonUtilsService {
    */
   generateDefaultDatePickerOptions(): Object {
     const defaultOptions: Object = {
-      min: new Date(1970, 0, 1), // Set the min selectable date as 01/01/1970
+      min: new Date(1970, 0, 1), // Set the min selectable date as January 1st, 1970
       max: false, // Max date is not constrained
       selectMonths: true, // Creates a dropdown to quick select the month
       selectYears: 25, // Creates a dropdown of 25 years at a time to quick select the year

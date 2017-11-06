@@ -35,6 +35,10 @@ export class LoginComponent implements OnInit {
   errorMessage: string;
   private standardErrorMessage: string = 'Something bad happened. Please try signing in again';
 
+  private times: Object = {
+    popupTimeout: 60000,
+  };
+
   // An JSON mapping variable names to more formal english words
   private varToWordMap: Object = {
     username: 'username',
@@ -129,7 +133,7 @@ export class LoginComponent implements OnInit {
           console.error('Opening Google OAuth2.0 window returned null');
         } else {
           // Automatically close the popup window after 1 minute
-          setTimeout(() => popup.close(), 60000);
+          setTimeout(() => popup.close(), this.times['popupTimeout']);
 
           /**
            * Subscribe to an event for when the user finishes Google

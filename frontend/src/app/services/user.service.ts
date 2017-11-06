@@ -20,7 +20,10 @@ import { InvalidRequestError } from '../objects/invalid-request-error';
 @Injectable()
 export class UserService {
   private autoRefreshTokenTimerId: number;
-  private autoRefreshTokenTimerInterval: number = 30000;
+
+  private times: Object = {
+    autoRefreshTokenInterval: 30000,
+  };
 
   constructor(
     private ROUTER: Router,
@@ -246,7 +249,7 @@ export class UserService {
             .then((token: string) => self.STORAGE.setItem('token', token))
             .catch((refreshTokenError: Error) => console.error(refreshTokenError));
         },
-        this.autoRefreshTokenTimerInterval);
+        this.times['autoRefreshTokenInterval']);
 
       startedAutoRefresh = true;
     }

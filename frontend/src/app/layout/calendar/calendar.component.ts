@@ -89,20 +89,6 @@ export class CalendarComponent implements OnInit {
   // Manages UI updates for the calendar
   calendarState: Subject<any> = new Subject();
 
-  // TODO: Don't think these are necessary
-  actions: CalendarEventAction[] = [{
-    label: '<i class="material-icons edit">create</i>',
-    onClick: ({ event }: { event: CalendarEvent }): void => {
-      console.log(event);
-    },
-  },
-  {
-    label: '<i class="material-icons delete">delete_sweep</i>',
-    onClick: ({ event }: { event: CalendarEvent }): void => {
-      console.log(event);
-    },
-  }];
-
   // Materialize date-picker holder
   datePicker: any;
 
@@ -115,8 +101,18 @@ export class CalendarComponent implements OnInit {
   // Subscription used to receive messages about when the quick setting Show Colors is toggled on or off
   showColorsSubscription: Subscription;
 
-  // The default amount of time (milliseconds) to display a message for
-  defaultMessageDisplayTime: number = 5000;
+  private times: Object = {
+    displayMessage: 5000,
+    popupDelay: 300,
+    displayPopup: 3000,
+    scrollDuration: 375,
+  };
+
+  // Amount of days that indicate the status of a task in terms of it's due date
+  maxDaysAway: Object = {
+    urgent: 5,
+    warning: 14,
+  };
 
   // Standard error messages
   errorMessages: Object = {
@@ -264,20 +260,24 @@ export class CalendarComponent implements OnInit {
   determineEventColor(_task: Task): any {
     const now = new Date();
     const dueDate = _task.getDueDate();
+    const daysAwayUrgent: number = this.maxDaysAway['urgent'];
+    const daysAwayWarning: number = this.maxDaysAway['warning'];
 
-    /*
-     * GRAY: Events that were before the current date. RED: Events that are within
-     * 5 days of the current date. YELLOW: Events that are more than 5 days away
-     * but less than 14 days from the current date. BLUE: Events that are more
-     * than 14 days away from the current date. GREEN: Events that are compmleted.
-     */
     let color;
     if (!this.displayEventColors) color = COLORS.LIGHT_BLUE;
     else if (_task.getCompleted()) color = COLORS.GREEN;
     else if (endOfDay(dueDate) < now) color = COLORS.GRAY;
-    else if (dueDate >= startOfDay(now) && endOfDay(dueDate) < startOfDay(addDays(now, 5))) color = COLORS.RED;
-    else if (dueDate >= startOfDay(addDays(now, 5)) && endOfDay(dueDate) < startOfDay(addDays(now, 14))) color = COLORS.YELLOW;
-    else color = COLORS.BLUE;
+    else if (
+      dueDate >= startOfDay(now) &&
+      endOfDay(dueDate) < startOfDay(addDays(now, daysAwayUrgent))
+    ) {
+      color = COLORS.RED;
+    } else if (
+      dueDate >= startOfDay(addDays(now, daysAwayUrgent)) &&
+      endOfDay(dueDate) < startOfDay(addDays(now, daysAwayWarning))
+    ) {
+      color = COLORS.YELLOW;
+    } else color = COLORS.BLUE;
 
     return color;
   } // End determineEventColor()
@@ -320,7 +320,7 @@ export class CalendarComponent implements OnInit {
             self.displayPopUp();
             self.onetime = !self.onetime;
           },
-          300);
+          this.times['popupDelay']);
       } else {
         this.onetime = !this.onetime;
         this.openSelectedDayView(dateClicked);
@@ -343,7 +343,7 @@ export class CalendarComponent implements OnInit {
       if ($(this.e).is('#popup')) {
         $(this.e).children('.show').css('display', 'inline-block');
         const prev_e = this.e;
-        setTimeout(() => $(prev_e).children('.show').css('display', 'none'), 3000);
+        setTimeout(() => $(prev_e).children('.show').css('display', 'none'), this.times['displayPopup']);
       } else {
         $(this.e).attr('id', 'popup');
         let data = `<div id='popup' class='popuptext show'>`;
@@ -354,7 +354,7 @@ export class CalendarComponent implements OnInit {
         this.e.insertAdjacentHTML('afterbegin', data);
         const prev_e = this.e;
 
-        setTimeout(() => $(prev_e).children('.show').css('display', 'none'), 3000);
+        setTimeout(() => $(prev_e).children('.show').css('display', 'none'), this.times['displayPopup']);
       }
     }
   } // End displayPopUp()
@@ -955,22 +955,21 @@ export class CalendarComponent implements OnInit {
 
   /**
    * Scrolls to the top of the selected day modal window with animation
-   * @param {number} _duration the number of
-   * milliseconds for the duration of the animation
+   * @param {number} _duration the number of milliseconds for the duration
+   * of the animation. If no value is given, the default value will be used
    */
   scrollToSelectedDayTop(_duration?: number): void {
-    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 375;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['scrollDuration'];
     $('#selectedDayModalTop').animate({ scrollTop: 0 }, duration);
   } // End scrollToSelectedDayTop()
 
   /**
    * Scrolls to the top of the calendar section with animation
-   * @param {number} _duration the number of milliseconds
-   * for the duration of the animation. If no value is
-   * given, the default value of 375 milliseconds is used
+   * @param {number} _duration the number of milliseconds for the duration
+   * of the animation. If no value is given, the default value will be used
    */
   scrollToCalendarTop(_duration?: number): void {
-    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 375;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['scrollDuration'];
     this.scrollToElement('#topOfPage', _duration);
   }
 
@@ -1068,7 +1067,6 @@ export class CalendarComponent implements OnInit {
         beforeStart: true,
         afterEnd: true,
       },
-      actions: this.actions,
     };
 
     return calendarEvent;
@@ -1108,11 +1106,11 @@ export class CalendarComponent implements OnInit {
    * Scrolls to a specific HTML element on the page with animation
    * @param {string} [_identifier = ''] the HTML tag
    * identifier for the page element to scroll to
-   * @param {number} _duration the number of
-   * milliseconds for the animation to last
+   * @param {number} _duration the number of milliseconds for the animation
+   * to last. If no value is given, the default value will be used
    */
   scrollToElement(_identifier: string = '', _duration?: number): void {
-    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 250;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['scrollDuration'];
     const isClass: boolean = _identifier.charAt(0) === '.';
 
     const element = isClass ? $(_identifier).first() : $(_identifier);
@@ -1166,7 +1164,7 @@ export class CalendarComponent implements OnInit {
     this.success['selectedDay']['message'] = _message;
 
     const self = this;
-    setTimeout(() => self.resetSelectedDaySuccess(), this.defaultMessageDisplayTime);
+    setTimeout(() => self.resetSelectedDaySuccess(), this.times['displayMessage']);
   } // End displaySelectedDaySuccess()
 
   /**
@@ -1180,7 +1178,7 @@ export class CalendarComponent implements OnInit {
     this.errors['selectedDay']['message'] = message;
 
     const self = this;
-    setTimeout(() => self.resetSelectedDayError(), this.defaultMessageDisplayTime);
+    setTimeout(() => self.resetSelectedDayError(), this.times['displayMessage']);
   } // End displaySelectedDayError()
 
   /**
@@ -1194,7 +1192,7 @@ export class CalendarComponent implements OnInit {
     this.errors['general']['message'] = message;
 
     const self = this;
-    setTimeout(() => self.resetCalendarError(), this.defaultMessageDisplayTime);
+    setTimeout(() => self.resetCalendarError(), this.times['displayMessage']);
   } // End displayCalendarError()
 
   /**
@@ -1208,7 +1206,7 @@ export class CalendarComponent implements OnInit {
     this.success['general']['message'] = message;
 
     const self = this;
-    setTimeout(() => self.resetCalendarSuccess(), this.defaultMessageDisplayTime);
+    setTimeout(() => self.resetCalendarSuccess(), this.times['displayMessage']);
   } // End displayCalendarSuccess()
 
   /**

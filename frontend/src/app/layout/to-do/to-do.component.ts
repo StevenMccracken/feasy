@@ -50,7 +50,11 @@ export class ToDoComponent implements OnInit {
   // Subscription used to receive messages about when a row in the incomplete section is clicked
   taskRowSelectedSubscription: Subscription;
 
-  defaultMessageDisplayTime: number = 5000;
+  private times: Object = {
+    displayMessage: 5000,
+    scrollDuration: 375,
+    incompleteListErrorMessage: 7500,
+  };
 
   errors: Object = {
     general: {
@@ -245,13 +249,14 @@ export class ToDoComponent implements OnInit {
   /**
    * Displays an error within the completed section
    * @param {string} _message the error message to display
-   * @param {number} _duration the number of seconds to display the error for
+   * @param {number} _duration the number of milliseconds for the message
+   * to last. If no value is given, the default value will be used
    */
   displayCompletedListError(_message?: string, _duration?: number): void {
     this.errors['completedTasks']['occurred'] = true;
     this.errors['completedTasks']['message'] = _message || this.errors['completedTasks']['defaultMessage'];
 
-    const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.defaultMessageDisplayTime;
+    const duration: number = typeof _duration === 'number' ? _duration : this.times['displayMessage'];
     const self = this;
     setTimeout(
       () => {
@@ -264,13 +269,14 @@ export class ToDoComponent implements OnInit {
   /**
    * Displays an error within the incomplete section
    * @param {string} _message the error message to display
-   * @param {number} _duration the number of seconds to display the error for
+   * @param {number} _duration the number of milliseconds for the message
+   * to last. If no value is given, the default value will be used
    */
   displayIncompleteListError(_message?: string, _duration?: number): void {
     this.errors['incompleteTasks']['occurred'] = true;
     this.errors['incompleteTasks']['message'] = _message || this.errors['incompleteTasks']['defaultMessage'];
 
-    const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.defaultMessageDisplayTime;
+    const duration: number = typeof _duration === 'number' ? _duration : this.times['displayMessage'];
     const self = this;
     setTimeout(
       () => {
@@ -311,11 +317,11 @@ export class ToDoComponent implements OnInit {
    * Scrolls to a specific HTML element on the page with animation
    * @param {string} [_identifier = ''] the HTML tag
    * identifier for the page element to scroll to
-   * @param {number} _duration the number of milliseconds for the animation to
-   * last. If no value is given, the default value of 250 milliseconds is used
+   * @param {number} _duration the number of milliseconds for the animation
+   * to last. If no value is given, the default value will be used
    */
   scrollToElement(_identifier: string = '', _duration?: number): void {
-    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 250;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['scrollDuration'];
     const isClass: boolean = _identifier.charAt(0) === '.';
     if (isClass) $('html, body').animate({ scrollTop: $(_identifier).first().offset().top }, duration);
     else $('html, body').animate({ scrollTop: $(_identifier).offset().top }, duration);
@@ -323,11 +329,11 @@ export class ToDoComponent implements OnInit {
 
   /**
    * Scrolls to the top of the HTML page with animation
-   * @param {number} _duration the number of milliseconds for the animation to
-   * last. If no value is given, the default value of 375 milliseconds is used
+   * @param {number} _duration the number of milliseconds for the animation
+   * to last. If no value is given, the default value will be used
    */
   scrollToTop(_duration?: number): void {
-    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 375;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['scrollDuration'];
     this.scrollToElement('#topOfPage', _duration);
   } // End scrollToTop()
 
@@ -487,7 +493,7 @@ export class ToDoComponent implements OnInit {
       else if (invalidDueDate && !invalidTitle) errorMessage = `${errorMessage} due date.`;
       else errorMessage = `${errorMessage} title and due date.`;
 
-      this.displayIncompleteListError(errorMessage, 7.5);
+      this.displayIncompleteListError(errorMessage, this.times['incompleteListErrorMessage']);
       this.scrollToTop();
     } else {
       this.newTask.setCompleted(false);
@@ -536,7 +542,7 @@ export class ToDoComponent implements OnInit {
             }
 
             this.scrollToTop();
-            this.displayIncompleteListError(errorMessage, 7.5);
+            this.displayIncompleteListError(errorMessage, this.times['incompleteListErrorMessage']);
           } else this.handleUnknownError(createError as RemoteError);
         }); // End this.TASKS.create()
     }
@@ -807,7 +813,7 @@ export class ToDoComponent implements OnInit {
       this.incompleteTasks[_index] = oldTask;
       this.clearTaskCache();
 
-      this.displayIncompleteListError(errorMessage, 7.5);
+      this.displayIncompleteListError(errorMessage, this.times['incompleteListErrorMessage']);
       this.scrollToTop();
     } else {
       // Updated fields are validated locally. Create promise variables to hold promises of service requests to update the task
@@ -838,7 +844,7 @@ export class ToDoComponent implements OnInit {
           const errorMessages: string[] = errors.map(error => error.getCustomProperty('detailedErrorMessage'));
           const errorMessage: string = `${errorMessages.join('. ')}.`;
 
-          this.displayIncompleteListError(errorMessage, 7.5);
+          this.displayIncompleteListError(errorMessage, this.times['incompleteListErrorMessage']);
           this.scrollToTop();
           this.enableEditing(_task);
         } else {
@@ -988,7 +994,7 @@ export class ToDoComponent implements OnInit {
     this.success['taskCreated']['occurred'] = true;
     this.success['taskCreated']['message'] = message;
     const self = this;
-    setTimeout(() => self.resetCreateTaskMessage(), this.defaultMessageDisplayTime);
+    setTimeout(() => self.resetCreateTaskMessage(), this.times['displayMessage']);
   } // End displayCreateTaskSuccess()
 
   /**
@@ -1001,7 +1007,7 @@ export class ToDoComponent implements OnInit {
     this.success['completedTasks']['occurred'] = true;
     this.success['completedTasks']['message'] = message;
     const self = this;
-    setTimeout(() => self.resetCompleteTaskMessage(), this.defaultMessageDisplayTime);
+    setTimeout(() => self.resetCompleteTaskMessage(), this.times['displayMessage']);
   } // End displayCompletedListSuccess()
 
   /**
@@ -1026,7 +1032,7 @@ export class ToDoComponent implements OnInit {
           self.errors['general']['occurred'] = false;
           self.errors['general']['message'] = '';
         },
-        this.defaultMessageDisplayTime);
+        this.times['displayMessage']);
     }
   } // End handleUnknownError()
 }

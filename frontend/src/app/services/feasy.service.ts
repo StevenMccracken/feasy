@@ -13,7 +13,10 @@ import { CommonUtilsService } from '../utils/common-utils.service';
 
 @Injectable()
 export class FeasyService {
-  private baseUrl: string = 'http://localhost:8080'; // 'https://api.feasy-app.com';
+  private remoteUrl: string = 'https://api.feasy-app.com';
+  private localhostPort: number = 8080;
+  private localhostUrl: string = `http://localhost:${this.localhostPort}`;
+  private baseUrl: string = this.localhostUrl;
   private contentTypes: Object = {
     json: 'application/json',
     urlencoded: 'application/x-www-form-urlencoded',
