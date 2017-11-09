@@ -33,10 +33,22 @@ export class LoginComponent implements OnInit {
   // Variables to update the form to display errors
   error: boolean;
   errorMessage: string;
-  private standardErrorMessage: string = 'Something bad happened. Please try signing in again';
+
+  /* tslint:disable max-line-length */
+  private errorMessages: Object = {
+    signInAgain: 'Please sign in again to continue.',
+    invalidCredentials: 'Your username or password is incorrect.',
+    general: 'Something bad happened. Please try signing in again.',
+    googleAuthPopup: 'Please enable popups in your browser settings in order to sign in with Google.',
+    regularSignInWithGoogle: 'You signed up using your Google account and must sign in by clicking the \'Sign in with Google\' button',
+    googleAuthHalfSuccess: 'Your Google Authentication worked, but we were unable to sign you in right now. Please try again later.',
+    signInHalfSuccess: 'Your username and password were correct, but there was a problem signing you in. Please try again later, or contact us at feasyresponse@gmail.com.',
+  };
+  /* tslint:enable max-line-length */
 
   private times: Object = {
     popupTimeout: 60000,
+    displayMessage: 5000,
   };
 
   // An JSON mapping variable names to more formal english words
@@ -77,13 +89,11 @@ export class LoginComponent implements OnInit {
         this.STORAGE.deleteItem('expiredToken');
 
         // Update the login screen error
-        this.error = true;
-        this.errorMessage = 'Please sign in again to continue';
+        this.displayError(this.errorMessages['signInAgain']);
         this.googleSignInImageSource = this.googleSignInImageSourceDefault;
       } else {
         // There is no token in storage currently, so don't display errors. Just display the main login form
-        this.error = false;
-        this.errorMessage = '';
+        this.resetError();
         this.googleSignInImageSource = this.googleSignInImageSourceDefault;
       }
 
@@ -115,9 +125,7 @@ export class LoginComponent implements OnInit {
     // Update the Google sign-in button styling
     this.googleSignInImageSource = this.googleSignInImageSourcePressed;
 
-    // Reset any previous error message
-    this.error = false;
-    this.errorMessage = '';
+    this.resetError();
 
     // Get the Google OAuth2.0 authentication URL for Feasy
     this.USERS.getAuthorizationUrl()
@@ -125,13 +133,10 @@ export class LoginComponent implements OnInit {
         // Update the Google sign-in button styling
         this.googleSignInImageSource = this.googleSignInImageSourceDefault;
 
-        // Open the authentication URL in a popup window. TODO: Stop using native popup for this
+        // Open the authentication URL in a popup window
         const popup = window.open(authUrl, 'Authenticate Google', 'width=600, height=600');
-        if (!this.UTILS.hasValue(popup)) {
-          this.error = true;
-          this.errorMessage = this.standardErrorMessage;
-          console.error('Opening Google OAuth2.0 window returned null');
-        } else {
+        if (!this.UTILS.hasValue(popup)) this.displayError(this.errorMessages['googleAuthPopup']);
+        else {
           // Automatically close the popup window after 1 minute
           setTimeout(() => popup.close(), this.times['popupTimeout']);
 
@@ -170,38 +175,37 @@ export class LoginComponent implements OnInit {
               // Signal that Google authentication inside the popup window is done to close it
               googleAuthSource.next(true);
 
-              this.error = true;
+              // this.error = true;
+              let errorMessage: string;
               let unknownError: boolean = false;
 
               if (this.ERROR.isLocalError(loginError)) {
                 if (loginError.getType() === 'null_authInfo') {
                   // The service call succeeded, but the necessary login info was missing
-                  /* tslint:disable max-line-length */
-                  this.errorMessage = 'Your Google Authentication worked, but we were unable to sign you in right now. Please try again later';
-                  /* tslint:enable max-line-length */
+                  errorMessage = this.errorMessages['googleAuthHalfSuccess'];
                   console.error(loginError);
                 } else unknownError = true;
               } else if (this.ERROR.isRemoteError(loginError)) {
                 if (this.ERROR.isInvalidRequestError(loginError)) {
                   // Likely, the alpha code was not in a valid form
-                  this.errorMessage = this.handleInvalidRequestError(loginError as RemoteError);
+                  errorMessage = this.handleInvalidRequestError(loginError as RemoteError);
                 } else if (this.ERROR.isResourceError(loginError as RemoteError)) {
                   // One of the attributes of the Google account was already being used by another account
                   const invalidResource: string = loginError.getCustomProperty('invalidResource') || '';
                   const officialName: string = this.varToWordMap[invalidResource] || '';
 
-                  if (invalidResource === 'username' || invalidResource === 'email') {
-                    this.errorMessage = `That ${officialName} is already taken`;
-                  } else if (invalidResource === 'alphaCode') this.errorMessage = `That ${officialName} has already been used`;
+                  if (invalidResource === 'username' || invalidResource === 'email') errorMessage = `That ${officialName} is already taken`;
+                  else if (invalidResource === 'alphaCode') errorMessage = `That ${officialName} has already been used`;
                   else unknownError = true;
                 } else if (this.ERROR.isResourceDneError(loginError as RemoteError)) {
                   // The access code does not exist
                   const officialName: string = this.varToWordMap['alphaCode'];
-                  this.errorMessage = `That ${officialName} does not exist`;
+                  errorMessage = `That ${officialName} does not exist`;
                 } else unknownError = true;
               } else unknownError = true;
 
               if (unknownError) this.handleUnknownError(loginError);
+              else this.displayError(errorMessage);
             }); // End this.USERS.authenticateGoogle()
         }
       }) // End then(authUrl)
@@ -217,26 +221,26 @@ export class LoginComponent implements OnInit {
    * information. Routes the user to the main page if the login is successful
    */
   signIn(): void {
-    // Reset any previous error message
-    this.error = false;
-    this.errorMessage = '';
+    this.resetError();
 
     // Checks the values from the form because that form validation can fail sometimes
     const usernameEntered: boolean = this.UTILS.hasValue(this._username);
     const passwordEntered: boolean = this.UTILS.hasValue(this._password);
-    this.error = !usernameEntered || !passwordEntered;
+    const errorOccurred: boolean = !usernameEntered || !passwordEntered;
 
     // If the form validation failed and invalid username/password were passed to the component, display an error
-    if (this.error) {
-      this.errorMessage = 'Please enter your ';
-      if (!usernameEntered) this.errorMessage += 'username';
+    if (errorOccurred) {
+      let errorMessage: string = 'Please enter your ';
+      if (!usernameEntered) errorMessage = `${errorMessage} username`;
       if (!passwordEntered) {
-        if (!usernameEntered) this.errorMessage += ' and password';
-        else this.errorMessage += 'password';
+        if (!usernameEntered) errorMessage = `${errorMessage} and password`;
+        else errorMessage = `${errorMessage} password`;
       }
 
       // If there is still an error but the username & password were entered, provide a generic message
-      if (usernameEntered && passwordEntered) this.errorMessage += 'login credentials';
+      if (usernameEntered && passwordEntered) errorMessage = `${errorMessage} login credentials`;
+
+      this.displayError(errorMessage);
     } else {
       // Username needs to be saved for closure created with service call to set local storage
       const username: string = this._username;
@@ -252,24 +256,21 @@ export class LoginComponent implements OnInit {
           this.ROUTER.navigate(['main']);
         }) // End then(token)
         .catch((loginError: Error) => {
-          this.error = true;
+          let errorMessage: string;
           let unknownError: boolean = false;
 
           if (this.ERROR.isLocalError(loginError)) {
-            if (loginError.getType() === 'null_token') {
-              /* tslint:disable max-line-length */
-              this.errorMessage = 'Your username and password were correct, but there was a problem signing you in. Please try again later, or contact us at feasyresponse@gmail.com';
-              /* tslint:enable max-line-length */
-            } else unknownError = true;
+            if (loginError.getType() === 'null_token') errorMessage = this.errorMessages['signInHalfSuccess'];
+            else unknownError = true;
           } else if (this.ERROR.isRemoteError(loginError)) {
-            if (this.ERROR.isInvalidRequestError(loginError)) this.errorMessage = this.handleInvalidRequestError(loginError as RemoteError);
-            else if (this.ERROR.isResourceError(loginError as RemoteError)) {
-              this.errorMessage = 'You signed up using your Google account and must sign in by clicking the \'Sign in with Google\' button';
-            } else if (this.ERROR.isLoginError(loginError as RemoteError)) this.errorMessage = 'Your username or password is incorrect';
+            if (this.ERROR.isInvalidRequestError(loginError)) errorMessage = this.handleInvalidRequestError(loginError as RemoteError);
+            else if (this.ERROR.isResourceError(loginError as RemoteError)) errorMessage = this.errorMessages['regularSignInWithGoogle'];
+            else if (this.ERROR.isLoginError(loginError as RemoteError)) errorMessage = this.errorMessages['invalidCredentials'];
             else unknownError = true;
           } else unknownError = true;
 
           if (unknownError) this.handleUnknownError(loginError);
+          else this.displayError(errorMessage);
         }); // End this.USERS.getAuthToken()
     }
   } // End signIn()
@@ -287,7 +288,7 @@ export class LoginComponent implements OnInit {
     const invalidParams: string[] = _error.getCustomProperty('invalidParameters') || [];
 
     // If there are no invalid parameters in the error object, use the standard error message
-    if (invalidParams.length === 0) errorMessage = this.standardErrorMessage;
+    if (invalidParams.length === 0) errorMessage = this.errorMessages['general'];
     else {
       // Create the error message from the invalid params array
       errorMessage = 'Your ';
@@ -317,13 +318,38 @@ export class LoginComponent implements OnInit {
   } // End handleInvalidRequestError()
 
   /**
+   * Displays an error message for a given duration
+   * @param {string} _message the message to display. If
+   * no value is given, the default value will be used
+   * @param {number} _duration the duration for the message to
+   * last. If no value is given, the default value will be used
+   */
+  displayError(_message?: string, _duration?: number): void {
+    const message: string = this.UTILS.hasValue(_message) ? _message : this.errorMessages['general'];
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['displayMessage'];
+
+    this.error = true;
+    this.errorMessage = message;
+
+    const self = this;
+    setTimeout(() => self.resetError(), duration);
+  } // End displayError()
+
+  /**
+   * Resets any error message that is currently displayed
+   */
+  resetError(): void {
+    this.error = false;
+    this.errorMessage = '';
+  } // End resetError()
+
+  /**
    * Handles unexpected error types by displaying
    * the standard error message and logging the error
    * @param {Error} _error the error of an unknown type
    */
   private handleUnknownError(_error: Error): void {
     console.error(_error);
-    this.error = true;
-    this.errorMessage = this.standardErrorMessage;
+    this.displayError(this.errorMessages['general']);
   } // End handleUnknownError()
 }

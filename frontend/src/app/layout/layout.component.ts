@@ -44,6 +44,7 @@ export class LayoutComponent implements OnInit {
   quickSettingType: boolean;
   quickSettingColors: boolean;
   quickSettingDescription: boolean;
+  quickSettingCalendarView: boolean
 
   // Materialize date-picker holder
   datePicker: any;
@@ -111,6 +112,7 @@ export class LayoutComponent implements OnInit {
     this.quickSettingType = this.QUICK_SETTINGS.getShowType();
     this.quickSettingColors = this.QUICK_SETTINGS.getShowColors();
     this.quickSettingDescription = this.QUICK_SETTINGS.getShowDescription();
+    this.quickSettingCalendarView = this.QUICK_SETTINGS.getDefaultCalendarViewIsWeek();
 
     // Instantiate the side nav
     $('#button-slide').sideNav();
@@ -214,6 +216,9 @@ export class LayoutComponent implements OnInit {
         break;
       case 'description':
         setTimeout(() => self.QUICK_SETTINGS.toggleShowDescription(), this.times['quickSettingToggle']);
+        break;
+      case 'calendarView':
+        setTimeout(() => self.QUICK_SETTINGS.toggleDefaultCalendarViewAsWeek(), this.times['quickSettingsToggle']);
         break;
       default:
         console.error('Can\'t toggle unknown settings type \'%s\'', _settingName);

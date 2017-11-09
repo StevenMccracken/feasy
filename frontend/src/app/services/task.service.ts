@@ -36,8 +36,8 @@ export class TaskService {
 
     // Check required task attributes
     const invalidParams: string[] = [];
-    if (!this.UTILS.hasValue(_task.title)) invalidParams.push('title');
-    if (!this.UTILS.hasValue(_task.dueDate)) invalidParams.push('dueDate');
+    if (!this.UTILS.hasValue(_task.getTitle())) invalidParams.push('title');
+    if (!this.UTILS.hasValue(_task.getDueDate)) invalidParams.push('dueDate');
 
     // Reject if there are invalid required task parameters
     if (invalidParams.length > 0) {
@@ -48,15 +48,15 @@ export class TaskService {
       // Add required task attributes
       const dateUnixSeconds: number = _task.getDueDateInUnixSeconds();
       const requestParams: Object = {
-        title: _task.title,
+        title: _task.getTitle(),
         dueDate: dateUnixSeconds,
       };
 
       // Add optional task attributes
-      if (this.UTILS.hasValue(_task.class)) requestParams['class'] = _task.class;
-      if (this.UTILS.hasValue(_task.type)) requestParams['type'] = _task.type;
+      if (this.UTILS.hasValue(_task.getClass())) requestParams['class'] = _task.getClass();
+      if (this.UTILS.hasValue(_task.getType())) requestParams['type'] = _task.getType();
       if (this.UTILS.hasValue(_task.description)) requestParams['description'] = _task.description;
-      if (this.UTILS.hasValue(_task.completed)) requestParams['completed'] = _task.completed;
+      if (this.UTILS.hasValue(_task.getCompleted())) requestParams['completed'] = _task.getCompleted();
 
       // Send request
       const promise = this.FEASY_API.post(createPath, requestParams, headersOptions)
@@ -64,8 +64,8 @@ export class TaskService {
           const responseBody = successResponse.json();
 
           // Update attributes for the local object that were created by the API
-          _task._id = responseBody['_id'];
-          _task.type = responseBody.type;
+          _task.getId() = responseBody['_id'];
+          _task.getType() = responseBody.getType();
           return Promise.resolve(_task);
         }) // End then(successResponse)
         .catch((errorResponse: Response) => {
@@ -102,23 +102,23 @@ export class TaskService {
     const formattedTasks: Object[] = [];
     for (let i = 0; i < _tasks.length; i++) {
       const invalidParams = [];
-      if (!this.UTILS.hasValue(_tasks[i].title)) invalidParams.push('title');
-      if (!this.UTILS.hasValue(_tasks[i].dueDate)) invalidParams.push('dueDate');
+      if (!this.UTILS.hasValue(_tasks[i].getTitle())) invalidParams.push('title');
+      if (!this.UTILS.hasValue(_tasks[i].getDueDate())) invalidParams.push('dueDate');
 
       if (invalidParams.length > 0) invalidTasks[String(i)] = invalidParams;
       else {
         // Add required task attributes
-        const dateUnixSeconds: Number = Math.round(_tasks[i].dueDate.getTime() / 1000);
+        const dateUnixSeconds: Number = Math.round(_tasks[i].getDueDate().getTime() / 1000);
         const taskAttributes: Object = {
-          title: _tasks[i].title,
+          title: _tasks[i].getTitle(),
           dueDate: dateUnixSeconds,
         };
 
         // Add optional task attributes
-        if (this.UTILS.hasValue(_tasks[i].class)) taskAttributes['class'] = _tasks[i].class;
-        if (this.UTILS.hasValue(_tasks[i].type)) taskAttributes['type'] = _tasks[i].type;
+        if (this.UTILS.hasValue(_tasks[i].getClass())) taskAttributes['class'] = _tasks[i].getClass();
+        if (this.UTILS.hasValue(_tasks[i].getType())) taskAttributes['type'] = _tasks[i].getType();
         if (this.UTILS.hasValue(_tasks[i].description)) taskAttributes['description'] = _tasks[i].description;
-        if (this.UTILS.hasValue(_tasks[i].completed)) taskAttributes['completed'] = _tasks[i].completed;
+        if (this.UTILS.hasValue(_tasks[i].getCompleted())) taskAttributes['completed'] = _tasks[i].getCompleted();
 
         formattedTasks.push(taskAttributes);
       }
