@@ -46,7 +46,7 @@
         <table>
           <tr>
             <td class="icon-menu">
-              <p class="material-icons">library_books</p>
+              <p class="material-icons">list</p>
             </td>
             <td>
               <h6>To-Do List</h6>
@@ -56,16 +56,18 @@
       </a>
     </li>
     <li>
-      <table>
-        <tr>
-          <td class="icon-menu">
-            <p class="material-icons">library_books</p>
-          </td>
-          <td>
-            <h6>Quick Add</h6>
-          </td>
-        </tr>
-      </table>
+      <a (click)="this.openQuickAdd()">
+        <table>
+          <tr>
+            <td class="icon-menu">
+              <p class="material-icons">add_circle_outline</p>
+            </td>
+            <td>
+              <h6>Quick Add</h6>
+            </td>
+          </tr>
+        </table>
+      </a>
     </li>
     <li>
       <a>
@@ -150,12 +152,6 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="container center upload-button" (click)="this.openQuickAdd()">
-      <label class="waves-effect waves-light btn blue">
-        Quick Add
-      </label>
     </div>
   </ul>
 
