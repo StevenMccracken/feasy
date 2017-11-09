@@ -448,10 +448,10 @@ export class CalendarComponent implements OnInit {
             const newDueDate: Date = new Date(unixMilliseconds + self.UTILS.getUnixMilliseconds12Hours());
 
             // Update the task's due date because it isn't in a valid format when first created
-            self.selectedDayEvents[index.getTask().setDueDate(newDueDate);
+            self.selectedDayEvents[index].getTask().setDueDate(newDueDate);
           } else if (context.hasOwnProperty('clear')) {
             // Reset the task's due date in the HTML form
-            self.selectedDayEvents[index.getTask().setDueDate(new Date(self.currentEditingTaskCopy.getDueDateInUnixMilliseconds()));
+            self.selectedDayEvents[index].getTask().setDueDate(new Date(self.currentEditingTaskCopy.getDueDateInUnixMilliseconds()));
           }
         }
       };
