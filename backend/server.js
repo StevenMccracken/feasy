@@ -49,7 +49,7 @@ app.use('/', ROUTER);
 
 // Connect to database server before express server starts
 MONGOOSE.Promise = BLUEBIRD;
-MONGOOSE.connect(DB_CONFIG.path, { useMongoClient: true });
+MONGOOSE.connect(DB_CONFIG.path, {"auth": {"authSource": DB_CONFIG.authSource}, "user": DB_CONFIG.user, "pass": DB_CONFIG.password, useMongoClient: true });
 
 // Define the port to listen on
 let port = 8080;
