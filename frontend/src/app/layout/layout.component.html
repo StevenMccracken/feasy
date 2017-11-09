@@ -91,11 +91,22 @@
           <div class="switch">
             <table>
               <tr>
+                <td class="fontify">Week View Default</td>
+                <td>
+                  <label>
+                    No
+                    <input type="checkbox" [(ngModel)]="this.quickSettingCalendarView" [value]="this.quickSettingCalendarView" (click)="this.toggleQuickSettings('calendarView')">
+                    <span class="lever"></span>
+                    Yes
+                  </label>
+                </td>
+              </tr>
+              <tr>
                 <td class="fontify">Colors</td>
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="this.quickSettingColors" value="true" (click)="this.toggleQuickSettings('color')">
+                    <input type="checkbox" [(ngModel)]="this.quickSettingColors" [value]="this.quickSettingColors" (click)="this.toggleQuickSettings('color')">
                     <span class="lever"></span>
                     On
                   </label>
@@ -106,7 +117,7 @@
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="this.quickSettingType" value="true" (click)="this.toggleQuickSettings('type')">
+                    <input type="checkbox" [(ngModel)]="this.quickSettingType" [value]="this.quickSettingType" (click)="this.toggleQuickSettings('type')">
                     <span class="lever"></span>
                     On
                   </label>
@@ -117,7 +128,7 @@
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="this.quickSettingDescription" value="true" (click)="this.toggleQuickSettings('description')">
+                    <input type="checkbox" [(ngModel)]="this.quickSettingDescription" [value]="this.quickSettingDescription" (click)="this.toggleQuickSettings('description')">
                     <span class="lever"></span>
                     On
                   </label>

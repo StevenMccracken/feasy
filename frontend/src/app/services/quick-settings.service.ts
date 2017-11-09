@@ -6,18 +6,22 @@ import { LocalStorageService } from '../utils/local-storage.service';
 
 @Injectable()
 export class QuickSettingsService {
+  private quickSettingsPrefix: string = 'quickSettings';
   private typeName: string;
   private colorsName: string;
   private descriptionName: string;
+  private defaultCalendarViewName: string;
 
   private showType: boolean;
   private showColors: boolean;
   private showDescription: boolean;
+  private defaultCalendarViewIsWeek: boolean;
 
   constructor(private STORAGE: LocalStorageService) {
-    this.typeName = 'quickSettings_type';
-    this.colorsName = 'quickSettings_color';
-    this.descriptionName = 'quickSettings_description';
+    this.typeName = `${this.quickSettingsPrefix}_type`;
+    this.colorsName = `${this.quickSettingsPrefix}_color`;
+    this.descriptionName = `${this.quickSettingsPrefix}_description`;
+    this.defaultCalendarViewName = `${this.quickSettingsPrefix}_calendarView`;
 
     /*
      * Check if quick settings are already in local storage. Default is true
@@ -34,6 +38,10 @@ export class QuickSettingsService {
     if (this.STORAGE.isValidItem(this.descriptionName)) {
       this.showDescription = this.STORAGE.getItem(this.descriptionName) === 'true';
     } else this.turnShowDescriptionOn();
+
+    if (this.STORAGE.isValidItem(this.defaultCalendarViewName)) {
+      this.defaultCalendarViewIsWeek = this.STORAGE.getItem(this.defaultCalendarViewName) === 'true';
+    } else this.turnDefaultCalendarViewAsWeekOff();
   } // End constructor()
 
   getShowType(): boolean {
@@ -46,6 +54,10 @@ export class QuickSettingsService {
 
   getShowDescription(): boolean {
     return this.showDescription;
+  }
+
+  getDefaultCalendarViewIsWeek(): boolean {
+    return this.defaultCalendarViewIsWeek;
   }
 
   private setShowType(_showType: boolean): void {
@@ -63,6 +75,11 @@ export class QuickSettingsService {
     this.showDescription = _showDescription;
   }
 
+  private setDefaultCalendarViewIsWeek(_defaultCalendarViewIsWeek: boolean): void {
+    this.STORAGE.setItem(this.defaultCalendarViewName, _defaultCalendarViewIsWeek.toString());
+    this.defaultCalendarViewIsWeek = _defaultCalendarViewIsWeek;
+  }
+
   turnShowTypeOn(): void {
     this.setShowType(true);
   }
@@ -73,6 +90,10 @@ export class QuickSettingsService {
 
   turnShowDescriptionOn(): void {
     this.setShowDescription(true);
+  }
+
+  turnDefaultCalendarViewAsWeekOn(): void {
+    this.setDefaultCalendarViewIsWeek(true);
   }
 
   turnShowTypeOff(): void {
@@ -87,6 +108,10 @@ export class QuickSettingsService {
     this.setShowDescription(false);
   }
 
+  turnDefaultCalendarViewAsWeekOff(): void {
+    this.setDefaultCalendarViewIsWeek(false);
+  }
+
   toggleShowType(): void {
     this.setShowType(!this.showType);
   }
@@ -97,5 +122,9 @@ export class QuickSettingsService {
 
   toggleShowDescription(): void {
     this.setShowDescription(!this.showDescription);
+  }
+
+  toggleDefaultCalendarViewAsWeek(): void {
+    this.setDefaultCalendarViewIsWeek(!this.defaultCalendarViewIsWeek);
   }
 }

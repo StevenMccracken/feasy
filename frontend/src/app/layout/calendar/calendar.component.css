@@ -18,6 +18,10 @@
   display: block;
 }
 
+.pull-right {
+  float: right !important;
+}
+
 .content-view {
   background-color: #F5F5F5;
   border: thin solid #CCC;

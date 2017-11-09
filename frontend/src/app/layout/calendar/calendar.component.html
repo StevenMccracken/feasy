@@ -15,6 +15,15 @@
           </div>
         </div>
       </div>
+      <div class="col s12">
+        <div class="btn btn-red waves-effect waves-light pull-right" (click)="this.calendarViewType = this.CalendarViewTypes.WEEK" [class.active]="this.calendarViewType === this.CalendarViewTypes.WEEK">
+          Week
+        </div>
+        <br><br>
+        <div class="btn btn-red waves-effect waves-light pull-right" (click)="this.calendarViewType = this.CalendarViewTypes.MONTH" [class.active]="this.calendarViewType === this.CalendarViewTypes.MONTH">
+          Month
+        </div>
+      </div>
       <div class="col s12 cal-title">
         <h3 class="calendar-title">{{ this.viewDate | calendarDate:(this.calendarViewType + 'ViewTitle'):'en' }}</h3>
       </div>
@@ -31,26 +40,14 @@
           </a>
         </div>
       </div>
-
-      <!-- TODO: Should we include this? -->
-      <!-- <div class="col s4">
-        <div class="btn-group">
-          <div class="btn btn-primary" (click)="this.calendarViewType='month'" [class.active]="this.calendarViewType === 'month'">
-            Month
-          </div>
-          <div class="btn btn-primary" (click)="this.calendarViewType='week'" [class.active]="this.calendarViewType === 'week'">
-            Week
-          </div>
-        </div>
-      </div> -->
     </div>
   </div>
   <br>
   <div class="row">
     <div [ngSwitch]="this.calendarViewType" class="col s12">
-      <mwl-calendar-month-view *ngSwitchCase="'month'" [viewDate]="this.viewDate" [events]="this.events" [refresh]="this.calendarState" [activeDayIsOpen]="this.activeDayIsOpen" (mousedown)="this.setEvent($event)" (dayClicked)="this.monthEventClick($event)" (eventClicked)="this.handleEvent('Clicked', $event.event)" (eventTimesChanged)="this.eventTimesChanged($event)">
+      <mwl-calendar-month-view *ngSwitchCase="this.CalendarViewTypes.MONTH" [viewDate]="this.viewDate" [events]="this.events" [refresh]="this.calendarState" (dayClicked)="this.monthViewDayClicked($event)" (eventTimesChanged)="this.eventTimesWereChanged($event)" (mousedown)="this.setEvent($event)">
       </mwl-calendar-month-view>
-      <mwl-calendar-week-view *ngSwitchCase="'week'" [viewDate]="this.viewDate" [events]="this.events" [refresh]="this.calendarState"  (dayClicked)="this.dayEventClick($event)" (eventClicked)="this.handleEvent('Clicked', $event.event)" (eventTimesChanged)="this.eventTimesChanged($event)">
+      <mwl-calendar-week-view *ngSwitchCase="this.CalendarViewTypes.WEEK" [viewDate]="this.viewDate" [events]="this.events" [refresh]="this.calendarState" (dayClicked)="this.weekViewDayClicked($event)" (eventTimesChanged)="this.eventTimesWereChanged($event)">
       </mwl-calendar-week-view>
     </div>
   </div>
@@ -72,40 +69,40 @@
           </div>
         </div>
       </div>
-      <div *ngFor="let a of this.selectedDayTasks; let i = index;" class="col s12">
+      <div *ngFor="let event of this.selectedDayEvents; let i = index;" class="col s12">
         <table class="eventDisplay">
           <tr class="row">
             <td class="col s12 m4" align='center'>
               <div class="collection-head">
-                <div *ngIf="!a.getEditModeTitle()">
-                  <h5>{{ a.getTitle() }}</h5>
+                <div *ngIf="!event.getTask().getEditModeTitle()">
+                  <h5>{{ event.getTask().getTitle() }}</h5>
                 </div>
-                <div [style.display]="a.getEditModeTitle() ? 'inline' : 'none'">
-                  <input [id]="'titleEdit' + i" name="titleEdit" type="text" [(ngModel)]="a.title">
+                <div [style.display]="event.getTask().getEditModeTitle() ? 'inline' : 'none'">
+                  <input [id]="'titleEdit' + i" name="titleEdit" type="text" [(ngModel)]="event.task.title">
                   <label [for]="'titleEdit' + i">Title</label>
                 </div>
               </div>
             </td>
-            <td class="col s7 m2" align='center' *ngIf="this.shouldDisplayTaskType() && !a.getEditModeType()" [style.display]="a.getType() ? 'inline': 'none'">
-              <div class="chip">{{ a.getType() }}</div>
+            <td class="col s7 m2" align='center' *ngIf="this.shouldDisplayTaskType() && !event.getTask().getEditModeType()" [style.display]="event.getTask().getType() ? 'inline': 'none'">
+              <div class="chip">{{ event.getTask().getType() }}</div>
             </td>
             <td class="col s2 m1" align='center'>
-              <p class="material-icons action" (click)="this.displayEditableFields(a, i)">create</p>
+              <p class="material-icons action" (click)="this.displayEditableFields(event, i)">create</p>
             </td>
-            <td class="col s2 m1" align='center' [ngClass]="a.getCompleted() ? 'complete' : 'incomplete'">
-              <input type="checkbox" [id]="'completed' + i" class="filled-in" [checked]="a.getCompleted()" (click)="this.updateCompleted(a, i)"/>
+            <td class="col s2 m1" align='center' [ngClass]="event.getTask().getCompleted() ? 'complete' : 'incomplete'">
+              <input type="checkbox" [id]="'completed' + i" class="filled-in" [checked]="event.getTask().getCompleted()" (click)="this.updateCompleted(event, i)"/>
               <label [for]="'completed' + i"></label>
-              <div *ngIf="a.getCompleted()">Completed</div>
-              <div *ngIf="!a.getCompleted()">Incomplete</div>
+              <div *ngIf="event.getTask().getCompleted()">Completed</div>
+              <div *ngIf="!event.getTask().getCompleted()">Incomplete</div>
             </td>
             <td class="col s2 m1" align='center'>
-              <p class="material-icons action" (click)="this.deleteRemoteTask(a, i)">delete_sweep</p>
+              <p class="material-icons action" (click)="this.deleteRemoteTask(event, i)">delete_sweep</p>
             </td>
           </tr>
-          <tr class="row" *ngIf="this.shouldDisplayTaskType()" [style.display]="a.getEditModeType() ? 'inline': 'none'">
+          <tr class="row" *ngIf="this.shouldDisplayTaskType()" [style.display]="event.getTask().getEditModeType() ? 'inline': 'none'">
             <td>
               <div class="input-field col s12" id="type-row">
-                <select id="type" name="type" [(ngModel)]="a.type" #type="ngModel">
+                <select id="type" name="type" [(ngModel)]="event.task.type" #type="ngModel">
                   <option value="" selected>None</option>
                   <option value="Homework">Homework</option>
                   <option value="Quiz">Quiz</option>
@@ -116,27 +113,27 @@
               </div>
             </td>
           </tr>
-          <tr class="row" [style.display]="a.getEditModeDate() ? 'inline': 'none'" >
+          <tr class="row" [style.display]="event.getTask().getEditModeDate() ? 'inline': 'none'" >
             <div class="col s8">
-              <input required type="text" placeholder="Due Date" class="form-control existingTaskDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="a.dueDate | date: 'fullDate'" (click)="this.publishDatePick(a, i)">
+              <input required type="text" placeholder="Due Date" class="form-control existingTaskDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="event.task.dueDate | date: 'fullDate'" (click)="this.publishDatePick(event, i)">
             </div>
           </tr>
           <tr class="row" *ngIf="this.shouldDisplayTaskDescription()">
-            <div *ngIf="!a.getEditModeDescription() && (a.getDescription() || '').trim() !== ''" class="col s12">
-              <pre>{{ a.getDescription() }}</pre>
+            <div *ngIf="!event.getTask().getEditModeDescription() && (event.getTask().getDescription() || '').trim() !== ''" class="col s12">
+              <pre>{{ event.getTask().getDescription() }}</pre>
             </div>
-            <div [style.display]="a.getEditModeDescription() ? 'inline' : 'none'">
+            <div [style.display]="event.getTask().getEditModeDescription() ? 'inline' : 'none'">
               <div class="row">
                 <div class="input-field col s8">
-                  <textarea [id]="'descriptionEdit' + i" name="descriptionEdit" class="materialize-textarea col s12" [(ngModel)]="a.description"></textarea>
+                  <textarea [id]="'descriptionEdit' + i" name="descriptionEdit" class="materialize-textarea col s12" [(ngModel)]="event.task.description"></textarea>
                   <label [for]="'descriptionEdit' + i">Description</label>
                 </div>
               </div>
             </div>
           </tr>
-          <tr class="row" [style.display]="a.getEditModeDate() ? 'inline' : 'none'">
-            <button class="btn btn-flat add-todo" (click)="this.updateTask(a, i)">Update</button>
-            <button class="btn btn-flat add-todo" (click)="this.cancelEditingTask(a, i)">Cancel</button>
+          <tr class="row" [style.display]="event.getTask().getEditModeDate() ? 'inline' : 'none'">
+            <button class="btn btn-flat add-todo" (click)="this.updateTask(event, i)">Update</button>
+            <button class="btn btn-flat add-todo" (click)="this.cancelEditing(event, i)">Cancel</button>
           </tr>
         </table>
       </div>

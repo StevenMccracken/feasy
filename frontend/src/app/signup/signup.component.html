@@ -1,7 +1,7 @@
 <div class="row signup">
   <form class="col s12 offset-m4 m4" #signupForm="ngForm" autocomplete="on">
     <h4 class="logo">Feasy</h4>
-    <div id="error" *ngIf="error">
+    <div id="error" *ngIf="this.error">
       <div class="card error-message">
         <div class="card-content">
           {{ this.errorMessage }}
