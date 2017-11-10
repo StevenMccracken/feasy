@@ -38,4 +38,5 @@ jwtSecret.json
 googleSecret.json
 bugsnagSecret.json
 sendGridSecret.json
+databaseSecret.json
 secrets.tar
