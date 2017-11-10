@@ -21,6 +21,7 @@ import { CommonUtilsService } from '../../utils/common-utils.service';
 import { LocalStorageService } from '../../utils/local-storage.service';
 import { TaskDatePicked } from '../../objects/messages/task-date-picked';
 import { QuickSettingsService } from '../../services/quick-settings.service';
+import { QuickAddTasksCreated } from '../../objects/messages/quick-add-tasks-created';
 
 declare var $: any;
 
@@ -46,6 +47,9 @@ export class ToDoComponent implements OnInit {
   // Materialize date-picker holder
   newDatePicker: any;
   existingDatePicker: any;
+
+  // Subscription used to receive messages about when tasks are added from the Quick Add modal
+  quickAddTasksSubscription: Subscription;
 
   // Subscription used to receive messages about when a row in the incomplete section is clicked
   taskRowSelectedSubscription: Subscription;
@@ -115,10 +119,19 @@ export class ToDoComponent implements OnInit {
     // Configure the drag n drop service
     this.DRAGULA_SERVICE.drop.subscribe(value => this.onDrop(value));
     this.toDoInit();
+
+    this.quickAddTasksSubscription = this.MESSAGING.messagesOf(QuickAddTasksCreated)
+      .subscribe((quickAddMessage) => {
+        if (this.UTILS.hasValue(quickAddMessage)) {
+          const newTasks: Task[] = quickAddMessage.getTasks() || [];
+          this.addTasksAndSort(newTasks);
+        }
+      });
   } // End ngOnInit()
 
   ngOnDestroy() {
     // Unsubscribe to ensure no memory leaks or duplicate messages
+    if (this.UTILS.hasValue(this.quickAddTasksSubscription)) this.quickAddTasksSubscription.unsubscribe();
     if (this.UTILS.hasValue(this.taskRowSelectedSubscription)) this.taskRowSelectedSubscription.unsubscribe();
   } // End ngOnDestroy()
 
@@ -135,13 +148,7 @@ export class ToDoComponent implements OnInit {
     // Fetch all the user's tasks
     this.TASKS.getAll()
       .then((tasks: Task[]) => {
-        // Filter the tasks into complete and incomplete arrays
-        tasks.forEach((task) => {
-          if (task.getCompleted()) this.completedTasks.push(task);
-          else this.incompleteTasks.push(task);
-        });
-
-        this.sortAllTasks();
+        this.addTasksAndSort(tasks);
         this.showBothLists = true;
         this.showCompletedList = true;
         this.showIncompleteList = true;
@@ -154,6 +161,22 @@ export class ToDoComponent implements OnInit {
         this.resetNewTaskFields();
       }); // End this.TASKS.getAll()
   } // End toDoInit()
+
+  /**
+   * Adds a given list of tasks into either the completed or
+   * incomplete list, based on each tasks' completed value.
+   * Then, both lists are sorted by the tasks' due dates
+   * @param {Task[]} _tasks the tasks to add
+   */
+  addTasksAndSort(_tasks: Task[]): void {
+    // Filter the tasks into complete and incomplete arrays
+    _tasks.forEach((task) => {
+      if (task.getCompleted()) this.completedTasks.push(task);
+      else this.incompleteTasks.push(task);
+    });
+
+    this.sortAllTasks();
+  } // End addTasksAndSort()
 
   /**
    * Receives a Dragula event and determines where
