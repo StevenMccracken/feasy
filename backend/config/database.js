@@ -2,9 +2,11 @@
  * database - Database configuration
  */
 
+const CONFIG = require('./databaseSecret');
+
 module.exports = {
   path: 'mongodb://localhost/userDB',
   authSource: 'userDB',
-  user: '',
-  password: '',
+  user: CONFIG.username,
+  password: CONFIG.password,
 };
