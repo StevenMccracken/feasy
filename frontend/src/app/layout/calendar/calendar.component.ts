@@ -203,6 +203,24 @@ export class CalendarComponent implements OnInit {
 
     // Populate the calendar with the user's tasks
     this.initializeCalendarData();
+
+    // Capture left and right arrow presses to move the calendar view forwards and backwards
+    const self = this;
+    document.onkeydown = (_event) => {
+      const keyPress: any = _event || window.event;
+      const dateAdjustment: number = self.calendarViewType === self.CalendarViewTypes.WEEK ? 7 : 30;
+      switch (keyPress.key) {
+        case 'ArrowLeft':
+          self.viewDate = addDays(self.viewDate, -dateAdjustment);
+          this.refreshCalendar();
+          break;
+        case 'ArrowRight':
+          self.viewDate = addDays(self.viewDate, dateAdjustment);
+          this.refreshCalendar();
+          break;
+        default:
+      }
+    };
   } // End ngOnInit()
 
   /**
