@@ -3,6 +3,12 @@ import { Router } from '@angular/router';
 import { Response } from '@angular/http';
 import { Injectable } from '@angular/core';
 
+// Import 3rd party libraries
+import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/catch';
+import 'rxjs/add/operator/toPromise';
+import { Observable } from 'rxjs/Observable';
+
 // Import our files
 import { Task } from '../objects/task';
 import { FeasyService } from './feasy.service';
@@ -201,7 +207,6 @@ export class TaskService {
     const username: string = this.STORAGE.getItem('currentUser');
     const getPath: string = `/users/${username}/assignments`;
     const headersOptions: Object = { Authorization: token };
-
     // Send request
     const promise = this.FEASY_API.get(getPath, headersOptions)
       .then((successResponse: Response) => {

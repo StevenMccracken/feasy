@@ -81,7 +81,7 @@
               </tr>
               <tr class="row" *ngIf="this.doDisplayTaskDescription()">
                 <div *ngIf="!a.getEditModeDescription() && (a.getDescription() || '').trim() !== ''" class="col s12">
-                  <pre>{{ a.getDescription() }}</pre>
+                  <pre [style.width]="this.getSize()">{{ a.getDescription() }}</pre>
                 </div>
                 <div [style.display]="a.getEditModeDescription() ? 'inline' : 'none'">
                   <div class="row">
@@ -179,7 +179,7 @@
             </tr>
             <tr class="row"  *ngIf="this.doDisplayTaskDescription()" [style.display]="(a.getDescription() || '').trim() === '' ? 'none': 'inline'">
               <div class="col s12">
-                <pre>{{ a.getDescription() }}</pre>
+                <pre [style.width]="this.getSize()">{{ a.getDescription() }}</pre>
               </div>
             </tr>
           </table>
