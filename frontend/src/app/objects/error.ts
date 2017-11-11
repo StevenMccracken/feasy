@@ -28,7 +28,6 @@ export class Error {
   } // End getId()
 
   getType(): string {
-    console.log(this.type);
     return this.type;
   } // End getType()
 

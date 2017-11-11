@@ -5,10 +5,6 @@ import { Injectable } from '@angular/core';
 
 // Import 3rd-party libraries
 import { GoogleAuthService } from 'ng-gapi/lib/GoogleAuthService';
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/catch';
-import 'rxjs/add/operator/toPromise';
-import { Observable } from 'rxjs/Observable';
 
 // Import our files
 import { User } from '../objects/user';

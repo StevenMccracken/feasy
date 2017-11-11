@@ -32,7 +32,6 @@ export class FeasyService {
    * @return {Promise<Response>} the HTTP response
    */
   post(_path: string = '', _bodyParameters: Object = {}, _headers: Object = {}): Promise<Response> {
-    console.log("went through");
     return this.sendRequest('post', _path, _bodyParameters, _headers)
       .then((successResponse: Response) => Promise.resolve(successResponse))
       .catch((errorResponse: Response) => Promise.reject(errorResponse));
