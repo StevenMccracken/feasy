@@ -54,10 +54,6 @@ export class ToDoComponent implements OnInit {
   // Subscription used to receive messages about when a row in the incomplete section is clicked
   taskRowSelectedSubscription: Subscription;
 
-  // this will allow a constant size for description when displayed on modal
-  // FIX: fixes long description going off modal
-  size: Number;
-
   private times: Object = {
     displayMessage: 5000,
     scrollDuration: 375,
@@ -123,7 +119,7 @@ export class ToDoComponent implements OnInit {
     // Configure the drag n drop service
     this.DRAGULA_SERVICE.drop.subscribe(value => this.onDrop(value));
     this.toDoInit();
-    this.size = $('#createTaskForm').width()*0.95972614;
+
     this.quickAddTasksSubscription = this.MESSAGING.messagesOf(QuickAddTasksCreated)
       .subscribe((quickAddMessage) => {
         if (this.UTILS.hasValue(quickAddMessage)) {
@@ -280,7 +276,8 @@ export class ToDoComponent implements OnInit {
    @return {string} return the px size
   */
   getSize(): string{
-    return this.size + 'px';
+    let size = $('#createTaskForm').width()*0.95972614;
+    return size + 'px';
   } // End getSize()
 
 

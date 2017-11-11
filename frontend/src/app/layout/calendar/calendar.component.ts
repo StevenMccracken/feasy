@@ -100,10 +100,6 @@ export class CalendarComponent implements OnInit {
   // Subscription used to receive messages about when the quick setting Show Colors is toggled on or off
   showColorsSubscription: Subscription;
 
-  // this will allow a constant size for description when displayed on modal
-  // FIX: fixes long description going off modal
-  size: Number;
-
   private times: Object = {
     displayMessage: 5000,
     popupDelay: 300,
@@ -342,14 +338,10 @@ export class CalendarComponent implements OnInit {
       } else {
         this.dayWasClickedOnce = !this.dayWasClickedOnce;
         this.openSelectedDayView(dateClicked);
-        this.size = $('#task-creation').width()*0.95972614;
-
-
       }
     } else {
       clearTimeout(this.monthViewDayClickTimer);
       this.openSelectedDayView(dateClicked);
-      this.size = $('#task-creation').width()*0.95972614;
     }
   } // End monthViewDayClicked()
 
@@ -359,7 +351,8 @@ export class CalendarComponent implements OnInit {
    @return {string} return the px size
   */
   getSize(): string{
-    return this.size + 'px';
+    let size = $('#task-creation').width()*0.95972614;
+    return size + 'px';
   } // End getSize()
 
   /**

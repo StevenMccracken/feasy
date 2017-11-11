@@ -120,7 +120,7 @@
           </tr>
           <tr class="row" *ngIf="this.shouldDisplayTaskDescription()">
             <div *ngIf="!event.getTask().getEditModeDescription() && (event.getTask().getDescription() || '').trim() !== ''" class="col s12">
-              <pre [style.width]="this.getSize()">{{ event.getTask().getDescription() }}</pre>
+              <pre [style.width]="this.getSize()" (window:resize)="this.getSize()">{{ event.getTask().getDescription() }}</pre>
             </div>
             <div [style.display]="event.getTask().getEditModeDescription() ? 'inline' : 'none'">
               <div class="row">
