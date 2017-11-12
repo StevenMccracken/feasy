@@ -65,7 +65,7 @@ export class TaskService {
 
           // Update attributes for the local object that were created by the API
           _task.setId(responseBody['_id']);
-          _task.setType(responseBody.getType());
+          _task.setType(responseBody['type']);
           return Promise.resolve(_task);
         }) // End then(successResponse)
         .catch((errorResponse: Response) => {

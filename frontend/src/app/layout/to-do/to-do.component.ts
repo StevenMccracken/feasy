@@ -2,6 +2,7 @@
 import {
   OnInit,
   Component,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -54,9 +55,11 @@ export class ToDoComponent implements OnInit {
   // Subscription used to receive messages about when a row in the incomplete section is clicked
   taskRowSelectedSubscription: Subscription;
 
-  // this will allow a constant size for description when displayed on modal
-  // FIX: fixes long description going off modal
-  size: Number;
+  // Contains the correct widths for certain HTML elements
+  correctWidths: any = {
+    description: 0,
+    previousWindow: 0,
+  };
 
   private times: Object = {
     displayMessage: 5000,
@@ -100,7 +103,7 @@ export class ToDoComponent implements OnInit {
     },
   };
 
-  varToWordMap = {
+  private varToWordMap = {
     title: 'title',
     dueDate: 'due date',
     newTitle: 'title',
@@ -116,14 +119,18 @@ export class ToDoComponent implements OnInit {
     private MESSAGING: MessagingService,
     private STORAGE: LocalStorageService,
     private DRAGULA_SERVICE: DragulaService,
+    private CHANGE_DETECTOR: ChangeDetectorRef,
     private QUICK_SETTINGS: QuickSettingsService,
   ) {}
 
   ngOnInit() {
     // Configure the drag n drop service
     this.DRAGULA_SERVICE.drop.subscribe(value => this.onDrop(value));
+    this.correctWidths.description = this.getCorrectDescriptionWidth();
+    this.correctWidths.previousWindow = document.documentElement.clientWidth;
+
     this.toDoInit();
-    this.size = $('#createTaskForm').width()*0.95972614;
+
     this.quickAddTasksSubscription = this.MESSAGING.messagesOf(QuickAddTasksCreated)
       .subscribe((quickAddMessage) => {
         if (this.UTILS.hasValue(quickAddMessage)) {
@@ -132,6 +139,17 @@ export class ToDoComponent implements OnInit {
         }
       });
 
+    // Listen for window resizing events
+    const self = this;
+    window.addEventListener('resize', (_event) => {
+      // Only update the width of the input boxes when the selected day modal is open and the window is horizontally resized
+      const source: any = _event.srcElement || _event.currentTarget;
+      if (source.innerWidth !== self.correctWidths.previousWindow) {
+        self.correctWidths.previousWindow = source.innerWidth;
+        self.correctWidths.description = self.getCorrectDescriptionWidth();
+        self.CHANGE_DETECTOR.detectChanges();
+      }
+    });
   } // End ngOnInit()
 
   ngOnDestroy() {
@@ -275,14 +293,13 @@ export class ToDoComponent implements OnInit {
   } // End onDrop()
 
   /**
-   a simple return function to maintain constant size for <pre> in displaying
-   the tasks' description
-   @return {string} return the px size
-  */
-  getSize(): string{
-    return this.size + 'px';
-  } // End getSize()
-
+   * Returns the correct width that the description
+   * text field should be when it is not being edited
+   * @return {number} the correct width
+   */
+  getCorrectDescriptionWidth(): number {
+    return $('#createTaskForm').width() * 0.95972614;
+  } // End getCorrectDescriptionWidth()
 
   /**
    * Displays an error within the completed section

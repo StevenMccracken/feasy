@@ -75,7 +75,9 @@
             <td class="col s12 m4" align='center'>
               <div class="collection-head">
                 <div *ngIf="!event.getTask().getEditModeTitle()">
-                  <h5>{{ event.getTask().getTitle() }}</h5>
+                  <h5>
+                    {{ (event.getTask().getTitle() || '').length <= 20 ? event.getTask().getTitle() : event.getTask().getTitle().substring(0, 16) + '...' }}
+                  </h5>
                 </div>
                 <div [style.display]="event.getTask().getEditModeTitle() ? 'inline' : 'none'">
                   <input [id]="'titleEdit' + i" name="titleEdit" type="text" [(ngModel)]="event.task.title">
@@ -120,7 +122,7 @@
           </tr>
           <tr class="row" *ngIf="this.shouldDisplayTaskDescription()">
             <div *ngIf="!event.getTask().getEditModeDescription() && (event.getTask().getDescription() || '').trim() !== ''" class="col s12">
-              <pre [style.width]="this.getSize()">{{ event.getTask().getDescription() }}</pre>
+              <pre [style.width]="this.correctWidths.description + 'px'">{{ event.getTask().getDescription() }}</pre>
             </div>
             <div [style.display]="event.getTask().getEditModeDescription() ? 'inline' : 'none'">
               <div class="row">

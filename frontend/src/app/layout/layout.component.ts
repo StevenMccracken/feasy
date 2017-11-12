@@ -40,11 +40,12 @@ export class LayoutComponent implements OnInit {
   // Array of tasks for the quick add modal
   quickAddTasks: Task[];
 
-  // Quick Settings variables
-  quickSettingType: boolean;
-  quickSettingColors: boolean;
-  quickSettingDescription: boolean;
-  quickSettingCalendarView: boolean
+  quickSettings: any = {
+    type: false,
+    colors: false,
+    description: false,
+    calendarView: false,
+  };
 
   // Materialize date-picker holder
   datePicker: any;
@@ -109,10 +110,10 @@ export class LayoutComponent implements OnInit {
     this.avatars = this.AVATARS.getAllAvatars();
 
     // Initialize the quick settings
-    this.quickSettingType = this.QUICK_SETTINGS.getShowType();
-    this.quickSettingColors = this.QUICK_SETTINGS.getShowColors();
-    this.quickSettingDescription = this.QUICK_SETTINGS.getShowDescription();
-    this.quickSettingCalendarView = this.QUICK_SETTINGS.getDefaultCalendarViewIsWeek();
+    this.quickSettings.type = this.QUICK_SETTINGS.getShowType();
+    this.quickSettings.colors = this.QUICK_SETTINGS.getShowColors();
+    this.quickSettings.description = this.QUICK_SETTINGS.getShowDescription();
+    this.quickSettings.calendarView = this.QUICK_SETTINGS.getDefaultCalendarViewIsWeek();
 
     // Instantiate the side nav
     $('#button-slide').sideNav();
