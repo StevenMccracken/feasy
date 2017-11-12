@@ -2,14 +2,10 @@
   margin-top: 55px;
 }
 
-#signup {
-  padding-left: 5px;
-}
-
 #googleSignIn {
   border: none;
-  width: 13.100em;
   height: 3.220em;
+  width: 13.100em;
 }
 
 .error-message {
@@ -20,4 +16,10 @@
 
 .error-message .card-content {
   padding: 5px;
+}
+
+.btn-red {
+  background-color: #E57373;
+  color: #FFFFFF;
+  text-align: center;
 }

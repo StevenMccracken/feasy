@@ -17,8 +17,37 @@ function log(_message) {
 }
 
 /**
+ * createLocal - Creates a new assignment for a user in memory (not in the database)
+ * @param {Object} [_assignmentInfo = {}] JSON containing the assignment attributes
+ * @return {Assignment} the Mongoose object
+ */
+const createLocal = function createLocal(_assignmentInfo = {}) {
+  const SOURCE = 'createLocal()';
+  log(SOURCE);
+
+  const newAssignment = new ASSIGNMENT();
+
+  newAssignment.title = _assignmentInfo.title;
+  newAssignment.userId = _assignmentInfo.userId;
+  newAssignment.dueDate = _assignmentInfo.dueDate;
+  newAssignment.completed = _assignmentInfo.completed;
+
+  // Add optional properties
+  newAssignment.class = UTIL.hasValue(_assignmentInfo.class) ? _assignmentInfo.class : '';
+  newAssignment.type = UTIL.hasValue(_assignmentInfo.type) ? _assignmentInfo.type : '';
+  if (!UTIL.hasValue(_assignmentInfo.description)) newAssignment.description = '';
+  else newAssignment.description = _assignmentInfo.description;
+
+  if (UTIL.hasValue(_assignmentInfo.googleId)) {
+    newAssignment.googleId = _assignmentInfo.googleId;
+  }
+
+  return newAssignment;
+}; // End createLocal()
+
+/**
  * create - Saves a new assignment for a user in the database
- * @param {Object} [_assignmentInfo={}] JSON containing the assignment attributes
+ * @param {Object} [_assignmentInfo = {}] JSON containing the assignment attributes
  * @return {Promise<Assignment>} the Mongoose object
  */
 const create = function create(_assignmentInfo = {}) {
@@ -26,23 +55,7 @@ const create = function create(_assignmentInfo = {}) {
   log(SOURCE);
 
   return new Promise((resolve, reject) => {
-    /* eslint-disable prefer-const */
-    let newAssignment = new ASSIGNMENT();
-    /* eslint-enable prefer-const */
-
-    newAssignment.title = _assignmentInfo.title;
-    newAssignment.userId = _assignmentInfo.userId;
-    newAssignment.dueDate = _assignmentInfo.dueDate;
-    newAssignment.completed = _assignmentInfo.completed;
-
-    // Add optional properties
-    newAssignment.class = UTIL.hasValue(_assignmentInfo.class) ? _assignmentInfo.class : '';
-    newAssignment.type = UTIL.hasValue(_assignmentInfo.type) ? _assignmentInfo.type : '';
-    if (!UTIL.hasValue(_assignmentInfo.description)) newAssignment.description = '';
-    else newAssignment.description = _assignmentInfo.description;
-
-    if (UTIL.hasValue(_assignmentInfo.googleId)) newAssignment.googleId = _assignmentInfo.googleId;
-
+    const newAssignment = createLocal(_assignmentInfo);
     newAssignment.save()
       .then(() => resolve(newAssignment)) // End then(newAssignment)
       .catch(saveAssignmentError => reject(saveAssignmentError)); // End newAssignment.save()
@@ -67,9 +80,7 @@ const convertGoogleEvent = function convertGoogleEvent(_userId, _googleEvent) {
    * is not actually a Google Calendar event from the Google API
    */
   try {
-    /* eslint-disable prefer-const */
-    let newAssignment = new ASSIGNMENT();
-    /* eslint-enable prefer-const */
+    const newAssignment = new ASSIGNMENT();
 
     newAssignment.title = _googleEvent.summary;
     newAssignment.userId = _userId;
@@ -261,7 +272,26 @@ const removeAllByUser = function removeAllByUser(_userId) {
   }); // End return promise
 }; // End removeAllByUser()
 
+/**
+ * sort - Sorts assignments by their due date in ascending order
+ * @param {Array<Assignment>} _assignments the array of assignments to sort
+ */
+const sort = function sort(_assignments = []) {
+  _assignments.sort((assignment1, assignment2) => {
+    const moment1 = UTIL.moment(assignment1.dueDate);
+    const moment2 = UTIL.moment(assignment2.dueDate);
+
+    let intValue;
+    if (moment1.isBefore(moment2)) intValue = -1;
+    else if (moment1.isAfter(moment2)) intValue = 1;
+    else intValue = 0;
+
+    return intValue;
+  });
+}; // End sort()
+
 module.exports = {
+  createLocal,
   create,
   convertGoogleEvent,
   getById,
@@ -274,4 +304,5 @@ module.exports = {
   bulkSave,
   remove,
   removeAllByUser,
+  sort,
 };

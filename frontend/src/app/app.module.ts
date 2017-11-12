@@ -9,28 +9,30 @@ import { MaterialModule } from '@angular/material';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-// Import 3rd party libraries
+// Import 3rd-party libraries
 import {
   ClientConfig,
-  GoogleApiModule,
   NG_GAPI_CONFIG,
+  GoogleApiModule,
 } from 'ng-gapi';
-import 'hammerjs';
 
 // Import our files
 import { AppComponent } from './app.component';
 import { AuthGuard } from './router-guard/auth.guard';
+import { TaskService } from './services/task.service';
 import { UserService } from './services/user.service';
 import { FeasyService } from './services/feasy.service';
+import { ErrorService } from './services/error.service';
 import { LoginComponent } from './login/login.component';
 import { AvatarService } from './services/avatar.service';
 import { SignupComponent } from './signup/signup.component';
 import { LayoutComponent } from './layout/layout.component';
-import { MessageService } from './services/message.service';
-import { AssignmentService } from './services/assignment.service';
+import { MessagingService } from './services/messaging.service';
 import { CommonUtilsService } from './utils/common-utils.service';
-import { LocalStorageService } from './utils/local-storage.service';
 import { AppRoutingModule } from './app-routing/app-routing.module';
+import { LocalStorageService } from './utils/local-storage.service';
+import { QuickSettingsService } from './services/quick-settings.service';
+import { environment as ENVIRONMENT } from '../environments/environment';
 import { PasswordResetComponent } from './password-reset/password-reset.component';
 
 // Configure client side Google API service
@@ -42,7 +44,7 @@ const gapiClientConfig: ClientConfig = {
     'https://www.googleapis.com/auth/plus.me',
     'https://www.googleapis.com/auth/calendar',
   ].join(' '),
-  redirect_uri: 'https://api.feasy-app.com/auth/google/exchange',
+  redirect_uri: `${ENVIRONMENT.feasyApiUrl}/auth/google/exchange`,
 };
 
 @NgModule({
@@ -67,13 +69,15 @@ const gapiClientConfig: ClientConfig = {
   ],
   providers: [
     AuthGuard,
+    TaskService,
     UserService,
     FeasyService,
+    ErrorService,
     AvatarService,
-    MessageService,
-    AssignmentService,
+    MessagingService,
     CommonUtilsService,
     LocalStorageService,
+    QuickSettingsService,
   ],
   bootstrap: [AppComponent],
 })

@@ -10,34 +10,29 @@ import {
 } from '@angular/router';
 import { Injectable } from '@angular/core';
 
-// Import 3rd party libraries
-import { Observable } from 'rxjs/Observable';
-
 // Import our files
 import { LocalStorageService } from '../utils/local-storage.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
-  constructor(private _router: Router, private _storage: LocalStorageService) {}
+  constructor(private ROUTER: Router, private STORAGE: LocalStorageService) {}
 
   // TODO: Add formal documentation
   canActivate(_next: ActivatedRouteSnapshot, _state: RouterStateSnapshot): boolean {
-    if (this._storage.isValidItem('currentUser') && this._storage.isValidItem('token')) return true;
+    if (this.STORAGE.isValidItem('currentUser') && this.STORAGE.isValidItem('token')) return true;
     else {
-      this._storage.deleteItem('token');
-      this._storage.deleteItem('currentUser');
+      this.STORAGE.deleteItem('token');
+      this.STORAGE.deleteItem('currentUser');
+      this.ROUTER.navigate(['/login']);
 
-      this._router.navigate(['/login']);
-
-      // TODO: Does this statement even get evaluated?
       return false;
     }
-  }
+  } // End canActivate()
 
   // TODO: Add formal documentation
   canActivateChild(_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): boolean {
     return this.canActivate(_route, _state);
-  }
+  } // End canActivateChild()
 
   /**
    * Determines whether or not a specific route can be loaded and routed to
@@ -45,6 +40,6 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
    * @return {boolean} whether or note the route can be loaded
    */
   canLoad(_route: Route): boolean {
-    return this._storage.isValidItem('currentUser') && this._storage.isValidItem('token');
-  }
+    return this.STORAGE.isValidItem('currentUser') && this.STORAGE.isValidItem('token');
+  } // End canLoad()
 }

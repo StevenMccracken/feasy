@@ -4,6 +4,7 @@
 
 const LOG = require('../modules/log_mod');
 const CODE = require('../models/code.js');
+const UTIL = require('../modules/utility_mod');
 
 const UNIVERSAL_PROJECTION = '_id code used expirationDate userId';
 
@@ -16,6 +17,28 @@ function log(_message) {
 }
 
 /**
+ * createRandom - Creates a new random code and returns it. This
+ * is a temporary function to allow unit tests to pass. It should
+ * not be used anywhere else and will be removed in the future
+ * @return {Promise<Code>} the Mongoose object
+ */
+const createRandom = function createRandom() {
+  const SOURCE = 'createRandom()';
+  log(SOURCE);
+
+  return new Promise((resolve, reject) => {
+    const code = CODE();
+
+    code.uuid = UTIL.newUuid();
+    code.completed = false;
+
+    code.save()
+      .then(() => resolve(code)) // End then()
+      .catch(saveError => reject(saveError)); // End code.save()
+  }); // End return promise
+}; // End createRandom()
+
+/*
  * Creates a Code with an expiration date of 1 hour from the current date
  * @param {User} [_userInfo = {}] the Mongoose object of the user
  * @param {String} _code a unique identifier for the Code object
@@ -97,6 +120,7 @@ const updateAttribute = function updateAttribute(_code, _attribute, _newValue) {
 }; // End updateAttribute()
 
 module.exports = {
+  createRandom,
   createForgottenPasswordCode,
   getByUuid,
   update,

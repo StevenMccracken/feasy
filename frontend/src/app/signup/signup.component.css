@@ -1,4 +1,4 @@
-#signup {
+#signup, #returnToLogin {
   margin-top: 55px;
 }
 
@@ -10,4 +10,9 @@
 
 .error-message .card-content {
   padding: 5px;
+}
+
+.btn-red {
+  background-color: #E57373;
+  color: #FFFFFF;
 }

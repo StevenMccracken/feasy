@@ -1,5 +1,10 @@
-import { TestBed, async } from '@angular/core/testing';
+// Import angular packages
+import {
+  async,
+  TestBed,
+} from '@angular/core/testing';
 
+// Import our files
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {

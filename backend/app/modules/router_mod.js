@@ -2,9 +2,9 @@
  * router_mod - @module for HTTP request routing
  */
 
-const UTIL = require('./utility_mod');
 const LOG = require('./log_mod');
 const MEDIA = require('./media_mod');
+const UTIL = require('./utility_mod');
 const MIDDLEWARE = require('./middleware_mod');
 
 /**
@@ -27,7 +27,8 @@ const routing = function routing(_router) {
     /* eslint-disable no-param-reassign */
     _request.headers.requestId = uniqueRequestId;
     /* eslint-enable no-param-reassign */
-    _response.header('requestId', uniqueRequestId);
+    _response.set('requestId', uniqueRequestId);
+    _response.set('Access-Control-Expose-Headers', 'requestId');
 
     log(`${_request.method} ${_request.url}`, _request);
     _next();
@@ -224,11 +225,11 @@ const routing = function routing(_router) {
   });
 
   /**
-   * The POST route for creating an assignment. Sends an error JSON or a
-   * JSON of the created assignment. This route requires token authentication
+   * The POST route for creating an assignment(s). Sends an error JSON or a
+   * JSON of the created assignment(s). This route requires token authentication
    */
   router.route('/users/:username/assignments').post((_request, _response) => {
-    MIDDLEWARE.createAssignment(_request, _response)
+    MIDDLEWARE.createAssignmentsHandler(_request, _response)
       .then((result) => {
         _response.status(201);
         _response.json(result);
