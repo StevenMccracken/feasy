@@ -53,7 +53,7 @@
   </div>
 
   <div class="modal modal-fixed-footer row" id="selectedDayModal">
-    <div class="modal-content row" id="selectedDayModalTop">
+    <div class="modal-content col s12" id="selectedDayModalTop">
       <h4 align='center'>{{ this.selectedDayDate | date:'fullDate' }}</h4>
       <div *ngIf="this.errors.selectedDay.occurred" id="selectedDayError">
         <div class="card error-message">
@@ -75,7 +75,9 @@
             <td class="col s12 m4" align='center'>
               <div class="collection-head">
                 <div *ngIf="!event.getTask().getEditModeTitle()">
-                  <h5>{{ event.getTask().getTitle() }}</h5>
+                  <h5>
+                    {{ (event.getTask().getTitle() || '').length <= 20 ? event.getTask().getTitle() : event.getTask().getTitle().substring(0, 16) + '...' }}
+                  </h5>
                 </div>
                 <div [style.display]="event.getTask().getEditModeTitle() ? 'inline' : 'none'">
                   <input [id]="'titleEdit' + i" name="titleEdit" type="text" [(ngModel)]="event.task.title">
@@ -89,14 +91,14 @@
             <td class="col s2 m1" align='center'>
               <p class="material-icons action" (click)="this.displayEditableFields(event, i)">create</p>
             </td>
-            <td class="col s2 m1" align='center' [ngClass]="event.getTask().getCompleted() ? 'complete' : 'incomplete'">
+            <td class="col s2 m1" align='center'>
+              <p class="material-icons action" (click)="this.deleteRemoteTask(event, i)">delete_sweep</p>
+            </td>
+            <td id="complete_detail" class="col s2 m1" align='center' [ngClass]="event.getTask().getCompleted() ? 'complete' : 'incomplete'">
               <input type="checkbox" [id]="'completed' + i" class="filled-in" [checked]="event.getTask().getCompleted()" (click)="this.updateCompleted(event, i)"/>
               <label [for]="'completed' + i"></label>
               <div *ngIf="event.getTask().getCompleted()">Completed</div>
               <div *ngIf="!event.getTask().getCompleted()">Incomplete</div>
-            </td>
-            <td class="col s2 m1" align='center'>
-              <p class="material-icons action" (click)="this.deleteRemoteTask(event, i)">delete_sweep</p>
             </td>
           </tr>
           <tr class="row" *ngIf="this.shouldDisplayTaskType()" [style.display]="event.getTask().getEditModeType() ? 'inline': 'none'">
@@ -120,7 +122,7 @@
           </tr>
           <tr class="row" *ngIf="this.shouldDisplayTaskDescription()">
             <div *ngIf="!event.getTask().getEditModeDescription() && (event.getTask().getDescription() || '').trim() !== ''" class="col s12">
-              <pre>{{ event.getTask().getDescription() }}</pre>
+              <pre [style.width]="this.correctWidths.description + 'px'">{{ event.getTask().getDescription() }}</pre>
             </div>
             <div [style.display]="event.getTask().getEditModeDescription() ? 'inline' : 'none'">
               <div class="row">
@@ -140,7 +142,7 @@
 
       <!-- New task creation section -->
       <div class="col s12">
-        <form class="add-form col s12" #taskForm="ngForm">
+        <form id="task-creation" class="add-form col s12" #taskForm="ngForm">
           <div class="row row-add">
             <div class="input-field col s12">
               <input required id="title" type="text" name="title" [(ngModel)]="this.newTask.title" #title="ngModel">

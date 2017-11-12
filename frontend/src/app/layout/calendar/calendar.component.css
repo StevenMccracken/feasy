@@ -127,3 +127,13 @@ select {
 .complete {
   color: green;
 }
+
+.breaking {
+  width: inherit;
+  word-wrap: break-word !important;
+}
+
+#complete_detail {
+  display: inline-flex;
+  padding-top: 26px;
+}

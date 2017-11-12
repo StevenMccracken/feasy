@@ -100,6 +100,12 @@ export class CalendarComponent implements OnInit {
   // Subscription used to receive messages about when the quick setting Show Colors is toggled on or off
   showColorsSubscription: Subscription;
 
+  // Contains the correct widths for certain HTML elements
+  correctWidths: any = {
+    description: 0,
+    previousWindow: 0,
+  };
+
   private times: Object = {
     displayMessage: 5000,
     popupDelay: 300,
@@ -115,6 +121,7 @@ export class CalendarComponent implements OnInit {
 
   // Standard error messages
   errorMessages: Object = {
+    invalidNewTaskTitle: 'Your new task needs a title.',
     unableToCompleteTask: 'Unable to complmete that task right now. Please try again.',
     unableToIncompleteTask: 'Unable to mark that task as incomplete right now. Please try again.',
     taskDoesNotExist: 'That task no longer exists.',
@@ -221,6 +228,17 @@ export class CalendarComponent implements OnInit {
         default:
       }
     };
+
+    // Listen for window resizing events
+    window.addEventListener('resize', (_event) => {
+      // Only update the width of the input boxes when the selected day modal is open and the window is horizontally resized
+      const source: any = _event.srcElement || _event.currentTarget;
+      if ($('#selectedDayModal').is(':visible') && source.innerWidth !== self.correctWidths.previousWindow) {
+        self.correctWidths.previousWindow = source.innerWidth;
+        self.correctWidths.description = self.getCorrectDescriptionWidth();
+        self.CHANGE_DETECTOR.detectChanges();
+      }
+    });
   } // End ngOnInit()
 
   /**
@@ -232,6 +250,15 @@ export class CalendarComponent implements OnInit {
   setEvent(_clickEvent: MouseEvent): void {
     this.monthViewDayClickEventTarget = $(_clickEvent.target).hasClass('cal-cell-top') ? _clickEvent.target : null;
   }
+
+  /**
+   * Returns the correct width that the description
+   * text field should be when it is not being edited
+   * @return {number} the correct width
+   */
+  getCorrectDescriptionWidth(): number {
+    return $('#task-creation').width() * 0.95972614;
+  } // End getCorrectDescriptionWidth()
 
   /**
    * Gets all tasks from the API and populates the calendar with events
@@ -406,6 +433,13 @@ export class CalendarComponent implements OnInit {
     this.clearTaskCache();
     this.refreshSelectElements(this.newTask);
     $('#selectedDayModal').modal('open');
+
+    // Make sure the widths are up to date when the modal opens
+    this.correctWidths.previousWindow = document.documentElement.clientWidth;
+    this.correctWidths.description = this.getCorrectDescriptionWidth();
+
+    this.resetSelectedDayError();
+    this.resetSelectedDaySuccess();
   } // End openSelectedDayView()
 
   /**
@@ -982,53 +1016,60 @@ export class CalendarComponent implements OnInit {
    * to the selected day list and set of calendar events
    */
   createTask(): void {
-    // Create a date from the selected day modal view and set the time to 12 pm for the new task
-    const dueDate = new Date(this.selectedDayDate.getTime());
-    dueDate.setHours(12, 0, 0, 0);
-    this.newTask.setDueDate(dueDate);
+    const taskTitle: string = this.newTask.getTitle();
+    if (!this.UTILS.hasValue(taskTitle) || taskTitle.trim() === '') {
+      const errorMessage: string = this.errorMessages['invalidNewTaskTitle'];
+      this.displaySelectedDayError(errorMessage);
+      this.scrollToSelectedDayTop();
+    } else {
+      // Create a date from the selected day modal view and set the time to 12 pm for the new task
+      const dueDate = new Date(this.selectedDayDate.getTime());
+      dueDate.setHours(12, 0, 0, 0);
+      this.newTask.setDueDate(dueDate);
 
-    this.TASKS.create(this.newTask)
-      .then((newTask: Task) => {
-        this.displaySelectedDaySuccess(this.successMessages['createdTask']);
-        this.scrollToSelectedDayTop();
-
-        // Reset the new task form
-        this.newTask = new Task();
-        this.refreshSelectElements(this.newTask);
-
-        const newEvent: FeasyCalendarEvent = this.addCalendarEvent(newTask);
-        this.selectedDayEvents.push(newEvent);
-        this.refreshCalendar();
-      }) // End then(newTask)
-      .catch((createError: Error) => {
-        if (this.ERROR.isInvalidRequestError(createError) || createError instanceof LocalError) {
-          const invalidParams: string[] = createError.getCustomProperty('invalidParameters') || [];
-
-          let errorMessage: string;
-          const length: number = invalidParams.length;
-          if (length === 0) errorMessage = 'Your task is invalid.';
-          else if (length === 1) errorMessage = `Your task's ${this.varToWordMap[invalidParams[0]]} is invalid.`;
-          else {
-            const prettyInvalidParams: string[] = invalidParams.map((invalidParam) => {
-              let prettyInvalidParam: string;
-              if (this.UTILS.hasValue(this.varToWordMap[invalidParam])) prettyInvalidParam = this.varToWordMap[invalidParam];
-              else prettyInvalidParam = invalidParam;
-
-              return prettyInvalidParam;
-            });
-
-            const invalidParamsSubset: string[] = prettyInvalidParams.slice(0, length - 1);
-            const possibleComma: string = length === 2 ? '' : ',';
-
-            /* tslint:disable max-line-length */
-            errorMessage = `Your task's ${invalidParamsSubset.join(', ')}${possibleComma} and ${prettyInvalidParams[length - 1]} are invalid.`;
-            /* tslint:enable max-line-length */
-          }
-
+      this.TASKS.create(this.newTask)
+        .then((newTask: Task) => {
+          this.displaySelectedDaySuccess(this.successMessages['createdTask']);
           this.scrollToSelectedDayTop();
-          this.displaySelectedDayError(errorMessage);
-        } else this.handleUnknownError(true, createError as RemoteError);
-      }); // End this.TASKS.create()
+
+          // Reset the new task form
+          this.newTask = new Task();
+          this.refreshSelectElements(this.newTask);
+
+          const newEvent: FeasyCalendarEvent = this.addCalendarEvent(newTask);
+          this.selectedDayEvents.push(newEvent);
+          this.refreshCalendar();
+        }) // End then(newTask)
+        .catch((createError: Error) => {
+          if (this.ERROR.isInvalidRequestError(createError) || createError instanceof LocalError) {
+            const invalidParams: string[] = createError.getCustomProperty('invalidParameters') || [];
+
+            let errorMessage: string;
+            const length: number = invalidParams.length;
+            if (length === 0) errorMessage = 'Your task is invalid.';
+            else if (length === 1) errorMessage = `Your task's ${this.varToWordMap[invalidParams[0]]} is invalid.`;
+            else {
+              const prettyInvalidParams: string[] = invalidParams.map((invalidParam) => {
+                let prettyInvalidParam: string;
+                if (this.UTILS.hasValue(this.varToWordMap[invalidParam])) prettyInvalidParam = this.varToWordMap[invalidParam];
+                else prettyInvalidParam = invalidParam;
+
+                return prettyInvalidParam;
+              });
+
+              const invalidParamsSubset: string[] = prettyInvalidParams.slice(0, length - 1);
+              const possibleComma: string = length === 2 ? '' : ',';
+
+              /* tslint:disable max-line-length */
+              errorMessage = `Your task's ${invalidParamsSubset.join(', ')}${possibleComma} and ${prettyInvalidParams[length - 1]} are invalid.`;
+              /* tslint:enable max-line-length */
+            }
+
+            this.scrollToSelectedDayTop();
+            this.displaySelectedDayError(errorMessage);
+          } else this.handleUnknownError(true, createError as RemoteError);
+        }); // End this.TASKS.create()
+    }
   } // End createTask()
 
   /**

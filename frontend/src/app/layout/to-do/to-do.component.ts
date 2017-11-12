@@ -2,6 +2,7 @@
 import {
   OnInit,
   Component,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -54,6 +55,12 @@ export class ToDoComponent implements OnInit {
   // Subscription used to receive messages about when a row in the incomplete section is clicked
   taskRowSelectedSubscription: Subscription;
 
+  // Contains the correct widths for certain HTML elements
+  correctWidths: any = {
+    description: 0,
+    previousWindow: 0,
+  };
+
   private times: Object = {
     displayMessage: 5000,
     scrollDuration: 375,
@@ -96,7 +103,7 @@ export class ToDoComponent implements OnInit {
     },
   };
 
-  varToWordMap = {
+  private varToWordMap = {
     title: 'title',
     dueDate: 'due date',
     newTitle: 'title',
@@ -112,12 +119,16 @@ export class ToDoComponent implements OnInit {
     private MESSAGING: MessagingService,
     private STORAGE: LocalStorageService,
     private DRAGULA_SERVICE: DragulaService,
+    private CHANGE_DETECTOR: ChangeDetectorRef,
     private QUICK_SETTINGS: QuickSettingsService,
   ) {}
 
   ngOnInit() {
     // Configure the drag n drop service
     this.DRAGULA_SERVICE.drop.subscribe(value => this.onDrop(value));
+    this.correctWidths.description = this.getCorrectDescriptionWidth();
+    this.correctWidths.previousWindow = document.documentElement.clientWidth;
+
     this.toDoInit();
 
     this.quickAddTasksSubscription = this.MESSAGING.messagesOf(QuickAddTasksCreated)
@@ -127,6 +138,18 @@ export class ToDoComponent implements OnInit {
           this.addTasksAndSort(newTasks);
         }
       });
+
+    // Listen for window resizing events
+    const self = this;
+    window.addEventListener('resize', (_event) => {
+      // Only update the width of the input boxes when the selected day modal is open and the window is horizontally resized
+      const source: any = _event.srcElement || _event.currentTarget;
+      if (source.innerWidth !== self.correctWidths.previousWindow) {
+        self.correctWidths.previousWindow = source.innerWidth;
+        self.correctWidths.description = self.getCorrectDescriptionWidth();
+        self.CHANGE_DETECTOR.detectChanges();
+      }
+    });
   } // End ngOnInit()
 
   ngOnDestroy() {
@@ -268,6 +291,15 @@ export class ToDoComponent implements OnInit {
       this.refreshIncompleteList();
     }
   } // End onDrop()
+
+  /**
+   * Returns the correct width that the description
+   * text field should be when it is not being edited
+   * @return {number} the correct width
+   */
+  getCorrectDescriptionWidth(): number {
+    return $('#createTaskForm').width() * 0.95972614;
+  } // End getCorrectDescriptionWidth()
 
   /**
    * Displays an error within the completed section

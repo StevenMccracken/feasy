@@ -109,7 +109,7 @@
                 <td>
                   <label>
                     No
-                    <input type="checkbox" [(ngModel)]="this.quickSettingCalendarView" [value]="this.quickSettingCalendarView" (click)="this.toggleQuickSettings('calendarView')">
+                    <input type="checkbox" [(ngModel)]="this.quickSettings.calendarView" [value]="this.quickSettings.calendarView" (click)="this.toggleQuickSettings('calendarView')">
                     <span class="lever"></span>
                     Yes
                   </label>
@@ -120,7 +120,7 @@
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="this.quickSettingColors" [value]="this.quickSettingColors" (click)="this.toggleQuickSettings('color')">
+                    <input type="checkbox" [(ngModel)]="this.quickSettings.colors" [value]="this.quickSettings.colors" (click)="this.toggleQuickSettings('color')">
                     <span class="lever"></span>
                     On
                   </label>
@@ -131,7 +131,7 @@
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="this.quickSettingType" [value]="this.quickSettingType" (click)="this.toggleQuickSettings('type')">
+                    <input type="checkbox" [(ngModel)]="this.quickSettings.type" [value]="this.quickSettings.type" (click)="this.toggleQuickSettings('type')">
                     <span class="lever"></span>
                     On
                   </label>
@@ -142,7 +142,7 @@
                 <td>
                   <label>
                     Off
-                    <input type="checkbox" [(ngModel)]="this.quickSettingDescription" [value]="this.quickSettingDescription" (click)="this.toggleQuickSettings('description')">
+                    <input type="checkbox" [(ngModel)]="this.quickSettings.description" [value]="this.quickSettings.description" (click)="this.toggleQuickSettings('description')">
                     <span class="lever"></span>
                     On
                   </label>
@@ -182,7 +182,7 @@
             </td>
           </tr>
         </thead>
-        <br><br><br>
+        <br>
         <tbody *ngFor="let task of this.quickAddTasks; let i = index" style="margin-top: 100px;">
           <tr>
             <td class="tableContent center">
@@ -198,7 +198,7 @@
       </table>
     </div>
     <div class="modal-footer">
-      <a class="waves-effect waves-green btn-flat" (click)="this.addTasksInBulk()">Add to Calendar</a>
+      <a class="waves-effect waves-red btn-flat" (click)="this.addTasksInBulk()">Add to Calendar</a>
     </div>
   </div>
 
