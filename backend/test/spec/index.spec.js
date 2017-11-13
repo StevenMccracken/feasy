@@ -19,6 +19,7 @@ describe('Start server', () => {
   describe(baseApiRoute, () => {
     it('gets the welcome message and returns status code 200', (done) => {
       REQUEST.get(baseUrl, (error, response, body) => {
+        console.log(response);
         expect(response.statusCode).toBe(200);
         LOG(baseApiRoute, body);
         done();
