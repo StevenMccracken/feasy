@@ -44,14 +44,10 @@ const connect = function connect(_isProductionEnvironment = false) {
       MONGOOSE.connect(uri, connectionOptions)
         .then(
           () => {
-            console.log('wow');
             connected = true;
             resolve();
           },
-          (connectError) => {
-            console.error(connectError);
-            reject(connectError);
-          }
+          connectError => reject(connectError)
         ); // End MONGOOSE.connect()
     }
   }); // End create promise
