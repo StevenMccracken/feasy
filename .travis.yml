@@ -15,7 +15,7 @@ before_script:
 - cd backend
 - npm install -g grunt-cli
 - npm install
-script: npm test -- --port=3000
+script: npm test
 notifications:
   email: false
   slack:

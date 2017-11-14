@@ -7,6 +7,8 @@ const SERVER = require('../../server');
 // TODO: DELETE THIS WHEN ALPHA IS OVER
 const CODES = require('../../app/controller/code');
 
+const STANDARD_DELAY = 3000;
+
 // Server will check for TEST env variable and adjust the port according to the environment
 let baseUrl = 'http://localhost:8080';
 if (process.env.TEST) baseUrl = 'http://localhost:3000';
@@ -24,7 +26,7 @@ describe('Start server', () => {
         LOG(baseApiRoute, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End base API route
 
   // Test user information
@@ -71,7 +73,7 @@ describe('Start server', () => {
           LOG(createUser1, createCodeError);
           done();
         }); // End CODES.createRandom()
-    });
+    }, STANDARD_DELAY);
   }); // End create user 1
 
   // Create the second test user
@@ -110,7 +112,7 @@ describe('Start server', () => {
           LOG(createUser2, createCodeError);
           done();
         }); // End CODES.createRandom()
-    });
+    }, STANDARD_DELAY);
   }); // End create user 2
 
   // Send login credentials to get a token
@@ -138,7 +140,7 @@ describe('Start server', () => {
         expect(data.success.token).toBeDefined();
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End login
 
   // Send valid token to get a new token
@@ -163,7 +165,7 @@ describe('Start server', () => {
         expect(data.success.token).toBeDefined();
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End refreshToken
 
   // Get the Google OAuth URL
@@ -185,7 +187,7 @@ describe('Start server', () => {
         expect(data.success.authUrl).toBeDefined();
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End googleOAuthUrl
 
   // Request password reset
@@ -209,7 +211,7 @@ describe('Start server', () => {
           LOG(requestPasswordReset, body);
           done();
         });
-      }
+      }, STANDARD_DELAY
     );
   }); // End request password reset
 
@@ -230,7 +232,7 @@ describe('Start server', () => {
         LOG(getUser1Info, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End get user 1 information
 
   // Update user 1's username
@@ -259,7 +261,7 @@ describe('Start server', () => {
         user1Token = data.success.token;
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update user 1's username
 
   // Update user 1's password
@@ -289,7 +291,7 @@ describe('Start server', () => {
         user1Password = newUser1Password;
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update user 1's password
 
   // Update user 1's email
@@ -314,7 +316,7 @@ describe('Start server', () => {
         LOG(updateUser1Email, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update user 1's email
 
   // Update user 1's first name
@@ -339,7 +341,7 @@ describe('Start server', () => {
         LOG(updateUser1FirstName, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update user 1's first name
 
   // Update user 1's last name
@@ -364,7 +366,7 @@ describe('Start server', () => {
         LOG(updateUser1LastName, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update user 1's last name
 
   // Update user 1's avatar
@@ -389,7 +391,7 @@ describe('Start server', () => {
         LOG(updateUser1Avatar, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update user 1's avatar
 
   // Create assignment 1
@@ -420,7 +422,7 @@ describe('Start server', () => {
         assignment1Id = data._id;
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End create assignment 1
 
   // Create multiple assignments
@@ -462,7 +464,7 @@ describe('Start server', () => {
         LOG(createMultipleAssignments, `Count = ${data.length}`);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End create multiple assignments
 
   // Upload pdf
@@ -490,7 +492,7 @@ describe('Start server', () => {
         LOG(uploadPdf, `Number of assignments found in PDF = ${data.length}`);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End upload pdf
 
   // Create assignment 2
@@ -526,7 +528,7 @@ describe('Start server', () => {
         assignment2Id = data._id;
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End create assignment 2
 
   // Get user 1's assignments
@@ -550,7 +552,7 @@ describe('Start server', () => {
         LOG(getUser1Assignments, `Count = ${data.length}`);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End get user 1's assignments
 
   // Get assignment 1
@@ -570,7 +572,7 @@ describe('Start server', () => {
         LOG(getAssignment1, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End get assignment 1
 
   // Update assignment 1's title
@@ -595,7 +597,7 @@ describe('Start server', () => {
         LOG(updateAssignment1Title, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update assignment 1's title
 
   // Update assignment 1's class
@@ -620,7 +622,7 @@ describe('Start server', () => {
         LOG(updateAssignment1Class, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update assignment 1's class
 
   // Update assignment 1's type
@@ -645,7 +647,7 @@ describe('Start server', () => {
         LOG(updateAssignment1Type, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update assignment 1's type
 
   // Update assignment 1's description
@@ -670,7 +672,7 @@ describe('Start server', () => {
         LOG(updateAssignment1Description, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update assignment 1's description
 
   // Update assignment 1's completed
@@ -695,7 +697,7 @@ describe('Start server', () => {
         LOG(updateAssignment1Completed, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update assignment 1's completed
 
   // Update assignment 1's due date
@@ -720,7 +722,7 @@ describe('Start server', () => {
         LOG(updateAssignment1DueDate, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End update assignment 1's due date
 
   // Delete assignment 1
@@ -744,7 +746,7 @@ describe('Start server', () => {
         LOG(deleteAssignment1, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End delete assignment 1
 
   // Delete user 1
@@ -768,7 +770,7 @@ describe('Start server', () => {
         LOG(deleteUser1, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End delete user 1
 
   // Delete user 2
@@ -792,7 +794,7 @@ describe('Start server', () => {
         LOG(deleteUser2, body);
         done();
       });
-    });
+    }, STANDARD_DELAY);
   }); // End delete user 2
 
   // Close the server
@@ -804,5 +806,5 @@ describe('Start server', () => {
       LOG('Test duration', `${(Date.now() - start) / 1000} seconds`);
       done();
     });
-  }); // End close the server
+  }, STANDARD_DELAY); // End close the server
 }); // End start server
