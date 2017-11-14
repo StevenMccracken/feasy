@@ -17,28 +17,28 @@ if (process.env.TEST) baseUrl = 'http://localhost:3000';
 describe('Start server', () => {
   const start = Date.now();
 
-  const baseApiRoute = 'Base API route';
-  describe(baseApiRoute, () => {
-    let requestParams;
-    beforeEach(() => {
-      requestParams = {
-        url: baseUrl,
-      };
-    });
-
-    it('gets the welcome message and returns status code 200', (done) => {
-      REQUEST.get(requestParams, (error, response, body) => {
-        console.log(baseUrl);
-        console.error(error);
-        console.error(response);
-        console.log(body);
-        expect(response).toBeDefined();
-        expect(response.statusCode).toBe(200);
-        LOG(baseApiRoute, body);
-        done();
-      });
-    }, STANDARD_DELAY);
-  }); // End base API route
+  // const baseApiRoute = 'Base API route';
+  // describe(baseApiRoute, () => {
+  //   let requestParams;
+  //   beforeEach(() => {
+  //     requestParams = {
+  //       url: baseUrl,
+  //     };
+  //   });
+  //
+  //   it('gets the welcome message and returns status code 200', (done) => {
+  //     REQUEST.get(requestParams, (error, response, body) => {
+  //       console.log(baseUrl);
+  //       console.error(error);
+  //       console.error(response);
+  //       console.log(body);
+  //       expect(response).toBeDefined();
+  //       expect(response.statusCode).toBe(200);
+  //       LOG(baseApiRoute, body);
+  //       done();
+  //     });
+  //   }, STANDARD_DELAY);
+  // }); // End base API route
 
   // Test user information
   let user1Name = `grunttest_${UuidV4()}`;
