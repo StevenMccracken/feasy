@@ -19,8 +19,15 @@ describe('Start server', () => {
 
   const baseApiRoute = 'Base API route';
   describe(baseApiRoute, () => {
+    let requestParams;
+    beforeEach(() => {
+      requestParams = {
+        url: baseUrl,
+      };
+    });
+
     it('gets the welcome message and returns status code 200', (done) => {
-      REQUEST.get(baseUrl, (error, response, body) => {
+      REQUEST.get(requestParams, (error, response, body) => {
         console.log(baseUrl);
         console.error(error);
         console.error(response);
