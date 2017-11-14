@@ -165,11 +165,12 @@ process.argv.forEach((arg) => {
     startupLog('Production settings configured', true);
   }
 });
+
 startupLog('Arguments checked', true);
 
 // Connect to database server before express server starts
 startupLog('Starting the database connection...', true);
-DATABASE.connect()
+DATABASE.connect(usedArgsOptions.prod)
   .then(() => {
     startupLog('Database connected');
 
