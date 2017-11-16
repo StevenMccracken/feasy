@@ -7,9 +7,15 @@ import {
 import { Router } from '@angular/router';
 
 // Import 3rd-party libraries
+import {
+  addDays,
+  endOfDay,
+  endOfWeek,
+  startOfDay,
+  isWithinRange,
+} from 'date-fns';
 import { DragulaService } from 'ng2-dragula';
 import { Subscription } from 'rxjs/Subscription';
-import { endOfDay, startOfDay, endOfWeek, addDays, isWithinRange } from 'date-fns';
 
 // Import our files
 import { Task } from '../../objects/task';
