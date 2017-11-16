@@ -265,13 +265,14 @@ export class ToDoComponent implements OnInit {
           }
 
           tasksDestination.splice(insertIndex, 0, task);
-          if (this.isTaskCacheValid() && task.getId() === taskInfo['taskId']) this.clearTaskCache();
+          if (this.isTaskCacheValid() && task.getId() === this.currentEditingTaskCopy.getId()) this.clearTaskCache();
 
           // Refresh the appropriate list
           if (task.getCompleted()) {
+            this.refreshCompletedList();
             this.displayCompletedListSuccess();
             this.scrollToTop();
-          }
+          } else this.refreshIncompleteList();
         }) // End then()
         .catch((error: RemoteError) => {
           if (this.ERROR.isResourceDneError(error)) {
