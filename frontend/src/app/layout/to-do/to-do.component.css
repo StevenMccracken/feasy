@@ -145,6 +145,11 @@ pre {
   margin-bottom: 30px;
 }
 
+.filter-list li {
+  display: inline;
+  list-style-type: none;
+}
+
 /*
   Dragula CSS styling. DO NOT DELETE
  */

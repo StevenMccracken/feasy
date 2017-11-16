@@ -32,9 +32,31 @@
     <div class="col s12 center fontify">
       <h3>Incomplete</h3>
     </div>
+    <div id="incompleteFilters" align='center'>
+      <form action="#">
+        <ul class="filter-list">
+          <li>
+            <input checked name="incompleteFilter" type="radio" id="incompleteFilter1" (change)="this.updateIncompleteFilter(this.FilterScopes.ALL)"/>
+            <label for="incompleteFilter1">{{ this.FilterScopes.ALL }}</label>
+          </li>
+          <li>
+            <input name="incompleteFilter" type="radio" id="incompleteFilter2" (change)="this.updateIncompleteFilter(this.FilterScopes.TODAY)" />
+            <label for="incompleteFilter2">{{ this.FilterScopes.TODAY }}</label>
+          </li>
+          <li>
+            <input name="incompleteFilter" type="radio" id="incompleteFilter3" (change)="this.updateIncompleteFilter(this.FilterScopes.THIS_WEEK)" />
+            <label for="incompleteFilter3">{{ this.FilterScopes.THIS_WEEK }}</label>
+          </li>
+          <li>
+            <input name="incompleteFilter" type="radio" id="incompleteFilter4" (change)="this.updateIncompleteFilter(this.FilterScopes.TWO_WEEKS)" />
+            <label for="incompleteFilter4">{{ this.FilterScopes.TWO_WEEKS }}</label>
+          </li>
+        </ul>
+      </form>
+    </div>
     <div *ngIf="this.showBothLists && this.showIncompleteList">
       <div *ngFor="let a of this.incompleteTasks; let i = index;" id="incomplete" class="col s12 wrapper" [dragula]="first">
-        <div [id]="a.getId()" [attr.value]="i.toString()">
+        <div [id]="a.getId()" [attr.value]="i.toString()" [style.display]="this.isTaskBeingEdited(a) || this.shouldDisplayTaskForCurrentFilter(a) ? 'initial' : 'none'">
             <table class="eventDisplay">
               <tr class = "row">
                 <td class="col s12 m4" align='center'>
@@ -159,9 +181,31 @@
     <div class="col s12 center fontify">
       <h3>Completed</h3>
     </div>
+    <div id="completedFilters" align='center'>
+      <form action="#">
+        <ul class="filter-list">
+          <li>
+            <input checked name="completedFilter" type="radio" id="completedFilter1" (change)="this.updateCompletedFilter(this.FilterScopes.ALL)"/>
+            <label for="completedFilter1">{{ this.FilterScopes.ALL }}</label>
+          </li>
+          <li>
+            <input name="completedFilter" type="radio" id="completedFilter2" (change)="this.updateCompletedFilter(this.FilterScopes.TODAY)" />
+            <label for="completedFilter2">{{ this.FilterScopes.TODAY }}</label>
+          </li>
+          <li>
+            <input name="completedFilter" type="radio" id="completedFilter3" (change)="this.updateCompletedFilter(this.FilterScopes.THIS_WEEK)" />
+            <label for="completedFilter3">{{ this.FilterScopes.THIS_WEEK }}</label>
+          </li>
+          <li>
+            <input name="completedFilter" type="radio" id="completedFilter4" (change)="this.updateCompletedFilter(this.FilterScopes.TWO_WEEKS)" />
+            <label for="completedFilter4">{{ this.FilterScopes.TWO_WEEKS }}</label>
+          </li>
+        </ul>
+      </form>
+    </div>
     <div *ngIf="this.showBothLists && this.showCompletedList">
       <div *ngFor="let a of this.completedTasks; let i = index;" id="complete" class="col s12 wrapper" [dragula]="second">
-        <div [id]="a.getId()" [attr.value]="i.toString()">
+        <div [id]="a.getId()" [attr.value]="i.toString()" [style.display]="this.shouldDisplayTaskForCurrentFilter(a) ? 'initial' : 'none'">
           <table class="eventDisplay">
             <tr class = "row">
               <td class="col s12 m4" align='center'>

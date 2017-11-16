@@ -50,7 +50,7 @@ declare var $: any;
   templateUrl: 'calendar.component.html',
 })
 export class CalendarComponent implements OnInit {
-  CalendarViewTypes = {
+  CalendarViewTypes: any = {
     WEEK: 'week',
     MONTH: 'month',
   };
