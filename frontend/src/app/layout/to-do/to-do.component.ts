@@ -7,6 +7,13 @@ import {
 import { Router } from '@angular/router';
 
 // Import 3rd-party libraries
+import {
+  addDays,
+  endOfDay,
+  endOfWeek,
+  startOfDay,
+  isWithinRange,
+} from 'date-fns';
 import { DragulaService } from 'ng2-dragula';
 import { Subscription } from 'rxjs/Subscription';
 
@@ -33,6 +40,32 @@ declare var $: any;
 })
 export class ToDoComponent implements OnInit {
   today: Date = new Date();
+
+  // Represents the date ranges to filter incomplete and completed tasks on
+  filterDates: any = {
+    incomplete: {
+      earliest: null,
+      latest: null,
+    },
+    completed: {
+      earliest: null,
+      latest: null,
+    },
+  };
+
+  // Represents the types of filters (an enumeration)
+  FilterScopes: any = {
+    ALL: 'All',
+    TODAY: 'Today',
+    THIS_WEEK: 'This Week',
+    TWO_WEEKS: 'Two Weeks',
+  };
+
+  // The current filter being applied to the incomplete and completed tasks
+  currentFilters: any = {
+    incomplete: this.FilterScopes.ALL,
+    completed: this.FilterScopes.ALL,
+  };
 
   newTask: Task;
   currentEditingTaskCopy: Task;
@@ -202,6 +235,82 @@ export class ToDoComponent implements OnInit {
   } // End addTasksAndSort()
 
   /**
+   * Updates a given filter's date ranges based on a given scope
+   * @param {string} _filterType the filter to
+   * update, either 'completed' or 'incomplete'
+   * @param {string} _scope the filter scope to apply to the given filter type
+   */
+  private updateFilter(_filterType: string, _scope: string): void {
+    const filterType: string = _filterType === 'completed' ? 'completed' : 'incomplete';
+    const filterDates: any = filterType === 'completed' ? this.filterDates.completed : this.filterDates.incomplete;
+
+    const now: Date = new Date();
+    this.currentFilters[filterType] = _scope;
+    switch (_scope) {
+      case this.FilterScopes.ALL:
+        filterDates.earliest = null;
+        filterDates.latest = null;
+        break;
+      case this.FilterScopes.TODAY:
+        filterDates.earliest = startOfDay(now);
+        filterDates.latest = endOfDay(now);
+        break;
+      case this.FilterScopes.THIS_WEEK:
+        filterDates.earliest = startOfDay(now);
+        filterDates.latest = endOfWeek(now);
+        break;
+      case this.FilterScopes.TWO_WEEKS:
+        filterDates.earliest = startOfDay(now);
+        filterDates.latest = endOfDay(addDays(filterDates.earliest, 14));
+        break;
+      default:
+        this.currentFilters[filterType] = this.FilterScopes.ALL;
+        filterDates.earliest = null;
+        filterDates.latest = null;
+      }
+  } // End updateFilter()
+
+  /**
+   * Updates the incomplete list filter date ranges with the given scope
+   * @param {string} _scope the new scope to apply to the incomplete list filter
+   */
+  updateIncompleteFilter(_scope: string): void {
+    this.updateFilter('incomplete', _scope);
+  } // End updateIncompleteFilter()
+
+  /**
+   * Updates the completed list filter date ranges with the given scope
+   * @param {string} _scope the new scope to apply to the completed list filter
+   */
+  updateCompletedFilter(_scope: string): void {
+    this.updateFilter('completed', _scope);
+  } // End updateCompletedFilter()
+
+  /**
+   * Determines whether or not a given task should be displayed based
+   * on the current filter being applied to the list that the task is in
+   * @param {Task} [_task = new Task()] the task to test
+   * @return {boolean} whether or not to display the task
+   */
+  shouldDisplayTaskForCurrentFilter(_task: Task = new Task()): boolean {
+    let shouldDisplayTask: boolean = false;
+
+    // Get the current filter type from the incomplete or completed list based on the task's completed property
+    const isTaskCompleted: boolean = _task.getCompleted();
+    const currentFilter: string = isTaskCompleted ? this.currentFilters.completed : this.currentFilters.incomplete;
+
+    // If the scope is FilterScopes.ALL, then don't worry about checking if the due date is within range
+    if (currentFilter === this.FilterScopes.ALL) shouldDisplayTask = true;
+    else {
+      // Get the appropriate filter date range to compare against the task's due date
+      const filterDates: any = isTaskCompleted ? this.filterDates.completed : this.filterDates.incomplete;
+      shouldDisplayTask = isWithinRange(_task.getDueDate(), filterDates.earliest, filterDates.latest);
+    }
+
+    return shouldDisplayTask;
+  } // End shouldDisplayTaskForCurrentFilter()
+
+  /**
    * Receives a Dragula event and determines where
    * the event came from and the data it contained
    * @param {any[]} [_eventInfo = []] the drag or drop event from Dragula
@@ -265,13 +374,14 @@ export class ToDoComponent implements OnInit {
           }
 
           tasksDestination.splice(insertIndex, 0, task);
-          if (this.isTaskCacheValid() && task.getId() === taskInfo['taskId']) this.clearTaskCache();
+          if (this.isTaskBeingEdited(task)) this.clearTaskCache();
 
           // Refresh the appropriate list
           if (task.getCompleted()) {
+            this.refreshCompletedList();
             this.displayCompletedListSuccess();
             this.scrollToTop();
-          }
+          } else this.refreshIncompleteList();
         }) // End then()
         .catch((error: RemoteError) => {
           if (this.ERROR.isResourceDneError(error)) {
@@ -677,6 +787,15 @@ export class ToDoComponent implements OnInit {
 
     return validTask && validIndex;
   } // End isTaskCacheValid()
+
+  /**
+   * Determines whether or not a given task is currently being edited
+   * @param {Task} [_task = new Task()] the task to test
+   * @return {boolean} whether or not the given task is being edited
+   */
+  isTaskBeingEdited(_task: Task = new Task()): boolean {
+    return this.isTaskCacheValid() && this.currentEditingTaskCopy.getId() === _task.getId();
+  } // End isTaskBeingEdited()
 
   /**
    * Sets the current editing task and index to null
