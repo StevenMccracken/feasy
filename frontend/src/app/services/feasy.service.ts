@@ -8,18 +8,13 @@ import {
 } from '@angular/http';
 import { Injectable } from '@angular/core';
 
-// Import 3rd-party libraries
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/catch';
-import 'rxjs/add/operator/toPromise';
-import { Observable } from 'rxjs/Observable';
-
 // Import our files
 import { CommonUtilsService } from '../utils/common-utils.service';
+import { environment as ENVIRONMENT } from '../../environments/environment';
 
 @Injectable()
 export class FeasyService {
-  private baseUrl: string = 'http://localhost:8080'; // 'https://api.feasy-app.com';
+  private baseUrl: string = ENVIRONMENT.feasyApiUrl;
   private contentTypes: Object = {
     json: 'application/json',
     urlencoded: 'application/x-www-form-urlencoded',

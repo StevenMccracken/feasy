@@ -2,9 +2,9 @@
 
 /* used in calendar component */
 .edit {
+  font-size: 18px;
   margin-left: 10px;
   margin-right: 3px;
-  font-size: 18px;
 }
 
 .delete {
@@ -41,37 +41,37 @@ label {
 
 /*---------- TESTING PURPOSE ---------------*/
 .popup {
-  position: relative;
-  display: inline-block;
   cursor: pointer;
-  -webkit-user-select: none;
+  display: inline-block;
+  position: relative;
+  user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
-  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* The actual popup */
 .popup .popuptext {
-  visibility: hidden;
-  width: 160px;
   background-color: #660099;
-  color: #fff;
-  text-align: center;
   border-radius: 6px;
-  padding: 8px 0;
-  position: absolute;
-  z-index: 1;
   bottom: 125%;
+  color: #fff;
   left: 50%;
   margin-left: -80px;
+  padding: 8px 0;
+  position: absolute;
+  text-align: center;
+  visibility: hidden;
+  width: 160px;
+  z-index: 1;
 }
 
 
 /* Toggle this class - hide and show the popup */
 .popup .show {
-  visibility: visible;
-  -webkit-animation: fadeIn 1s;
   animation: fadeIn 1s;
+  -webkit-animation: fadeIn 1s;
+  visibility: visible;
 }
 
 /* Add animation (fade in the popup) */

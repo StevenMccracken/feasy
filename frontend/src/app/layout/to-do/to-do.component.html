@@ -3,7 +3,7 @@
     <h3>To Do Listed by Date</h3>
   </div>
   <div id="date-view" class="col s12 center fontify">
-    <h5>{{ today | date:'fullDate' }}</h5>
+    <h5>{{ this.today | date:'fullDate' }}</h5>
   </div>
   <div *ngIf="this.errors.general.occurred" id="toDoError">
     <div class="card error-message">
@@ -13,171 +13,177 @@
     </div>
   </div>
 
-  <!-- Incomplete assignments section -->
-   <div class="col m5 offset-m1 todo-main incomplete-list">
-     <div *ngIf="this.errors.incompleteAssignments.occurred" id="incompleteAssignmentsError">
-       <div class="card error-message">
-         <div class="card-content">
-           {{ this.errors.incompleteAssignments.message }}
-         </div>
-       </div>
-     </div>
-     <div *ngIf="this.success.assignmentCreated.occurred" id="createAssignmentSuccess">
-       <div class="card success-message">
-         <div class="card-content">
-           {{ this.success.assignmentCreated.message }}
-         </div>
-       </div>
-     </div>
-     <div class="col s12 center fontify">
-       <h3>Incomplete</h3>
-     </div>
-     <div *ngIf="showList && doneSorting">
-       <div *ngFor="let a of incompleteAssignments; let i = index;" id="incomplete" class="col s12 wrapper" [dragula]="first">
-         <div [id]="a.getId()" [attr.value]="i.toString()">
-             <table class="eventDisplay">
-               <tr class = "row">
-                 <td class="col s12 m4" align='center'>
-                   <div class="collection-head">
-                     <div *ngIf="!a.getEditModeTitle()">
-                       <h5>{{ a.title }}</h5>
-                     </div>
-                     <div [style.display]="a.getEditModeTitle() ? 'inline' : 'none'">
-                       <input [id]="'titleEdit' + i" name="titleEdit" type="text" [(ngModel)]="a.title">
-                     </div>
-                   </div>
-                 </td>
-                 <td *ngIf="!a.getEditModeDate()" class="col s5 m3" align='center' style='display:table'>
-                   <p class="fontify">{{ a.dueDate | date:'mediumDate' }}</p>
-                 </td>
-                 <td class="col s12 m2" align='center' *ngIf="displayTaskTypeLabel() && !a.getEditModeType()" [style.display]="a.getType() ? 'inline': 'none'">
-                   <div class="chip">{{ a.type }}</div>
-                 </td>
-                 <td class="col s2 m1" align='center'>
-                   <p class="material-icons create action" (mousedown)="enableEdit(a, i)">create</p>
-                 </td>
-                 <td class="col s2 m1" align='center'>
-                   <p class="material-icons create action" (mousedown)="this.deleteRemoteAssignment(a)">delete_sweep</p>
-                 </td>
-               </tr>
-               <tr class="row" *ngIf="displayTaskTypeLabel()" [style.display]="a.getEditModeType() ? 'inline': 'none'">
-                 <td>
-                   <div class="label_assignment col s12">Assignment Type</div>
-                   <div class="input-field col s12" id="type-row">
-                     <select id="type" class="browser-default" name="type" [(ngModel)]="a.type" #type="ngModel">
-                       <option value="" selected>No type</option>
-                       <option value="Homework">Homework</option>
-                       <option value="Quiz">Quiz</option>
-                       <option value="Exam">Exam</option>
-                       <option value="Project">Project</option>
-                     </select>
-                   </div>
-                 </td>
-               </tr>
-               <tr class="row" [style.display]="a.getEditModeDate() ? 'inline': 'none'">
-                 <td class="col s8">
-                   <input required type="text" placeholder="Due Date" class="form-control existingAssignmentDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="a.dueDate | date: 'fullDate'" (click)="publishDatePick(a, i)">
-                 </td>
-               </tr>
-               <tr class="row" *ngIf="displayTaskDescriptionLabel()">
-                 <div *ngIf="!a.getEditModeDescription() && (a.getDescription() || '').trim() !== ''" class="col s12">
-                  <pre>{{ a.getDescription() }}</pre>
-                 </div>
-                 <div [style.display]="a.getEditModeDescription() ? 'inline' : 'none'">
-                   <div class="row">
-                     <div class="input-field col s8">
-                       <textarea [id]="'descriptionEdit' + i" name="descriptionEdit" class="materialize-textarea col s12" [(ngModel)]="a.description" placeholder="Edit description"></textarea>
-                     </div>
-                   </div>
-                 </div>
-               </tr>
-               <tr class="row" [style.display]="a.getEditModeDate() ? 'inline': 'none'">
-                 <button class="btn btn-flat update-todo" (click)="updateTask(a, i)">Update</button>
-                 <button class="btn btn-flat update-todo" (click)="cancelEditingTask(a, i)">Cancel</button>
-               </tr>
-             </table>
-           </div>
-       </div>
-     </div>
-     <div class="col s12">
-         <form class="add-form col s12" #todoForm="ngForm" id="createAssignmentForm">
-           <div class="row row-add">
-             <div class="input-field col s12">
-               <input placeholder="Task Name" id="title" type="text" name="title" [(ngModel)]="newAssignment.title" required #title="ngModel">
-             </div>
-           </div>
-           <div class="input-field col s12">
-             <input placeholder="Due Date" id="datetime" class="newAssignmentDatePicker" type="text" name="datetime2" required>
-           </div>
-           <div class="row row-add">
-             <div class="label_assignment col s12">Assignment Type</div>
-             <div class="input-field col s12" id="type-row">
-               <select id="type" class="browser-default" name="type" [(ngModel)]="newAssignment.type" #type="ngModel">
-                 <option value="" selected>No type</option>
-                 <option value="Homework">Homework</option>
-                 <option value="Quiz">Quiz</option>
-                 <option value="Exam">Exam</option>
-                 <option value="Project">Project</option>
-               </select>
-             </div>
-           </div>
-           <div class="row row-add">
-             <div class="input-field col s12">
-               <textarea id="description" name="description" class="materialize-textarea" [(ngModel)]="newAssignment.description" #description="ngModel"></textarea>
-               <label for="description">Description</label>
-             </div>
-           </div>
-           <div class="row">
-             <button class="btn btn-flat add-todo" [class.disabled]="!todoForm.form.valid" (click)="addAssignment()">
-               <b>Add</b>
-             </button>
-           </div>
-         </form>
-     </div>
-  </div>
-
-  <!-- Completed assignments section -->
-  <div class="col m5 todo-main completed-list">
-    <div *ngIf="this.errors.completedAssignments.occurred" id="completeAssignmentsError">
+  <!-- Incomplete tasks section -->
+  <div class="col m5 offset-m1 todo-main incomplete-list">
+    <div *ngIf="this.errors.incompleteTasks.occurred" id="incompleteTasksError">
       <div class="card error-message">
         <div class="card-content">
-          {{ this.errors.completedAssignments.message }}
+          {{ this.errors.incompleteTasks.message }}
         </div>
       </div>
     </div>
-    <div *ngIf="this.success.completedAssignments.occurred" id="completeAssignmentSuccess">
+    <div *ngIf="this.success.taskCreated.occurred" id="createTaskSuccess">
       <div class="card success-message">
         <div class="card-content">
-          {{ this.success.completedAssignments.message }}
+          {{ this.success.taskCreated.message }}
+        </div>
+      </div>
+    </div>
+    <div class="col s12 center fontify">
+      <h3>Incomplete</h3>
+    </div>
+    <div *ngIf="this.showBothLists && this.showIncompleteList">
+      <div *ngFor="let a of this.incompleteTasks; let i = index;" id="incomplete" class="col s12 wrapper" [dragula]="first">
+        <div [id]="a.getId()" [attr.value]="i.toString()">
+            <table class="eventDisplay">
+              <tr class = "row">
+                <td class="col s12 m4" align='center'>
+                  <div class="collection-head">
+                    <div *ngIf="!a.getEditModeTitle()">
+                      <h5>
+                        {{ (a.getTitle() || '').length <= 20 ? a.getTitle() : a.getTitle().substring(0,16) + '...' }}
+                      </h5>
+                    </div>
+                    <div [style.display]="a.getEditModeTitle() ? 'inline' : 'none'">
+                      <input [id]="'titleEdit' + i" name="titleEdit" type="text" [(ngModel)]="a.title">
+                    </div>
+                  </div>
+                </td>
+                <td *ngIf="!a.getEditModeDate()" class="col s5 m3" align='center' style='display:table'>
+                  <p class="fontify">{{ a.getDueDate() | date:'mediumDate' }}</p>
+                </td>
+                <td class="col s2 m1" align='center'>
+                  <p class="material-icons create action" (mousedown)="this.displayEditableFields(a, i)">create</p>
+                </td>
+                <td class="col s2 m1" align='center'>
+                  <p class="material-icons create action" (mousedown)="this.deleteRemoteTask(a)">delete_sweep</p>
+                </td>
+                <td class="col s12 m2" align='center' *ngIf="this.doDisplayTaskType() && !a.getEditModeType()" [style.display]="a.getType() ? 'inline': 'none'">
+                  <div class="chip">{{ a.getType() }}</div>
+                </td>
+              </tr>
+              <tr class="row" *ngIf="this.doDisplayTaskType()" [style.display]="a.getEditModeType() ? 'inline': 'none'">
+                <td>
+                  <div class="input-field col s12" id="type-row">
+                    <select [id]="'typeEdit' + i" name="type" [(ngModel)]="a.type" #type="ngModel">
+                      <option value="" selected>None</option>
+                      <option value="Homework">Homework</option>
+                      <option value="Quiz">Quiz</option>
+                      <option value="Exam">Exam</option>
+                      <option value="Project">Project</option>
+                    </select>
+                    <label [for]="'typeEdit' + i">Type</label>
+                  </div>
+                </td>
+              </tr>
+              <tr class="row" [style.display]="a.getEditModeDate() ? 'inline': 'none'">
+                <td class="col s8">
+                  <input required type="text" placeholder="Due Date" class="form-control existingTaskDatePicker" [id]="'datetime' + i" name="datetime" [ngModel]="a.dueDate | date: 'fullDate'" (click)="this.publishDatePick(a, i)">
+                </td>
+              </tr>
+              <tr class="row" *ngIf="this.doDisplayTaskDescription()">
+                <div *ngIf="!a.getEditModeDescription() && (a.getDescription() || '').trim() !== ''" class="col s12">
+                  <pre [style.width]="this.correctWidths.description + 'px'">{{ a.getDescription() }}</pre>
+                </div>
+                <div [style.display]="a.getEditModeDescription() ? 'inline' : 'none'">
+                  <div class="row">
+                    <div class="input-field col s8">
+                      <textarea [id]="'descriptionEdit' + i" name="descriptionEdit" class="materialize-textarea col s12" [(ngModel)]="a.description"></textarea>
+                      <label [for]="'descriptionEdit' + i">Description</label>
+                    </div>
+                  </div>
+                </div>
+              </tr>
+              <tr class="row" [style.display]="a.getEditModeDate() ? 'inline' : 'none'">
+                <button class="btn btn-flat update-todo" (click)="this.updateTask(a, i)">Update</button>
+                <button class="btn btn-flat update-todo" (click)="this.cancelEditingTask(a, i)">Cancel</button>
+              </tr>
+            </table>
+          </div>
+      </div>
+    </div>
+    <div class="col s12">
+      <form class="add-form col s12" #todoForm="ngForm" id="createTaskForm">
+        <div class="row row-add">
+          <div class="input-field col s12">
+            <input required id="title" type="text" name="title" [(ngModel)]="this.newTask.title" #title="ngModel">
+            <label for="title">Title</label>
+          </div>
+        </div>
+        <div class="input-field col s12">
+          <input required id="datetime" class="newTaskDatePicker" type="text" name="datetime2" placeholder="Due Date">
+        </div>
+        <div class="row row-add" *ngIf="this.doDisplayTaskType()">
+          <div class="input-field col s12" id="type-row">
+            <select id="type" name="type" [(ngModel)]="this.newTask.type" #type="ngModel">
+              <option value="" selected>None</option>
+              <option value="Homework">Homework</option>
+              <option value="Quiz">Quiz</option>
+              <option value="Exam">Exam</option>
+              <option value="Project">Project</option>
+            </select>
+            <label for="type">Type</label>
+          </div>
+        </div>
+        <div class="row row-add" *ngIf="this.doDisplayTaskDescription()">
+          <div class="input-field col s12">
+            <textarea id="description" name="description" class="materialize-textarea" [(ngModel)]="this.newTask.description" #description="ngModel"></textarea>
+            <label for="description">Description</label>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn btn-flat add-todo" [class.disabled]="!todoForm.form.valid" (click)="this.addTask()">
+            <b>Add</b>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Completed tasks section -->
+  <div class="col m5 todo-main completed-list">
+    <div *ngIf="this.errors.completedTasks.occurred" id="completeTasksError">
+      <div class="card error-message">
+        <div class="card-content">
+          {{ this.errors.completedTasks.message }}
+        </div>
+      </div>
+    </div>
+    <div *ngIf="this.success.completedTasks.occurred" id="completeTaskSuccess">
+      <div class="card success-message">
+        <div class="card-content">
+          {{ this.success.completedTasks.message }}
         </div>
       </div>
     </div>
     <div class="col s12 center fontify">
       <h3>Completed</h3>
     </div>
-    <div *ngIf="showList && doneSorting">
-      <div *ngFor="let a of completeAssignments; let i = index;" id="complete" class="col s12 wrapper" [dragula]="second">
+    <div *ngIf="this.showBothLists && this.showCompletedList">
+      <div *ngFor="let a of this.completedTasks; let i = index;" id="complete" class="col s12 wrapper" [dragula]="second">
         <div [id]="a.getId()" [attr.value]="i.toString()">
           <table class="eventDisplay">
             <tr class = "row">
               <td class="col s12 m4" align='center'>
                 <div class="collection-head">
-                  <h5>{{ a.title }}</h5>
+                  <h5>
+                    {{ (a.getTitle() || '').length <= 20 ? a.getTitle() : a.getTitle().substring(0,16) + '...' }}
+                  </h5>
                 </div>
               </td>
               <td class="col s5 m3" align='center' style='display:table'>
-                <p class="fontify">{{ a.dueDate | date:'mediumDate' }}</p>
-              </td>
-              <td class="col s12 m2" align='center' *ngIf="displayTaskTypeLabel()" [style.display]="(a.getType() || '').trim() === '' ? 'none': 'inline'">
-                <div class="chip">{{ a.type }}</div>
+                <p class="fontify">{{ a.getDueDate() | date:'mediumDate' }}</p>
               </td>
               <td class="col s2 m1" align='center'>
-                <p class="material-icons create action" (mousedown)="this.deleteRemoteAssignment(a)">delete_sweep</p>
+                <p class="material-icons create action" (mousedown)="this.deleteRemoteTask(a)">delete_sweep</p>
+              </td>
+              <td class="col s12 m2" align='center' *ngIf="this.doDisplayTaskType()" [style.display]="(a.getType() || '').trim() === '' ? 'none': 'inline'">
+                <div class="chip">{{ a.getType() }}</div>
               </td>
             </tr>
-            <tr class="row"  *ngIf="displayTaskDescriptionLabel()" [style.display]="(a.getDescription() || '').trim() === '' ? 'none': 'inline'">
+            <tr class="row"  *ngIf="this.doDisplayTaskDescription()" [style.display]="(a.getDescription() || '').trim() === '' ? 'none': 'inline'">
               <div class="col s12">
-                <pre>{{ a.description }}</pre>
+                <pre [style.width]="this.correctWidths.description + 'px'">{{ a.getDescription() }}</pre>
               </div>
             </tr>
           </table>

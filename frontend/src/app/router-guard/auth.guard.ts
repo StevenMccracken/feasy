@@ -10,9 +10,6 @@ import {
 } from '@angular/router';
 import { Injectable } from '@angular/core';
 
-// Import 3rd party libraries
-import { Observable } from 'rxjs/Observable';
-
 // Import our files
 import { LocalStorageService } from '../utils/local-storage.service';
 
@@ -26,10 +23,8 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
     else {
       this.STORAGE.deleteItem('token');
       this.STORAGE.deleteItem('currentUser');
-
       this.ROUTER.navigate(['/login']);
 
-      // TODO: Does this statement even get evaluated?
       return false;
     }
   } // End canActivate()

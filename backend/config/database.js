@@ -4,9 +4,12 @@
 
 const MONGOOSE = require('mongoose');
 const BLUEBIRD = require('bluebird');
+const CONFIG = require('./databaseSecret');
 
 let connected = false;
 MONGOOSE.Promise = BLUEBIRD;
+const username = CONFIG.username;
+const password = CONFIG.password;
 const uri = 'mongodb://localhost/userDB';
 const connectionOptions = {
   useMongoClient: true,
@@ -24,12 +27,20 @@ const isConnected = function isConnected() {
 /**
  * connect - Attempts to open a Mongoose database connection. If
  * a connection already exists, this function resolves immediately
+ * @param {boolean} [_isProductionEnvironment = false] determines
+ * whether or not to connect to the database with authentication or not
  * @return {Promise} an empty promise when the connection is established
  */
-const connect = function connect() {
+const connect = function connect(_isProductionEnvironment = false) {
   const promise = new Promise((resolve, reject) => {
     if (isConnected()) resolve();
     else {
+      if (_isProductionEnvironment) {
+        connectionOptions.user = username;
+        connectionOptions.pass = password;
+        connectionOptions.auth = { authSorce: 'userDB' };
+      }
+
       MONGOOSE.connect(uri, connectionOptions)
         .then(
           () => {

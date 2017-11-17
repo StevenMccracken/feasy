@@ -4,24 +4,24 @@ import { ErrorService } from '../services/error.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 
 export class InvalidRequestError extends RemoteError {
+  private ERROR_SERVICE: ErrorService;
   private invalidParameters: string[];
   private unchangedParameters: string[];
   private hasInvalidParams: boolean = false;
   private hasUnchangedParams: boolean = false;
-  private errorService: ErrorService;
 
   constructor(_remoteError: RemoteError = new RemoteError()) {
     super(_remoteError.getLocalSource(), _remoteError.getRequestId(), _remoteError.getStatusCode());
 
-    const UTILS: CommonUtilsService = new CommonUtilsService();
-    this.errorService = new ErrorService(UTILS);
+    const commonUtilsService: CommonUtilsService = new CommonUtilsService();
+    this.ERROR_SERVICE = new ErrorService(commonUtilsService);
     const errorMessage = this.getMessage() || '';
     if (/invalid/gi.test(errorMessage)) {
       this.hasInvalidParams = true;
-      this.invalidParameters = this.errorService.getInvalidParameters(this);
+      this.invalidParameters = this.ERROR_SERVICE.getInvalidParameters(this);
     } else if (/unchanged/gi.test(errorMessage)) {
       this.hasUnchangedParams = true;
-      this.unchangedParameters = this.errorService.getUnchangedParameters(this);
+      this.unchangedParameters = this.ERROR_SERVICE.getUnchangedParameters(this);
     }
   }
 }

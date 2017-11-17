@@ -5,7 +5,6 @@ import {
   RouterModule,
 } from '@angular/router';
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 // Import our files
 import { AuthGuard } from '../router-guard/auth.guard';

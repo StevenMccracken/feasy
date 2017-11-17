@@ -1,14 +1,6 @@
 // Import angular packages
-import {
-  OnInit,
-  Component,
-} from '@angular/core';
-import {
-  FormGroup,
-  Validators,
-  FormBuilder,
-} from '@angular/forms';
 import { Router } from '@angular/router';
+import { Component } from '@angular/core';
 
 // Import our files
 import { User } from '../objects/user';
@@ -33,7 +25,17 @@ export class SignupComponent {
   // Variables to update the form to display errors
   error: boolean = false;
   errorMessage: string = '';
-  private standardErrorMessage: string = 'Something bad happened. Please try signing up again';
+
+  /* tslint:disable max-line-length */
+  private errorMessages: Object = {
+    general: 'Something bad happened. Please try signing up again.',
+    accountCreationNoToken: 'Congratulations on creating your account! Unfortunately, there was a problem signing you in. Please go to the login page to sign in. We apologize for this inconvenience',
+  };
+  /* tslint:enable max-line-length */
+
+  private times: Object = {
+    displayMessage: 5000,
+  };
 
   // An JSON mapping variable names to more formal english words
   private varToWordMap: Object = {
@@ -47,8 +49,8 @@ export class SignupComponent {
 
   constructor(
     private ROUTER: Router,
+    private USERS: UserService,
     private ERROR: ErrorService,
-    private USER_SERVICE: UserService,
     private UTILS: CommonUtilsService,
     private STORAGE: LocalStorageService,
   ) {}
@@ -59,18 +61,12 @@ export class SignupComponent {
    * credentials. Routes the user to the main page on successful sign-up
    */
   signup(): void {
-    if (this.error) {
-      this.error = false;
-      this.errorMessage = '';
-    }
+    this.resetError();
 
-    /*
-     * If the user object has a value, send it's
-     * information to create a user through the API
-     */
+    // If the user object has a value, send it's information to create a user through the API
     if (this.UTILS.hasValue(this.user)) {
       // Send the user data to the API to create the user
-      this.USER_SERVICE.create(this.user, this._alphaCode)
+      this.USERS.create(this.user, this._alphaCode)
         .then((token: string) => {
           // Add token and username info to browser local storage
           this.STORAGE.setItem('token', token);
@@ -80,34 +76,32 @@ export class SignupComponent {
           this.ROUTER.navigate(['/main']);
         }) // End then(token)
         .catch((createUserError: Error) => {
-          this.error = true;
+          let errorMessage: string;
           let unknownError: boolean = false;
 
           if (this.ERROR.isLocalError(createUserError)) {
-            if (createUserError.getType() === 'null_token') {
-              /* tslint:disable max-line-length */
-              this.errorMessage = 'Congratulations on creating your account! Unfortunately, there was a problem signing you in. Please go to the login page to sign in. We apologize for this inconvenience';
-              /* tslint:enable max-line-length */
-            } else unknownError = true;
+            if (createUserError.getType() === 'null_token') errorMessage = this.errorMessages['accountCreationNoToken'];
+            else unknownError = true;
           } else if (this.ERROR.isRemoteError(createUserError)) {
             if (this.ERROR.isResourceError(createUserError as RemoteError)) {
               // Another user exists with one of these attributes from the form
               const duplicateValue: string = createUserError.getCustomProperty('duplicateParameter');
               const officialName: string = this.varToWordMap[duplicateValue] || duplicateValue;
 
-              if (duplicateValue === 'username' || duplicateValue === 'email') this.errorMessage = `That ${officialName} is already taken`;
-              else if (duplicateValue === 'alphaCode') this.errorMessage = `That ${officialName} has already been used`;
+              if (duplicateValue === 'username' || duplicateValue === 'email') errorMessage = `That ${officialName} is already taken`;
+              else if (duplicateValue === 'alphaCode') errorMessage = `That ${officialName} has already been used`;
               else unknownError = true;
             } else if (this.ERROR.isInvalidRequestError(createUserError as RemoteError)) {
-              this.errorMessage = this.handleInvalidRequestError(createUserError as RemoteError);
+              errorMessage = this.handleInvalidRequestError(createUserError as RemoteError);
             } else if (this.ERROR.isResourceDneError(createUserError as RemoteError)) {
               const officialName = this.varToWordMap['alphaCode'] || 'access code';
-              this.errorMessage = `That ${officialName} does not exist`;
+              errorMessage = `That ${officialName} does not exist`;
             } else unknownError = true;
           } else unknownError = true;
 
           if (unknownError) this.handleUnknownError(createUserError);
-        }); // End this.USER_SERVICE.create()
+          else this.displayError(errorMessage);
+        }); // End this.USERS.create()
     }
   } // End signup()
 
@@ -124,7 +118,7 @@ export class SignupComponent {
     const invalidParams: string[] = _error.getCustomProperty('invalidParameters') || [];
 
     // If there are no invalid parameters in the error object, use the standard error message
-    if (invalidParams.length === 0) errorMessage = this.standardErrorMessage;
+    if (invalidParams.length === 0) errorMessage = this.errorMessages['general'];
     else {
       // Create the error message from the invalid params array
       errorMessage = 'Your ';
@@ -154,13 +148,38 @@ export class SignupComponent {
   } // End handleInvalidRequestError()
 
   /**
+   * Displays a given error message for a given duration
+   * @param {string} _message the message to display. If
+   * no value is given, the default value will be used
+   * @param {number} _duration the duration of the message to display
+   * for. If no value is given, the default value will be used
+   */
+  displayError(_message?: string, _duration?: number): void {
+    const message: string = this.UTILS.hasValue(_message) ? _message : this.errorMessage['general'];
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['displayMessage'];
+
+    this.error = true;
+    this.errorMessage = message;
+
+    const self = this;
+    setTimeout(() => self.resetError(), duration);
+  } // End displayError()
+
+  /**
+   * Resets any displayed error
+   */
+  resetError(): void {
+    this.error = false;
+    this.errorMessage = '';
+  } // End resetError()
+
+  /**
    * Handles unexpected error types by displaying
    * the standard error message and logging the error
    * @param {Error} _error the error of an unknown type
    */
   private handleUnknownError(_error: Error): void {
-    this.error = true;
-    this.errorMessage = this.standardErrorMessage;
     console.error(_error);
+    this.displayError(this.errorMessages['general']);
   } // End handleUnknownError()
 }

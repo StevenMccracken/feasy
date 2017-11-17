@@ -7,20 +7,20 @@ export class Error {
   private message: string;
   private localSource: string;
   private customProperties: Object;
-  protected utils: CommonUtilsService;
+  protected UTILS: CommonUtilsService;
 
   constructor(localSource?: string) {
-    this.utils = new CommonUtilsService();
+    this.UTILS = new CommonUtilsService();
 
     // Set a unique ID for the error
-    const uuid = this.utils.uuid();
+    const uuid = this.UTILS.uuid();
     this.setId(uuid);
 
     // Initialize the custom properties JSON
     this.customProperties = {};
 
     // Set the source of the error if it exists
-    if (this.utils.hasValue(localSource)) this.setLocalSource(localSource);
+    if (this.UTILS.hasValue(localSource)) this.setLocalSource(localSource);
   }
 
   getId(): string {

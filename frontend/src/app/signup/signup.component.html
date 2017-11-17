@@ -1,7 +1,7 @@
 <div class="row signup">
   <form class="col s12 offset-m4 m4" #signupForm="ngForm" autocomplete="on">
     <h4 class="logo">Feasy</h4>
-    <div id="error" *ngIf="error">
+    <div id="error" *ngIf="this.error">
       <div class="card error-message">
         <div class="card-content">
           {{ this.errorMessage }}
@@ -10,29 +10,36 @@
     </div>
     <div class="row">
       <div class="input-field col s12 m6">
-        <input id="firstName" placeholder="First Name" type="text" class="validate" pattern="^[a-zA-Z]{2,}[\s\w]*$" name="firstName" [(ngModel)]="user.firstName" #firstName="ngModel">
+        <input id="firstName" type="text" class="validate" pattern="^[a-zA-Z]{2,}[\s\w]*$" name="firstName" [(ngModel)]="user.firstName" #firstName="ngModel">
+        <label for="firstName">First Name</label>
       </div>
       <div class="input-field col s12 m6">
-        <input id="lastName" placeholder="Last Name" type="text" class="validate" pattern="^[a-zA-Z]{2,}[\s\w]*$" name="lastName" [(ngModel)]="user.lastName" #lastName="ngModel">
+        <input id="lastName" type="text" class="validate" pattern="^[a-zA-Z]{2,}[\s\w]*$" name="lastName" [(ngModel)]="user.lastName" #lastName="ngModel">
+        <label for="lastName">Last Name</label>
       </div>
       <div class="input-field col s12 m12">
-        <input id="email" placeholder="Email address (required)" type="email" class="validate" required pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$" name="email" [(ngModel)]="user.email" #email="ngModel">
+        <input id="email" type="email" class="validate" required pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$" name="email" [(ngModel)]="user.email" #email="ngModel">
+        <label for="email">Email address (required)</label>
       </div>
       <div class="input-field col s12 m12">
-        <input id="username" placeholder="Username (required)" type="text" class="validate" required pattern="^\w+([\.-]?\w+)*$" ondragover="" name="username" [(ngModel)]="user.username" #username="ngModel">
+        <input id="username" type="text" class="validate" required pattern="^\w+([\.-]?\w+)*$" ondragover="" name="username" [(ngModel)]="user.username" #username="ngModel">
+        <label for="username">Username (required)</label>
       </div>
     </div>
     <div class="row">
       <div class="input-field col s12 m6">
-        <input id="password" placeholder="Password (required)" type="password" class="validate" required name="password" [(ngModel)]="user.password" #password="ngModel">
+        <input id="password" type="password" class="validate" required name="password" [(ngModel)]="user.password" #password="ngModel">
+        <label for="password">Password (required)</label>
       </div>
       <div class="input-field col s12 m6">
-        <input id="passwordConfirm" placeholder="Confirm password (required)" type="password" class="validate" required name="passwordConfirm" [(ngModel)]="_passwordConfirm" #passwordConfirm="ngModel">
+        <input id="passwordConfirm" type="password" class="validate" required name="passwordConfirm" [(ngModel)]="_passwordConfirm" #passwordConfirm="ngModel">
+        <label for="passwordConfirm">Confirm password (required)</label>
       </div>
     </div>
     <div clas="row">
       <div class="input-field col s12 m12 l12">
-        <input id="token" placeholder="Access code (required)" type="text" class="validate" required pattern="^[a-zA-Z\d]{8}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{12}$" name="token" [(ngModel)]="_alphaCode" #token="ngModel">
+        <input id="token" type="text" class="validate" required pattern="^[a-zA-Z\d]{8}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{12}$" name="token" [(ngModel)]="_alphaCode" #token="ngModel">
+        <label for="token">Access code (required)</label>
         <p>This access code is <b>required</b> to create an account and use our app. Once you have signed up, you do not need to enter the code to log in. Please email <a href="mailto:feasyresponse@gmail.com">feasyresponse@gmail.com</a> if you need an access code.</p>
       </div>
     </div>

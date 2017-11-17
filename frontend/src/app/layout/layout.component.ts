@@ -9,19 +9,20 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs/Subscription';
 
 // Import our files
+import { Task } from '../objects/task';
 import { Account } from '../objects/account';
-import { Assignment } from '../objects/assignment';
 import { RemoteError } from '../objects/remote-error';
+import { TaskService } from '../services/task.service';
 import { UserService } from '../services/user.service';
 import { ErrorService } from '../services/error.service';
 import { AvatarService } from '../services/avatar.service';
 import { MessagingService } from '../services/messaging.service';
-import { AssignmentService } from '../services/assignment.service';
 import { CommonUtilsService } from '../utils/common-utils.service';
 import { LocalStorageService } from '../utils/local-storage.service';
 import { TaskDatePicked } from '../objects/messages/task-date-picked';
 import { QuickSettingsService } from '../services/quick-settings.service';
-import { QuickAddAssignmentsCreated } from '../objects/messages/quick-add-assignments-created';
+import { QuickAddTasksCreated } from '../objects/messages/quick-add-tasks-created';
+import { QuickSettingsColorToggle } from '../objects/messages/quick-settings-color-toggle';
 
 declare var $: any;
 
@@ -37,27 +38,37 @@ export class LayoutComponent implements OnInit {
   avatars: Object[];
 
   // Array of tasks for the quick add modal
-  taskArray: Assignment[];
+  quickAddTasks: Task[];
 
-  // Quick Settings variables
-  quickSettingType: boolean;
-  quickSettingColors: boolean;
-  quickSettingDescription: boolean;
+  quickSettings: any = {
+    type: false,
+    colors: false,
+    description: false,
+    calendarView: false,
+  };
 
-  defaultMessageDisplayTime: number = 5000;
+  // Materialize date-picker holder
+  datePicker: any;
+
+  private times: Object = {
+    quickSettingToggle: 150,
+    displayMessage: 5000,
+    routeToCalendar: 500,
+    scrollDuration: 250,
+  };
 
   errors: Object = {
     avatar: {
       occurred: false,
       message: '',
-      defaultMessage: 'We are unable to update your avatar at this time. Please contact us at feasyresponse@gmail.com to fix this issue',
+      defaultMessage: 'We are unable to update your avatar at this time. Please contact us at feasyresponse@gmail.com to fix this issue.',
       duplicateMessage: 'You are already using that avatar.',
     },
     general: {
       occurred: false,
       message: '',
       /* tslint:disable max-line-length */
-      defaultMessage: 'We are unable to create those assignments at this time. Please contact us at feasyresponse@gmail.com to fix this issue',
+      defaultMessage: 'We are unable to create those tasks at this time. Please contact us at feasyresponse@gmail.com to fix this issue.',
       /* tslint:enable max-line-length */
     },
   };
@@ -71,7 +82,7 @@ export class LayoutComponent implements OnInit {
     general: {
       occurred: false,
       message: '',
-      defaultMessage: 'All your tasks have been added to your calendar',
+      defaultMessage: 'These tasks have been added to your calendar! Click here to see your updated calendar.',
     },
   };
 
@@ -80,32 +91,32 @@ export class LayoutComponent implements OnInit {
 
   constructor(
     private ROUTER: Router,
+    private TASKS: TaskService,
     private USERS: UserService,
     private ERROR: ErrorService,
     private AVATARS: AvatarService,
     private UTILS: CommonUtilsService,
     private MESSAGING: MessagingService,
     private STORAGE: LocalStorageService,
-    private ASSIGNMENTS: AssignmentService,
     private QUICK_SETTINGS: QuickSettingsService,
   ) {}
 
   ngOnInit() {
-    this.taskArray = [new Assignment()];
+    this.USERS.startTokenAutoRefresh();
+
+    this.quickAddTasks = [];
 
     // Populate all the possible avatars
     this.avatars = this.AVATARS.getAllAvatars();
 
     // Initialize the quick settings
-    this.quickSettingType = this.QUICK_SETTINGS.getShowType();
-    this.quickSettingColors = this.QUICK_SETTINGS.getShowColors();
-    this.quickSettingDescription = this.QUICK_SETTINGS.getShowDescription();
+    this.quickSettings.type = this.QUICK_SETTINGS.getShowType();
+    this.quickSettings.colors = this.QUICK_SETTINGS.getShowColors();
+    this.quickSettings.description = this.QUICK_SETTINGS.getShowDescription();
+    this.quickSettings.calendarView = this.QUICK_SETTINGS.getDefaultCalendarViewIsWeek();
 
     // Instantiate the side nav
     $('#button-slide').sideNav();
-
-    // Initialize the quick add form date picker
-    this.quickAddFormInit();
 
     /*
      * Initialize the avatar URL to the default before the service request
@@ -131,7 +142,6 @@ export class LayoutComponent implements OnInit {
       .catch((getError: RemoteError) => {
         if (this.ERROR.isInvalidRequestError(getError)) {
           this.displayName = 'User';
-          console.error(getError);
         } else this.handleUnknownError(getError);
       }); // End this.USERS.get()
   } // End ngOnInit()
@@ -156,6 +166,13 @@ export class LayoutComponent implements OnInit {
   } // End logUserOut()
 
   /**
+   * Opens a system-native pop-up window to send an email to Feasy
+   */
+  emailFeasy(): void {
+    window.location.href = 'mailto:feasyresponse@gmail.com';
+  } // End emailFeasy()
+
+  /**
    * Closes the side nav and optionally navigates
    * to a given route after closing the side nav
    * @param {string} _followUpUrl the route to navigate to after closing the nav
@@ -172,26 +189,37 @@ export class LayoutComponent implements OnInit {
    */
   closeQuickAddModal(_followUpUrl?: string): void {
     $('#quickAdd').modal('close');
-    this.taskArray = null;
-
     $('#button-slide').sideNav('hide');
-    if (_followUpUrl === '/main/calendar') this.ROUTER.navigate([_followUpUrl]);
-  } // End closeSideNav()
+    if (_followUpUrl === '/main/calendar') {
+      const self = this;
+      setTimeout(() => self.ROUTER.navigate([_followUpUrl]), self.times['routeToCalendar']);
+    }
+  } // End closeQuickAddModal()
 
   /**
    * Toggles specific quick settings in the side nav
    * @param {string} _settingName the name of the quick setting to toggle
    */
   toggleQuickSettings(_settingName: string): void {
+    const self = this;
     switch (_settingName) {
       case 'color':
-        setTimeout(() => this.QUICK_SETTINGS.toggleShowColors(), 300);
+        setTimeout(
+          () => {
+            self.QUICK_SETTINGS.toggleShowColors();
+            const shouldDisplayColors: boolean = self.QUICK_SETTINGS.getShowColors();
+            self.MESSAGING.publish(new QuickSettingsColorToggle(shouldDisplayColors));
+          },
+          this.times['quickSettingToggle']);
         break;
       case 'type':
-        setTimeout(() => this.QUICK_SETTINGS.toggleShowType(), 300);
+        setTimeout(() => self.QUICK_SETTINGS.toggleShowType(), this.times['quickSettingToggle']);
         break;
       case 'description':
-        setTimeout(() => this.QUICK_SETTINGS.toggleShowDescription(), 300);
+        setTimeout(() => self.QUICK_SETTINGS.toggleShowDescription(), this.times['quickSettingToggle']);
+        break;
+      case 'calendarView':
+        setTimeout(() => self.QUICK_SETTINGS.toggleDefaultCalendarViewAsWeek(), this.times['quickSettingsToggle']);
         break;
       default:
         console.error('Can\'t toggle unknown settings type \'%s\'', _settingName);
@@ -199,25 +227,28 @@ export class LayoutComponent implements OnInit {
   } // End toggleQuickSettings()
 
   /**
-   * Appends a new, empty Assignment to the end of the task array
+   * Appends a new, empty task to the end of the task list
    */
   increaseTaskArraySize(): void {
-    const size = this.taskArray.length;
-    this.taskArray[size] = new Assignment();
+    const size = this.quickAddTasks.length;
+    this.quickAddTasks[size] = new Task();
 
     // Add the date picker functionality to the new entry in the array of tasks
-    this.quickAddFormInit()
+    this.quickAddDatePickerInit()
   } // End increaseTaskArraySize()
 
   /**
-   * Removes an assignment from the task array
-   * @param {number} _taskIndex the index of the assignment in the task array
+   * Removes a task from the task list
+   * @param {number} _taskIndex the index of the task in the task list
    */
   removeTask(_taskIndex: number): void {
-    this.taskArray.splice(_taskIndex, 1);
+    this.quickAddTasks.splice(_taskIndex, 1);
 
-    // Reset the first assignment if it was deleted
-    if (this.taskArray.length === 0) this.taskArray[0] = new Assignment();
+    // Reset the first task if it was deleted
+    if (this.quickAddTasks.length === 0) {
+      this.quickAddTasks.push(new Task());
+      this.quickAddDatePickerInit();
+    }
   } // End removeTask()
 
   /**
@@ -277,16 +308,15 @@ export class LayoutComponent implements OnInit {
    * be displayed. Needs to be value in either the errors/success class JSON
    * @param {string} _message the message to display. If no
    * value is given, the default message for _source will be used
-   * @param {number} _duration the amount of seconds to display
-   * the message for. If no value is given, the default duration
-   * will be used (class variable: defaultMessageDisplayTime)
+   * @param {number} _duration the amount of seconds to display the
+   * message for. If no value is given, the default duration will be used
    */
   private displayMessage(_messageIsError: boolean, _source: string, _message?: string, _duration?: number): void {
     const messageType: Object = _messageIsError ? this.errors : this.success;
     messageType[_source]['occurred'] = true;
     messageType[_source]['message'] = _message || messageType[_source]['defaultMessage'];
 
-    const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.defaultMessageDisplayTime;
+    const duration: number = typeof _duration === 'number' ? _duration * 1000 : this.times['displayMessage'];
     setTimeout(
       () => {
         messageType[_source]['occurred'] = false;
@@ -445,17 +475,20 @@ export class LayoutComponent implements OnInit {
    */
   openQuickAdd(): void {
     this.clearAllQuickAddMessages();
+    this.quickAddTasks.length = 0;
+    this.quickAddTasks.push(new Task());
+    this.quickAddDatePickerInit();
     $('#quickAdd').modal('open');
   } // End openQuickAdd()
 
   /**
-   * Sends a message to subscribers about the assignment
+   * Sends a message to subscribers about the task
    * and row that was chosen in the quick add modal
-   * @param {Assignment} _task the assignment for the given row that was clicked
+   * @param {Task} _task the task for the given row that was clicked
    * @param {number} _index the 0-based index representing the row
    * that was clicked on in the row of tasks in the quick add modal
    */
-  publishDatePick(_task: Assignment, _index: number): void {
+  publishDatePick(_task: Task, _index: number): void {
     this.MESSAGING.publish(new TaskDatePicked(_task, _index));
   } // End publishDatePick()
 
@@ -463,81 +496,92 @@ export class LayoutComponent implements OnInit {
    * Initializes the Materialize date picker for
    * the quick add modal's current set of rows
    */
-  quickAddFormInit(): void {
+  quickAddDatePickerInit(): void {
     const self = this;
-    $(document).ready(function () {
+    $(document).ready(() => {
       // Create a variable to hold the message that will be sent when the date field for a row is selected
       let quickAddRowMessage;
+      const onOpen: Function = () => {
+        /*
+         * When the date picker opens, subscribe to receive a message
+         * about which index was clicked on to open the date picker
+         */
+        self.quickAddModalRowSelectedSubscription = self.MESSAGING.messagesOf(TaskDatePicked)
+          .subscribe(message => quickAddRowMessage = message);
+      };
 
-      // Configure the Materialize date picker
-      $('.quickAddDatePicker').pickadate({
-        // Called every time the date picker is opened
-        onOpen: () => {
-          /*
-           * When the date picker opens, subscribe to receive a message
-           * about which index was clicked on to open the date picker
-           */
-          self.quickAddModalRowSelectedSubscription = self.MESSAGING.messagesOf(TaskDatePicked)
-            .subscribe(message => quickAddRowMessage = message);
-        },
+      const onSet: Function = (context) => {
+        let index: number = -1;
+        if (self.UTILS.hasValue(quickAddRowMessage) && self.UTILS.hasValue(quickAddRowMessage.getIndex())) {
+          index = quickAddRowMessage.getIndex();
+        }
 
-        // Called whenever a date within the date picker is selected or the range is updated
-        onSet: (context) => {
-          // Check if the user clicked on an actual date, not a range selection
-          if (self.UTILS.hasValue(context.select)) {
-            let index: number;
-            if (self.UTILS.hasValue(quickAddRowMessage) && self.UTILS.hasValue(quickAddRowMessage.getIndex())) {
-              index = quickAddRowMessage.getIndex();
-            } else index = -1;
+        // Check if the user clicked on an actual date, not a range selection
+        if (self.UTILS.hasValue(context.select)) {
+          if (index !== -1) {
+            const unixMilliseconds: number = context.select;
+            const dueDate: Date = new Date(unixMilliseconds + self.UTILS.getUnixMilliseconds12Hours());
 
-            if (index !== -1) {
-              // Create a date from the selected day and set the time to 12 pm
-              const unixMilliseconds12Hours: number = 43200000;
-              const unixMilliseconds: number = context.select;
-              const dueDate: Date = new Date(unixMilliseconds + unixMilliseconds12Hours);
-
-              // Update the Assignment's due date because it isn't in a valid format when first created
-              self.taskArray[index].setDueDate(dueDate);
-            }
+            // Update the task's due date because it isn't in a valid format when first created
+            self.quickAddTasks[index].setDueDate(dueDate);
           }
-        },
+        } else if (context.hasOwnProperty('clear')) {
+          // Reset the task's due date in the HTML form
+          if (index !== -1) self.quickAddTasks[index].setDueDate(null);
+        }
+      };
 
-        // Called every time the date picker is exited
-        onClose: () => {
-          // Unsubscribe to ensure no memory leaks or receiving of old messages
-          if (self.UTILS.hasValue(self.quickAddModalRowSelectedSubscription)) self.quickAddModalRowSelectedSubscription.unsubscribe();
-        },
+      const onClose: Function = () => {
+        // Unsubscribe to ensure no memory leaks or receiving of old messages
+        if (self.UTILS.hasValue(self.quickAddModalRowSelectedSubscription)) self.quickAddModalRowSelectedSubscription.unsubscribe();
+      };
 
-        // Other date picker configuration properties
-        min: new Date(1970, 0, 1), // Set the min selectable date as 01/01/1970
-        max: false, // Max date is not constrained
-        selectMonths: true, // Creates a dropdown to quick select the month
-        selectYears: 25, // Creates a dropdown of 25 years at a time to quick select the year
-        format: 'dddd, mmmm d, yyyy', // Display format once a date has been selected
-        formatSubmit: 'yyyy/mm/dd', // Date format that is provided to the onSet method
-        hiddenName: true, // Ensures that submitted format is used in the onSet method, not regular format
-      });
+      self.datePicker = self.configureDatePicker('.quickAddDatePicker', onOpen, onSet, onClose);
+      self.datePicker.start();
     });
-  } // End quickAddFormInit()
+  } // End quickAddDatePickerInit()
 
   /**
-   * Sends a request to add all the tasks in the task array at the same time
+   * Configures a Materialize date picker with standard date
+   * options and the option of custom 'on' event functions
+   * @param {string} [_identifier = ''] the HTML
+   * tag identifier for the date picker element
+   * @param {Function} _onOpen a custom onOpen function
+   * @param {Function} _onSet a custom onSet
+   * function, requires one parameter/argument
+   * @param {Function} _onClose a custom onClose function
+   * @return {any} the date picker object
+   */
+  configureDatePicker(_identifier: string = '', _onOpen?: Function, _onSet?: Function, _onClose?: Function): any {
+    const datePickerOptions: Object = this.UTILS.generateDefaultDatePickerOptions();
+
+    // Configure custom functions for the open, set, and close events
+    datePickerOptions['onOpen'] = _onOpen;
+    datePickerOptions['onSet'] = _onSet;
+    datePickerOptions['onClose'] = _onClose;
+
+    const jQueryObject = $(_identifier).pickadate(datePickerOptions);
+    return jQueryObject.pickadate('picker');
+  } // End configureDatePicker()
+
+  /**
+   * Sends a request to add all the tasks in the task list at the same time
    */
   addTasksInBulk(): void {
     this.clearAllQuickAddMessages();
 
     /*
      * Validate all the tasks' due dates and titles first. Get an
-     * iterator representing each index of the task array (but 1-based)
+     * iterator representing each index of the task list (but 1-based)
      */
     const iterator: IterableIterator<number> = this.UTILS.integerSequence(1);
 
     /*
      * Map each task to it's 1-based index if the due date/title is
-     * invalid, or null if it is valid. Then filter only the assignment
+     * invalid, or null if it is valid. Then filter only the task
      * indexes who were invalid and display those in an error message
      */
-    const invalidTasks: number[] =  this.taskArray.map((task: Assignment) => {
+    const invalidTasks: number[] =  this.quickAddTasks.map((task: Task) => {
         const oneBasedIndex: number = iterator.next().value;
         /* tslint:disable max-line-length */
         if (!this.UTILS.hasValue(task.getDueDate()) || !this.UTILS.hasValue(task.getTitle()) ||  task.getTitle() === '') return oneBasedIndex;
@@ -563,33 +607,37 @@ export class LayoutComponent implements OnInit {
         else tasksString = `${tasksString}, and ${invalidTasks[invalidTasks.length - 1]}`;
       } else tasksString = String(invalidTasks[0]);
 
-      const errorMessage: string = `Make sure ${taskOrTasks} ${tasksString} ${hasOrHave} both a due date and a name.`;
+      const errorMessage: string = `Make sure ${taskOrTasks} ${tasksString} ${hasOrHave} both a due date and a title.`;
       this.displayQuickAddError(errorMessage);
       this.scrollToQuickAddTop();
     } else {
       // All the tasks are valid, so send a reques to create them all
-      this.ASSIGNMENTS.bulkCreate(this.taskArray)
-        .then((createdAssignments: Assignment[]) => {
-          // Send a message that new assignments were created from the Quick Add modal
-          this.MESSAGING.publish(new QuickAddAssignmentsCreated(createdAssignments));
+      this.TASKS.bulkCreate(this.quickAddTasks)
+        .then((createdTasks: Task[]) => {
+          // Send a message that new tasks were created from the Quick Add modal
+          this.MESSAGING.publish(new QuickAddTasksCreated(createdTasks));
 
-          // Reset the task array
-          this.taskArray = [new Assignment()];
+          // Reset the task list
+          this.quickAddTasks.length = 0;
+          this.quickAddTasks.push(new Task());
 
-          // Reset the date picker for the task array
-          this.quickAddFormInit();
+          // Reset the date picker for the task list
+          this.quickAddDatePickerInit();
 
           this.displayQuickAddSuccess();
           this.scrollToQuickAddTop();
-        }) // End then(createdAssignments)
+        }) // End then(createdTasks)
         .catch((bulkCreateError: Error) => {
           // TODO: Handle Local/Remote errors that are caught
           this.displayQuickAddError();
           this.scrollToQuickAddTop();
 
+          // Reset the date picker for the task list
+          this.quickAddDatePickerInit();
+
           console.error(bulkCreateError);
-          console.log(this.taskArray);
-        }); // End this.ASSIGNMENTS.bulkCreate()
+          console.log(this.quickAddTasks);
+        }); // End this.TASKS.bulkCreate()
       }
   } // End addTasksInBulk()
 
@@ -601,7 +649,7 @@ export class LayoutComponent implements OnInit {
    * milliseconds for the duration of the animation
    */
   scrollToModalTop(_identifier: string = '', _duration?: number): void {
-    const duration: number = this.UTILS.hasValue(_duration) ? _duration : 250;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['scrollDuration'];
     $(_identifier).animate({ scrollTop: 0 }, duration);
   } // End scrollToModalTop()
 

@@ -31,24 +31,36 @@ export class PasswordResetComponent implements OnInit {
   showFinalResetForm: boolean;
   showSuccess: boolean;
 
-  initialPasswordResetError: boolean;
-  initialPasswordResetErrorMessage: string;
+  errors: Object = {
+    initial: {
+      message: '',
+      occurred: false,
+    },
+    details: {
+      message: '',
+      occurred: false,
+    },
+    final: {
+      message: '',
+      occurred: false,
+    },
+  };
 
-  passwordResetDetailsError: boolean;
-  passwordResetDetailsErrorMessage: string;
-
-  finalResetError: boolean;
-  finalResetErrorMessage: string;
+  private times: Object = {
+    displayMessage: 5000,
+    formResetDuration: 5000,
+    routeToLoginDelay: 5000,
+  };
 
   /* tslint:disable max-line-length */
-  defaultErrorMessage: string = 'We apologize, but we are unable to help you reset your password right now. Please email us at feasyresponse@gmail.com to resolve this issue';
+  private defaultErrorMessage: string = 'We apologize, but we are unable to help you reset your password right now. Please email us at feasyresponse@gmail.com to resolve this issue.';
   /* tslint:enable max-line-length */
 
   constructor(
     private ROUTER: Router,
+    private USERS: UserService,
     private ERROR: ErrorService,
     private UTILS: CommonUtilsService,
-    private USER_SERVICE: UserService,
   ) {}
 
   ngOnInit() {
@@ -70,23 +82,19 @@ export class PasswordResetComponent implements OnInit {
           this.showFinalResetForm = true;
         }) // End then(userId)
         .catch((errorMessage: Error) => {
-          this.passwordResetDetailsError = true;
-
+          let formattedErrorMessage: string;
           if (typeof errorMessage !== 'string') {
-            this.passwordResetDetailsErrorMessage = this.defaultErrorMessage;
+            formattedErrorMessage = this.defaultErrorMessage;
             console.error(errorMessage);
-          } else this.passwordResetDetailsErrorMessage = errorMessage;
+          } else formattedErrorMessage = errorMessage;
 
-          this.passwordResetDetailsErrorMessage += '. You will be redirected to send another reset email shortly'
+          const duration: number = this.times['formResetDuration'];
+          formattedErrorMessage = `${formattedErrorMessage}. You will be redirected to send another reset email shortly.`
+          this.displayDetailsError(formattedErrorMessage, duration);
 
-          // Display the initial reset form after 5 seconds
-          /* tslint:disable align */
-          setTimeout(() => {
-              this.passwordResetDetailsError = false;
-              this.passwordResetDetailsErrorMessage = '';
-              this.showInitialResetForm = true;
-            }, 5000);
-            /* tslint:enable align */
+          // Display the initial reset form after a short delay
+          const self = this;
+          setTimeout(() => self.showInitialResetForm = true, duration);
         }); // End this.getPasswordResetDetails()
     } else this.showInitialResetForm = true;
   } // End ngOnInit()
@@ -124,19 +132,19 @@ export class PasswordResetComponent implements OnInit {
    * email to the email the user entered in the form
    */
   sendResetEmail(): void {
-    const promise = this.USER_SERVICE.sendPasswordResetEmail(this._emailAddress)
+    const promise = this.USERS.sendPasswordResetEmail(this._emailAddress)
       .then(() => {
         this.showInitialResetForm = false;
         this.showEmailSentMessage = true;
       }) // End then()
       .catch((sendEmailError: RemoteError) => {
-        this.initialPasswordResetError = true;
-        if (this.ERROR.isInvalidRequestError(sendEmailError)) {
-          this.initialPasswordResetErrorMessage = 'That email address is invalid';
-        } else if (this.ERROR.isResourceDneError(sendEmailError)) {
-          this.initialPasswordResetErrorMessage = 'That email address does not exist';
-        } else this.initialPasswordResetErrorMessage = this.defaultErrorMessage
-      }); // End this.USER_SERVICE.sendPasswordResetEmail()
+        let errorMessage: string;
+        if (this.ERROR.isInvalidRequestError(sendEmailError)) errorMessage = 'That email address is invalid.';
+        else if (this.ERROR.isResourceDneError(sendEmailError)) errorMessage = 'That email address does not exist.';
+        else errorMessage = this.defaultErrorMessage;
+
+        this.displayInitialError(errorMessage);
+      }); // End this.USERS.sendPasswordResetEmail()
   } // End sendResetEmail()
 
   /**
@@ -147,7 +155,7 @@ export class PasswordResetComponent implements OnInit {
    * userId and username, and possibly first name & last name
    */
   getPasswordResetDetails(_code: string = ''): Promise<Object> {
-    const promise = this.USER_SERVICE.getPasswordResetDetails(_code)
+    const promise = this.USERS.getPasswordResetDetails(_code)
       .then((userDetails: Object) => Promise.resolve(userDetails)) // End then(userDetails)
       .catch((getDetailsError: Error) => {
         let errorMessage: string;
@@ -170,7 +178,7 @@ export class PasswordResetComponent implements OnInit {
 
         if (unknownError) return Promise.reject(getDetailsError);
         else return Promise.reject(errorMessage);
-      }); // End this.USER_SERVICE.getPasswordResetDetails()
+      }); // End this.USERS.getPasswordResetDetails()
 
     return promise;
   } // End getPasswordResetDetails()
@@ -180,16 +188,15 @@ export class PasswordResetComponent implements OnInit {
    * the user ID, and the password reset code to reset the user's password
    */
   resetPassword(): void {
-    const promise = this.USER_SERVICE.resetPassword(this.escapedResetCode, this.userId, this._newPassword)
+    const promise = this.USERS.resetPassword(this.escapedResetCode, this.userId, this._newPassword)
       .then(() => {
-        // Show the success info and route back to the login screen after 5 seconds
+        // Show the success info and route back to the login screen after a delay
         this.showFinalResetForm = false;
         this.showSuccess = true;
-        setTimeout(() => this.ROUTER.navigate(['/login']), 5000);
+        const self = this;
+        setTimeout(() => self.ROUTER.navigate(['/login']), this.times['routeToLoginDelay']);
       }) // End then()
       .catch((resetPasswordError: RemoteError) => {
-        this.finalResetError = true;
-
         let errorMessage: string;
         let unknownError: boolean = false;
         const firstPart: string = 'The password reset code in the URL';
@@ -234,7 +241,90 @@ export class PasswordResetComponent implements OnInit {
           console.error(resetPasswordError);
         }
 
-        this.finalResetErrorMessage = errorMessage;
-      }); // End this.USER_SERVICE.resetPassword()
+        this.displayFinalError(errorMessage);
+      }); // End this.USERS.resetPassword()
   } // End resetPassword()
+
+  /**
+   * Displays an error message for a given duration in a given section
+   * @param {string} _errorType the section
+   * in the component to display the error for
+   * @param {string} _message the message to display. If
+   * no value is given, the default value will be used
+   * @param {number} _duration the duration for the message to
+   * last. If no value is given, the default value will be used
+   */
+  displayError(_errorType: string, _message?: string, _duration?: number): void {
+    const message: string = this.UTILS.hasValue(_message) ? _message : this.defaultErrorMessage;
+    const duration: number = this.UTILS.hasValue(_duration) ? _duration : this.times['displayMessage'];
+
+    this.errors[_errorType]['occurred'] = true;
+    this.errors[_errorType]['message'] = message;
+
+    const self = this;
+    setTimeout(() => self.resetError(_errorType), duration);
+  } // End displayInitialError()
+
+  /**
+   * Displays an error message for a given duration in the initial section
+   * @param {string} _message the message to display. If
+   * no value is given, the default value will be used
+   * @param {number} _duration the duration for the message to
+   * last. If no value is given, the default value will be used
+   */
+  displayInitialError(_message?: string, _duration?: number): void {
+    this.displayError('initial', _message, _duration);
+  } // End displayInitialError()
+
+  /**
+   * Displays an error message for a given duration in the details section
+   * @param {string} _message the message to display. If
+   * no value is given, the default value will be used
+   * @param {number} _duration the duration for the message to
+   * last. If no value is given, the default value will be used
+   */
+  displayDetailsError(_message?: string, _duration?: number): void {
+    this.displayError('details', _message, _duration);
+  } // End displayDetailsError()
+
+  /**
+   * Displays an error message for a given duration in the final section
+   * @param {string} _message the message to display. If
+   * no value is given, the default value will be used
+   * @param {number} _duration the duration for the message to
+   * last. If no value is given, the default value will be used
+   */
+  displayFinalError(_message?: string, _duration?: number): void {
+    this.displayError('final', _message, _duration);
+  } // End displayFinalError()
+
+  /**
+   * Resets the error for a given section
+   * @param {string} _errorType the error section type
+   */
+  resetError(_errorType: string): void {
+    this.errors[_errorType]['occurred'] = false;
+    this.errors[_errorType]['message'] = '';
+  } // End resetError()
+
+  /**
+   * Resets any error message that is currently displayed in the initial section
+   */
+  resetInitialError(): void {
+    this.resetError('initial');
+  } // End resetInitialError()
+
+  /**
+   * Resets any error message that is currently displayed in the details section
+   */
+  resetDetailsError(): void {
+    this.resetError('details');
+  } // End resetDetailsError()
+
+  /**
+   * Resets any error message that is currently displayed in the final section
+   */
+  resetFinalError(): void {
+    this.resetError('final');
+  } // End resetFinalError()
 }

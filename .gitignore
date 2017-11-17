@@ -7,6 +7,10 @@ node_modules/
 
 # IDEs and editors
 /.idea
+.tags
+.tags_swap
+
+# Visual Studio
 *.sln
 *.userprefs
 /obj/Debug
@@ -36,6 +40,7 @@ jwtSecret.json
 googleSecret.json
 bugsnagSecret.json
 sendGridSecret.json
+databaseSecret.json
 secrets.tar
 
 # Xcode
