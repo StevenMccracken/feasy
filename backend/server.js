@@ -8,7 +8,6 @@ const BUGSNAG = require('bugsnag');
 const BODY_PARSER = require('body-parser');
 const DATABASE = require('./config/database');
 const UTIL = require('./app/modules/utility_mod');
-const ROUTES = require('./app/modules/router_mod');
 const BUGSNAG_CONFIG = require('./config/bugsnagSecret');
 
 /**
@@ -60,8 +59,8 @@ function shutdownLog(_message, _newLineBefore = false) {
 
 let server;
 const PORTS = {
-  DEV: 8081,
-  TEST: 8082,
+  DEV: 8080,
+  TEST: 8081,
   PRODUCTION: 8080,
 };
 
@@ -125,12 +124,6 @@ express.use(BODY_PARSER.urlencoded({
 }));
 startupLog('Body-parser configured');
 
-// Register the routes from the router module with the express app
-startupLog('Adding Router configuration...', true);
-const ROUTER = ROUTES(Express.Router());
-express.use('/', ROUTER);
-startupLog('Router configured');
-
 // Define the default port to listen on
 let port = PORTS.DEV;
 
@@ -163,9 +156,7 @@ process.argv.forEach((arg) => {
     startupLog('Test flag recognized. Configuring test settings...', true);
 
     startupLog('Setting \'FEASY_ENV\' environment variable to \'test\'...', true);
-    /* eslint-disable dot-notation */
-    process.env['FEASY_ENV'] = 'test';
-    /* eslint-enable dot-notation */
+    process.env.FEASY_ENV = 'test';
     usedArgsOptions.env = true;
     startupLog('Set environment to \'test\'');
 
@@ -185,9 +176,7 @@ process.argv.forEach((arg) => {
     startupLog('Production flag recognized. Configuring production settings...', true);
 
     startupLog('Setting \'FEASY_ENV\' environment variable to \'prod\'...', true);
-    /* eslint-disable dot-notation */
-    process.env['FEASY_ENV'] = 'prod';
-    /* eslint-enable dot-notation */
+    process.env.FEASY_ENV = 'prod';
     usedArgsOptions.env = true;
     startupLog('Set environment to \'prod\'');
 
@@ -209,6 +198,21 @@ process.argv.forEach((arg) => {
 });
 
 startupLog('Arguments checked', true);
+
+// Set the port of the server in the environment
+process.env.FEASY_PORT = `${port}`;
+
+/*
+ Now require the routes module it, by proxy, requires Google
+ API config which needs environment information. Register the
+ routes from the router module with the express app
+ */
+const ROUTES = require('./app/modules/router_mod');
+
+startupLog('Adding Router configuration...', true);
+const ROUTER = ROUTES(Express.Router());
+express.use('/', ROUTER);
+startupLog('Router configured');
 
 // Connect to database server before express server starts
 startupLog('Starting the database connection...', true);

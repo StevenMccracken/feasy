@@ -849,3 +849,4 @@ describe('Start server', () => {
     });
   }); // End close the server
 }); // End start server
+/* eslint-enable no-undef */

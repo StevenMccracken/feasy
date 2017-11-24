@@ -27,7 +27,6 @@ export class LoginComponent implements OnInit {
   // Variables from the login form
   _username: string;
   _password: string;
-  _alphaCode: string;
   form: FormGroup;
 
   // Variables to update the form to display errors
@@ -56,7 +55,6 @@ export class LoginComponent implements OnInit {
     username: 'username',
     password: 'password',
     email: 'email address',
-    alphaCode: 'access code',
   };
 
   // Image URLs for the Google sign-in button (depending on it's state)
@@ -152,7 +150,7 @@ export class LoginComponent implements OnInit {
           });
 
           // Fetch the login credentials for the Google account the user selects
-          this.USERS.authenticateGoogle(this._alphaCode)
+          this.USERS.authenticateGoogle()
             .then((loginInfo: Object) => {
               // Signal that Google authentication inside the popup window is done to close it
               googleAuthSource.next(true);
@@ -187,7 +185,6 @@ export class LoginComponent implements OnInit {
                 } else unknownError = true;
               } else if (this.ERROR.isRemoteError(loginError)) {
                 if (this.ERROR.isInvalidRequestError(loginError)) {
-                  // Likely, the alpha code was not in a valid form
                   errorMessage = this.handleInvalidRequestError(loginError as RemoteError);
                 } else if (this.ERROR.isResourceError(loginError as RemoteError)) {
                   // One of the attributes of the Google account was already being used by another account
@@ -195,12 +192,7 @@ export class LoginComponent implements OnInit {
                   const officialName: string = this.varToWordMap[invalidResource] || '';
 
                   if (invalidResource === 'username' || invalidResource === 'email') errorMessage = `That ${officialName} is already taken`;
-                  else if (invalidResource === 'alphaCode') errorMessage = `That ${officialName} has already been used`;
                   else unknownError = true;
-                } else if (this.ERROR.isResourceDneError(loginError as RemoteError)) {
-                  // The access code does not exist
-                  const officialName: string = this.varToWordMap['alphaCode'];
-                  errorMessage = `That ${officialName} does not exist`;
                 } else unknownError = true;
               } else unknownError = true;
 

@@ -58,13 +58,11 @@ const verifyToken = function verifyToken(_request, _response) {
     PASSPORT.authenticate('jwt', { session: false }, (passportError, userInfo, tokenError) => {
       if (userInfo) resolve(userInfo);
       else {
-        /* eslint-disable object-shorthand */
         const errorJson = {
-          passportError: passportError,
+          passportError,
           tokenError: !UTIL.hasValue(tokenError) ? null : tokenError,
           userInfoMissing: !userInfo,
         };
-        /* eslint-enable object-shorthand */
 
         reject(errorJson);
       }

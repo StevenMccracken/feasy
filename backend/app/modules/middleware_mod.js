@@ -307,174 +307,95 @@ const authenticateGoogle = function authenticateGoogle(_request, _response) {
                     eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
                   });
               } else {
-                const alphaCode = _request.query.alphaCode;
-                if (!VALIDATE.isValidString(alphaCode)) {
-                  const errorJson = ERROR.error(
-                    SOURCE,
-                    _request,
-                    _response,
-                    ERROR.CODE.INVALID_REQUEST_ERROR,
-                    'Invalid parameters: alphaCode'
-                  );
+                /*
+                 * This is a new google user. Choose an email from the google
+                 * profile's array of emails. Default main email will be the
+                 * first email, but preferred email is the one with type 'account'
+                 */
+                let mainEmail;
+                let counter = 0;
+                let foundEmailOfTypeAccount = false;
+                const emails = googleProfile.emails || [];
+                emails.forEach((emailJson) => {
+                  if (emailJson.type === 'account' && !foundEmailOfTypeAccount) {
+                    mainEmail = emailJson.value;
+                    foundEmailOfTypeAccount = true;
+                  } else if (counter === 0) mainEmail = emailJson.value;
 
-                  reject(errorJson);
+                  counter++;
+                });
 
-                  // Signal the unsuccessful end of the google sign-up process
-                  eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
-                } else {
-                  CODES.getByUuid(alphaCode)
-                    .then((code) => {
-                      if (!UTIL.hasValue(code)) {
-                        // Invalid code
-                        const errorJson = ERROR.error(
-                          SOURCE,
-                          _request,
-                          _response,
-                          ERROR.CODE.RESOURCE_DNE_ERROR,
-                          'That alpha code does not exist',
-                          `Client tried to use '${alphaCode}' as an alpha code, but it does not exist`
-                        );
+                // Get JSON of first and last names from the google profile
+                const names = googleProfile.name;
 
-                        reject(errorJson);
+                // Create the google user info JSON
+                const googleUserInfo = {
+                  googleId,
+                  email: mainEmail,
+                  username: mainEmail.split('@')[0],
+                  firstName: names.givenName,
+                  lastName: names.familyName,
+                  accessToken: tokens.access_token,
+                  refreshToken: tokens.refresh_token,
+                  accessTokenExpiryDate: tokens.expiry_date,
+                };
 
-                        // Signal the unsuccessful end of the google sign-up process
-                        eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
-                      } else if (code.used) {
-                        // Stale code
-                        const errorJson = ERROR.error(
-                          SOURCE,
-                          _request,
-                          _response,
-                          ERROR.CODE.RESOURCE_ERROR,
-                          'That alpha code has already been used',
-                          `Client tried to use '${alphaCode}' as an alpha code, but it was already used`
-                        );
+                // Attempt to create the new user with the info from the google profile
+                USERS.createGoogle(googleUserInfo)
+                  .then((newUser) => {
+                    const successJson = createSuccessJson(newUser, 'sign-up');
+                    resolve(successJson);
 
-                        reject(errorJson);
+                    // Signal the successful end of the google sign-up process
+                    eventEmitter.emit(`googleAuth_${ipAddress}_finish`, null);
+                  }) // End then(newUser)
+                  .catch((createGoogleUserError) => {
+                    if (
+                      createGoogleUserError.name === 'MongoError' &&
+                      createGoogleUserError.message.indexOf('username') !== -1
+                    ) {
+                      /**
+                       * This error means that a user already exists with the username.
+                       * Append a random string to username to attempt a unique username
+                       * value
+                       */
+                      const shortUuid = UTIL.newUuid().split('-')[0];
+                      googleUserInfo.username += `-${shortUuid}`;
+                      USERS.createGoogle(googleUserInfo)
+                        .then((newUser) => {
+                          const successJson = createSuccessJson(newUser, 'sign-up');
+                          resolve(successJson);
 
-                        // Signal the unsuccessful end of the google sign-up process
-                        eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
-                      } else {
-                        // Valid code. Update the code to be used
-                        CODES.updateAttribute(code, 'used', true)
-                          /* eslint-disable no-unused-vars */
-                          .then((updatedCode) => {
-                          /* eslint-enalbe no-unused-vars */
-                            /**
-                             * This is a new google user. Choose an email from the google
-                             * profile's array of emails. Default main email will be the
-                             * first email, but preferred email is the one with type 'account'
-                             */
-                            let mainEmail;
-                            let counter = 0;
-                            let foundEmailOfTypeAccount = false;
-                            const emails = googleProfile.emails || [];
-                            emails.forEach((emailJson) => {
-                              if (emailJson.type === 'account' && !foundEmailOfTypeAccount) {
-                                mainEmail = emailJson.value;
-                                foundEmailOfTypeAccount = true;
-                              } else if (counter === 0) mainEmail = emailJson.value;
+                          // Signal the successful end of the google sign-up process
+                          eventEmitter.emit(`googleAuth_${ipAddress}_finish`, null);
+                        }) // End then(newUser)
+                        .catch((createGoogleUserError2) => {
+                          const errorJson = ERROR.userError(
+                            SOURCE,
+                            _request,
+                            _response,
+                            createGoogleUserError2
+                          );
 
-                              counter++;
-                            });
+                          reject(errorJson);
 
-                            // Get JSON of first and last names from the google profile
-                            const names = googleProfile.name;
+                          // Signal the unsuccessful end of the google sign-up process
+                          eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
+                        }); // End USERS.createGoogle()
+                    } else {
+                      const errorJson = ERROR.userError(
+                        SOURCE,
+                        _request,
+                        _response,
+                        createGoogleUserError
+                      );
 
-                            // Create the google user info JSON
-                            /* eslint-disable object-shorthand */
-                            const googleUserInfo = {
-                              googleId: googleId,
-                              email: mainEmail,
-                              username: mainEmail.split('@')[0],
-                              firstName: names.givenName,
-                              lastName: names.familyName,
-                              accessToken: tokens.access_token,
-                              refreshToken: tokens.refresh_token,
-                              accessTokenExpiryDate: tokens.expiry_date,
-                            };
-                            /* eslint-enable object-shorthand */
-
-                            // Attempt to create the new user with the info from the google profile
-                            USERS.createGoogle(googleUserInfo)
-                              .then((newUser) => {
-                                const successJson = createSuccessJson(newUser, 'sign-up');
-                                resolve(successJson);
-
-                                // Signal the successful end of the google sign-up process
-                                eventEmitter.emit(`googleAuth_${ipAddress}_finish`, null);
-                              }) // End then(newUser)
-                              .catch((createGoogleUserError) => {
-                                if (
-                                  createGoogleUserError.name === 'MongoError' &&
-                                  createGoogleUserError.message.indexOf('username') !== -1
-                                ) {
-                                  /**
-                                   * This error means that a user already exists with the username.
-                                   * Append a random string to username to attempt a unique username
-                                   * value
-                                   */
-                                  const shortUuid = UTIL.newUuid().split('-')[0];
-                                  googleUserInfo.username += `-${shortUuid}`;
-                                  USERS.createGoogle(googleUserInfo)
-                                    .then((newUser) => {
-                                      const successJson = createSuccessJson(newUser, 'sign-up');
-                                      resolve(successJson);
-
-                                      // Signal the successful end of the google sign-up process
-                                      eventEmitter.emit(`googleAuth_${ipAddress}_finish`, null);
-                                    }) // End then(newUser)
-                                    .catch((createGoogleUserError2) => {
-                                      const errorJson = ERROR.userError(
-                                        SOURCE,
-                                        _request,
-                                        _response,
-                                        createGoogleUserError2
-                                      );
-
-                                      reject(errorJson);
-
-                                      // Signal the unsuccessful end of the google sign-up process
-                                      eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
-                                    }); // End USERS.createGoogle()
-                                } else {
-                                  const errorJson = ERROR.userError(
-                                    SOURCE,
-                                    _request,
-                                    _response,
-                                    createGoogleUserError
-                                  );
-
-                                  reject(errorJson);
-
-                                  // Signal the unsuccessful end of the google sign-up process
-                                  eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
-                                }
-                              }); // End USERS.createGoogle()
-                          }) // End then(updatedCode)
-                          .catch((updateCodeError) => {
-                            const errorJson = ERROR.codeError(
-                              SOURCE,
-                              _request,
-                              _response,
-                              updateCodeError
-                            );
-
-                            reject(errorJson);
-
-                            // Signal the unsuccessful end of the google sign-up process
-                            eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
-                          }); // End CODES.updateAttribute()
-                      }
-                    }) // End then(code)
-                    .catch((getCodeError) => {
-                      const errorJson = ERROR.codeError(SOURCE, _request, _response, getCodeError);
                       reject(errorJson);
 
                       // Signal the unsuccessful end of the google sign-up process
                       eventEmitter.emit(`googleAuth_${ipAddress}_finish`, errorJson);
-                    }); // End CODES.getByUuid()
-                }
+                    }
+                  }); // End USERS.createGoogle()
               }
             }) // End then(userInfo)
             .catch((getGoogleUserError) => {
@@ -553,7 +474,9 @@ const startPasswordReset = function startPasswordReset(_request, _response) {
                     // Send the unique url with the hashed random token to the user via email
                     const uniqueUrl = `https://www.feasy-app.com/#/passwordreset?code=${code.uuid}`;
                     SENDGRID_API.sendPasswordReset(userInfo, uniqueUrl)
+                      /* eslint-disable no-unused-vars */
                       .then((sendResult) => {
+                      /* eslint-enable no-unused-vars */
                         const successJson = {
                           success: {
                             message: 'Password reset email successfully sent',
@@ -811,7 +734,9 @@ const finishPasswordReset = function finishPasswordReset(_request, _response) {
                   } else {
                     // All request body info is valid. Update the password
                     USERS.updateAttribute(userInfo, 'password', _request.body.newPassword)
+                      /* eslint-disable no-unused-vars */
                       .then((updatedUserInfo) => {
+                      /* eslint-enable no-unused-vars */
                         // Password was updated. Try and set the reset password code as used
                         const successJson = {
                           success: {
@@ -821,7 +746,9 @@ const finishPasswordReset = function finishPasswordReset(_request, _response) {
 
                         // Mark the password reset code as used
                         CODES.updateAttribute(passwordResetCode, 'used', true)
+                          /* eslint-disable no-unused-vars */
                           .then(updatedCode => resolve(successJson)) // End then(updatedCode)
+                          /* eslint-enable no-unused-vars */
                           .catch((updateCodeError) => {
                             log(
                               `Password reset code '${passwordResetCode._id}' not marked as used but password was successfully updated`,
@@ -1603,12 +1530,14 @@ const createAssignment = function createAssignment(_client, _request, _response)
         else hasValidDescription = true;
       }
 
+      /* eslint-disable no-unused-vars */
       let hasValidCompleted = false;
       if (UTIL.hasValue(_request.body.completed)) {
         if (_request.body.completed !== 'true' && _request.body.completed !== 'false') {
           invalidParams.push('completed');
         } else hasValidCompleted = true;
       }
+      /* eslint-enable no-unused-vars */
 
       if (invalidParams.length > 0) {
         const errorJson = ERROR.error(
