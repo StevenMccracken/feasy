@@ -19,7 +19,6 @@ import { LocalStorageService } from '../utils/local-storage.service';
 export class SignupComponent {
   // Variables from the signup form
   user: User = new User();
-  _alphaCode: string;
   _passwordConfirm: string;
 
   // Variables to update the form to display errors
@@ -44,7 +43,6 @@ export class SignupComponent {
     email: 'email address',
     firstName: 'first name',
     lastName: 'last name',
-    alphaCode: 'access code',
   };
 
   constructor(
@@ -66,7 +64,7 @@ export class SignupComponent {
     // If the user object has a value, send it's information to create a user through the API
     if (this.UTILS.hasValue(this.user)) {
       // Send the user data to the API to create the user
-      this.USERS.create(this.user, this._alphaCode)
+      this.USERS.create(this.user)
         .then((token: string) => {
           // Add token and username info to browser local storage
           this.STORAGE.setItem('token', token);
@@ -89,13 +87,9 @@ export class SignupComponent {
               const officialName: string = this.varToWordMap[duplicateValue] || duplicateValue;
 
               if (duplicateValue === 'username' || duplicateValue === 'email') errorMessage = `That ${officialName} is already taken`;
-              else if (duplicateValue === 'alphaCode') errorMessage = `That ${officialName} has already been used`;
               else unknownError = true;
             } else if (this.ERROR.isInvalidRequestError(createUserError as RemoteError)) {
               errorMessage = this.handleInvalidRequestError(createUserError as RemoteError);
-            } else if (this.ERROR.isResourceDneError(createUserError as RemoteError)) {
-              const officialName = this.varToWordMap['alphaCode'] || 'access code';
-              errorMessage = `That ${officialName} does not exist`;
             } else unknownError = true;
           } else unknownError = true;
 

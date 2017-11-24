@@ -36,13 +36,6 @@
         <label for="passwordConfirm">Confirm password (required)</label>
       </div>
     </div>
-    <div clas="row">
-      <div class="input-field col s12 m12 l12">
-        <input id="token" type="text" class="validate" required pattern="^[a-zA-Z\d]{8}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{12}$" name="token" [(ngModel)]="_alphaCode" #token="ngModel">
-        <label for="token">Access code (required)</label>
-        <p>This access code is <b>required</b> to create an account and use our app. Once you have signed up, you do not need to enter the code to log in. Please email <a href="mailto:feasyresponse@gmail.com">feasyresponse@gmail.com</a> if you need an access code.</p>
-      </div>
-    </div>
     <div class="row">
       <button type="submit" id="returnToLogin" class="waves-effect waves-light btn btn-red col s12 m5" routerLink="/login">Return to login</button>
       <button type="submit" id="signup" class="waves-effect waves-light btn btn-red col s12 m6" [class.disabled]="!signupForm.form.valid || (_passwordConfirm !== user.password)" (click)="signup()">Create your account</button>
