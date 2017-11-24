@@ -42,11 +42,15 @@ class LoginManager {
   }
   
   static func isUserLoggedIn() -> Bool {
-    return self.userIsLoggedIn
+    return userIsLoggedIn
+  }
+  
+  static func validLogin() {
+    userIsLoggedIn = true
   }
   
   static func logUserOut() {
-    self.userIsLoggedIn = false
-    self.removeToken()
+    userIsLoggedIn = false
+    removeToken()
   }
 }

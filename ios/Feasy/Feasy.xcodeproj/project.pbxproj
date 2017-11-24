@@ -37,6 +37,9 @@
 		69D6ECB21F6F0033009738A6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 694FABC51F6B63A300DFF897 /* AppDelegate.swift */; };
 		69D6ECB31F6F0036009738A6 /* LoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D6ECAB1F6EECA3009738A6 /* LoginManager.swift */; };
 		69D6ECB41F6F0039009738A6 /* StorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D6ECAF1F6EF587009738A6 /* StorageManager.swift */; };
+		69E1CFE81FBEC42300C52B78 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69E1CFE71FBEC42300C52B78 /* MainViewController.swift */; };
+		69E1CFE91FBEC42300C52B78 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69E1CFE71FBEC42300C52B78 /* MainViewController.swift */; };
+		69E43D811FBEEBD4000B35F1 /* UIColor+CustomColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69E43D801FBEEBD4000B35F1 /* UIColor+CustomColors.swift */; };
 		737A30DBA20997FA4083389F /* Pods_FeasyUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CA3825A32235D4F28909CA8F /* Pods_FeasyUITests.framework */; };
 /* End PBXBuildFile section */
 
@@ -83,6 +86,8 @@
 		694FABFB1F6DB94A00DFF897 /* UserService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
 		69D6ECAB1F6EECA3009738A6 /* LoginManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginManager.swift; sourceTree = "<group>"; };
 		69D6ECAF1F6EF587009738A6 /* StorageManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StorageManager.swift; sourceTree = "<group>"; };
+		69E1CFE71FBEC42300C52B78 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
+		69E43D801FBEEBD4000B35F1 /* UIColor+CustomColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+CustomColors.swift"; sourceTree = "<group>"; };
 		6E0328266D3678401A1A9413 /* Pods_FeasyTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FeasyTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A88B0B3F1DF3223EF4E5712C /* Pods-FeasyUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FeasyUITests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-FeasyUITests/Pods-FeasyUITests.debug.xcconfig"; sourceTree = "<group>"; };
 		B8604AD5E3093422619B17D4 /* Pods_Feasy.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Feasy.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -168,6 +173,7 @@
 		694FABC41F6B63A300DFF897 /* Feasy */ = {
 			isa = PBXGroup;
 			children = (
+				69E1CFE21FBE7E5E00C52B78 /* Extensions */,
 				692D47E41F91FA7E000FC4A8 /* UI */,
 				691091FE1F91369E00F7BB8A /* Helpers */,
 				69D6ECB51F6F00D8009738A6 /* Managers */,
@@ -176,6 +182,7 @@
 				694FABC71F6B63A300DFF897 /* LaunchViewController.swift */,
 				694FABCF1F6B63A300DFF897 /* Assets.xcassets */,
 				693F9F361F92D78B00864ED8 /* Main.storyboard */,
+				69E1CFE71FBEC42300C52B78 /* MainViewController.swift */,
 				694FABD11F6B63A300DFF897 /* LaunchScreen.storyboard */,
 				694FABD41F6B63A300DFF897 /* Info.plist */,
 				694FABCC1F6B63A300DFF897 /* Feasy.xcdatamodeld */,
@@ -217,6 +224,14 @@
 				69D6ECAF1F6EF587009738A6 /* StorageManager.swift */,
 			);
 			name = Managers;
+			sourceTree = "<group>";
+		};
+		69E1CFE21FBE7E5E00C52B78 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				69E43D801FBEEBD4000B35F1 /* UIColor+CustomColors.swift */,
+			);
+			name = Extensions;
 			sourceTree = "<group>";
 		};
 		89C2A4B7A466AFD9E4016505 /* Pods */ = {
@@ -547,7 +562,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				692D47EF1F91FB8F000FC4A8 /* LoginViewController.swift in Sources */,
+				69E1CFE81FBEC42300C52B78 /* MainViewController.swift in Sources */,
 				694FABC81F6B63A300DFF897 /* LaunchViewController.swift in Sources */,
+				69E43D811FBEEBD4000B35F1 /* UIColor+CustomColors.swift in Sources */,
 				69D6ECB01F6EF587009738A6 /* StorageManager.swift in Sources */,
 				694FABFC1F6DB94A00DFF897 /* UserService.swift in Sources */,
 				694FABCE1F6B63A300DFF897 /* Feasy.xcdatamodeld in Sources */,
@@ -565,6 +582,7 @@
 				691092011F9136B600F7BB8A /* Platform.swift in Sources */,
 				69D6ECB21F6F0033009738A6 /* AppDelegate.swift in Sources */,
 				69D6ECB11F6F0030009738A6 /* LaunchViewController.swift in Sources */,
+				69E1CFE91FBEC42300C52B78 /* MainViewController.swift in Sources */,
 				69D6ECB31F6F0036009738A6 /* LoginManager.swift in Sources */,
 				694FABFD1F6DB94A00DFF897 /* UserService.swift in Sources */,
 				694FABDE1F6B63A300DFF897 /* FeasyTests.swift in Sources */,

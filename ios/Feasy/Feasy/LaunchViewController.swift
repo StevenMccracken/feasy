@@ -7,45 +7,35 @@
 //
 
 import UIKit
-
-protocol LaunchViewControllerDelegate {
-  func didCompleteLogin(userInformation: Any)
-}
+import SwiftyJSON
 
 class LaunchViewController: UINavigationController {
   
   override func viewDidLoad() {
     super.viewDidLoad()
     
-    LoginManager.setUsername(username: "test")
-    LoginManager.setPassword(password: "test")
+    let tokenAlreadyExists = UserService.refreshToken(success: { [weak self] (result: JSON) in
+      print(result)
+      guard let strongSelf = self else { return }
+      print("helloooo")
+      strongSelf.presentHomeView()
+    }, error: { [weak self] (error: HTTPURLResponse) in
+      print("fuck")
+    })
     
-    if LoginManager.isUserLoggedIn() {
-      print("ayy")
-    } else {
-      print("noo")
-      UserService.getWelcomeMessage() { message in
-        print(message)
-      }
-      
-      let loginStoryboard = UIStoryboard(name: "LoginViewStoryboard", bundle: nil)
-      let loginViewController = loginStoryboard.instantiateInitialViewController() as! LoginViewController
-      
-      loginViewController.navController = self
-      loginViewController.delegate = self
-      
-      self.pushViewController(loginViewController, animated: true)
+    if !tokenAlreadyExists {
+      presentHomeView()
     }
+  }
+  
+  private func presentHomeView() {
+    let homeStoryboard = UIStoryboard(name: "Home", bundle: nil)
+    let homeNavigationController = homeStoryboard.instantiateInitialViewController() as! UINavigationController
+    pushViewController(homeNavigationController, animated: true)
   }
   
   override func didReceiveMemoryWarning() {
     super.didReceiveMemoryWarning()
     // Dispose of any resources that can be recreated.
-  }
-}
-
-extension LaunchViewController: LaunchViewControllerDelegate {
-  func didCompleteLogin(userInformation: Any) {
-    print(userInformation)
   }
 }

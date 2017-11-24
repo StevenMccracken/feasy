@@ -8,23 +8,28 @@
 
 import UIKit
 
+
+
 class LoginViewController: UIViewController {
 
-  @IBOutlet weak var welcomeLabel: UILabel!
   @IBOutlet weak var usernameField: UITextField!
   @IBOutlet weak var passwordField: UITextField!
   @IBOutlet weak var loginButton: UIButton!
   
-  var navController: UINavigationController?
-  var delegate: LaunchViewController?
+  private let usernameFieldTag = 0
+  private let passwordFieldTag = 1
   
   override func viewDidLoad() {
     super.viewDidLoad()
 
     // Do any additional setup after loading the view.
-    self.updateLoginButton(withEnabledStatus: false)
     usernameField.delegate = self
     passwordField.delegate = self
+    
+    usernameField.tag = usernameFieldTag
+    passwordField.tag = passwordFieldTag
+    
+    loginButton.layer.cornerRadius = 9
 }
 
   override func didReceiveMemoryWarning() {
@@ -32,43 +37,68 @@ class LoginViewController: UIViewController {
     // Dispose of any resources that can be recreated.
   }
     
-  @IBAction func loginButtonPressed(_ sender: UIButton) {
-    print("Logging in")
+  @IBAction func loginButtonPressed(_ sender: UIButton?) {
+    updateLoginButton(withEnabledStatus: false)
+    usernameField.resignFirstResponder()
+    passwordField.resignFirstResponder()
     
-    navController?.popViewController(animated: true)
-    dismiss(animated: true, completion: { () in
-      self.delegate?.didCompleteLogin(userInformation: "wow")
+    UserService.login(resolve: { [weak self] (response: HTTPURLResponse, body: [String: Any]) in
+      guard let strongSelf = self else { return }
+      if response.statusCode == 200  {
+        if let success = body["success"] as? [String: Any], let jwt = success["token"] as? String {
+          LoginManager.setToken(token: jwt)
+          LoginManager.validLogin()
+          
+          strongSelf.dismiss(animated: true)
+        } else {
+          // Token isn't in response body
+          strongSelf.updateLoginButton(withEnabledStatus: true)
+        }
+      } else {
+        // Login credentials are invalid
+        strongSelf.updateLoginButton(withEnabledStatus: true)
+      }
     })
   }
   
   func updateLoginButton(withEnabledStatus enabled: Bool) {
+    let color: UIColor = enabled ? .salmon : .lightGray
     DispatchQueue.main.async {
       self.loginButton.isEnabled = enabled
-      if enabled {
-        self.loginButton.setTitleColor(.red, for: .normal)
-      } else {
-        self.loginButton.setTitleColor(.gray, for: .normal)
-      }
+      self.loginButton.backgroundColor = color
     }
   }
   
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    // Check if the user tapped anywhere outside the text fields. If so, dismiss the keyboard
+    if let touch: UITouch = touches.first, let view = touch.view {
+      if !view.isKind(of: UITextField.self) {
+        view.endEditing(true)
+      }
     }
-    */
-
+  }
 }
 
 extension LoginViewController: UITextFieldDelegate {
+  
+  func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+    // Try to find next responder
+    if let nextField = textField.superview?.viewWithTag(textField.tag + 1) as? UITextField {
+      nextField.becomeFirstResponder()
+    } else {
+      // Not found, so remove keyboard.
+      textField.resignFirstResponder()
+      if usernameField.text != "" && passwordField.text != "" {
+        loginButtonPressed(nil)
+      }
+    }
+    
+    // Do not add a line break
+    return false
+  }
 
   func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-    print("wow")
-    self.updateLoginButton(withEnabledStatus: self.usernameField.text != "" && self.passwordField.text != "")
+    updateLoginButton(withEnabledStatus: usernameField.text != "" && passwordField.text != "")
     return true
   }
 }

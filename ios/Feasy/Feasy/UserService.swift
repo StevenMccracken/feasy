@@ -20,6 +20,15 @@ class UserService {
     }
   }
   
+  static func refreshToken(success: @escaping (JSON) -> (), error: @escaping (HTTPURLResponse) -> ()) -> Bool {
+    guard let _ = LoginManager.getToken() else { return false }
+    FeasyApi.get2(path: "/login/refresh", completion: { (result: JSON) in
+      success(result)
+    })
+    
+    return true
+  }
+  
   static func get(username: String, resolve: @escaping (HTTPURLResponse, [String: Any]) -> Void) {
     let getPath = "/users/\(username)"
     FeasyApi.get(path: getPath) { httpResponse, responseBodyJson in

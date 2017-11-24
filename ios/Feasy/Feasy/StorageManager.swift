@@ -30,6 +30,7 @@ class StorageManager {
   */
   static func set(key: String, value: Any) {
     UserDefaults.standard.set(value, forKey: key)
+    synchronize()
   }
   
   /**
@@ -39,5 +40,10 @@ class StorageManager {
   */
   static func delete(key: String) {
     UserDefaults.standard.removeObject(forKey: key)
+    synchronize()
+  }
+  
+  static func synchronize() {
+    UserDefaults.standard.synchronize()
   }
 }
