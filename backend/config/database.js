@@ -33,7 +33,7 @@ const isConnected = function isConnected() {
  */
 const connect = function connect(_isProductionEnvironment = false) {
   const promise = new Promise((resolve, reject) => {
-    if (isConnected()) resolve();
+    if (connected) resolve();
     else {
       if (_isProductionEnvironment) {
         connectionOptions.user = username;
@@ -62,7 +62,7 @@ const connect = function connect(_isProductionEnvironment = false) {
  */
 const disconnect = function disconnect() {
   const promise = new Promise((resolve, reject) => {
-    if (!isConnected()) resolve();
+    if (!connected) resolve();
     else {
       MONGOOSE.disconnect()
         .then(
