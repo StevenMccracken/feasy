@@ -42,7 +42,7 @@ const parsePdf = function parsePdf(_filepath) {
     parser.on('pdfParser_dataError', parseError => reject(parseError));
     /* eslint-disable no-unused-vars */
     parser.on('pdfParser_dataReady', (pdfData) => {
-    /* eslint-disable no-unused-vars */
+    /* eslint-enable no-unused-vars */
       // Get the raw text content from the pdf data structure
       const rawText = parser.getRawTextContent();
 

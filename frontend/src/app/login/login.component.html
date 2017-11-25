@@ -18,13 +18,6 @@
         <label for="password">Password</label>
       </div>
     </div>
-    <div clas="row">
-      <div class="input-field col s12 m12 l12">
-        <input id="token" class="validate" type="text" name="alphaCode" pattern="^[a-zA-Z\d]{8}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{12}$" [(ngModel)]="_alphaCode" #alphaCode="ngModel">
-        <label for="token">Access code (for first time Google users only)</label>
-        <p>This access code is only required when <b>signing up</b> to use our app (even if you use a Google account). Once you have signed up, you do not need to enter a code to log in</p>
-      </div>
-    </div>
     <div class="row">
       <button type="submit" class="waves-effect waves-light btn btn-red col s12 m5" [class.disabled]="!loginForm.form.valid" (click)="signIn()">Log in</button>
       <button type="button" class="waves-effect waves-light btn btn-red col s12 m7" routerLink="/signup">New? Sign up here</button>

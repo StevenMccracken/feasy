@@ -37,16 +37,14 @@ export class UserService {
   /**
    * Sends a request to create a new user
    * @param {User} [_user = new User()] the user object
-   * @param {string} [_alphaCode = ''] the special access alpha code
    * @return {Promise<string>} the authentication token for the newly created user
    */
-  create(_user: User = new User(), _alphaCode: string = ''): Promise<string> {
+  create(_user: User = new User()): Promise<string> {
     const createUserPath: string = '/users';
     const requestParams: Object = {
       username: _user.username,
       password: _user.password,
       email: _user.email,
-      alphaCode: _alphaCode,
     };
 
     // Add optional parameters
@@ -80,13 +78,12 @@ export class UserService {
             // Add the invalid parameters to the error object
             error.setCustomProperty('invalidParameters', invalidParameters);
           } else if (this.ERROR.isResourceError(error)) {
-            // A user with either the username, email, or access code already exists
+            // A user with either the username or email already exists
             let duplicateParameter: string;
             const errorMessage: string = error.getMessage();
             if (this.UTILS.hasValue(errorMessage)) {
               if (errorMessage.indexOf('username') !== -1) duplicateParameter = 'username';
               else if (errorMessage.indexOf('email') !== -1) duplicateParameter = 'email';
-              else if (errorMessage.indexOf('alpha') !== -1) duplicateParameter = 'alphaCode';
               else duplicateParameter = '';
             }
 
@@ -356,12 +353,11 @@ export class UserService {
    * Retrieves authentication info to login the user once
    * they have granted Feasy offline access. Will only work
    * if the Feasy-specific OAuth2.0 URL is accessed first
-   * @param {string} [_alphaCode = ''] the unique access code to sign up with
    * @return {Promise<Object>} the JSON containing the user's username and a JWT
    */
-  authenticateGoogle(_alphaCode: string = ''): Promise<Object> {
+  authenticateGoogle(): Promise<Object> {
     // Create request information
-    const authenticatePath = `/auth/google/await?alphaCode=${_alphaCode}`;
+    const authenticatePath = '/auth/google/await';
 
     // Send request
     const promise = this.FEASY_API.get(authenticatePath)
@@ -405,10 +401,9 @@ export class UserService {
             // Add the invalid parameters to the error object
             error.setCustomProperty('invalidParameters', invalidParameters);
           } else if (this.ERROR.isResourceError(error)) {
-            // The provided alpha code has already been used or the username/email is taken
+            // The username/email is taken
             const errorMessage: string = error.getMessage() || '';
-            if (errorMessage.indexOf('alpha code') !== -1) error.setCustomProperty('invalidResource', 'alphaCode');
-            else if (errorMessage.indexOf('username') !== -1) error.setCustomProperty('invalidResource', 'username');
+            if (errorMessage.indexOf('username') !== -1) error.setCustomProperty('invalidResource', 'username');
             else if (errorMessage.indexOf('email') !== -1) error.setCustomProperty('invalidResource', 'email');
           }
         } else return Promise.reject(errorResponse);
@@ -474,7 +469,7 @@ export class UserService {
             // Add the invalid parameters to the error object
             error.setCustomProperty('invalidParameters', invalidParameters);
           } else if (this.ERROR.isResourceError(error)) {
-            // The provided alpha code has already been used or the username/email is taken
+            // The provided reset code has already been used or the username/email is taken
             const errorMessage: string = error.getMessage() || '';
             if (errorMessage.indexOf('expired') !== -1) error.setCustomProperty('invalidResourceReason', 'expired');
             else if (errorMessage.indexOf('already') !== -1) error.setCustomProperty('invalidResourceReason', 'used');
@@ -516,7 +511,7 @@ export class UserService {
           // Add the invalid parameters to the error object
           error.setCustomProperty('invalidParameters', invalidParameters);
         } else if (this.ERROR.isResourceError(error)) {
-          // The provided alpha code has already been used or the username/email is taken
+          // The provided reset code has already been used or the username/email is taken
           const errorMessage: string = error.getMessage() || '';
           if (errorMessage.indexOf('expired') !== -1) error.setCustomProperty('invalidResourceReason', 'expired');
           else if (errorMessage.indexOf('already') !== -1) error.setCustomProperty('invalidResourceReason', 'used');

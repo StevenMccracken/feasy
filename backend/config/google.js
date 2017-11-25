@@ -4,9 +4,21 @@
 
 const CONFIG = require('./googleSecret');
 
-/* eslint-disable dot-notation */
-const redirectUriIndex = process.env['FEASY_ENV'] === 'prod' ? 0 : 1;
-/* eslint-enable dot-notation */
+let redirectUriIndex;
+if (process.env.FEASY_ENV === 'prod') {
+  redirectUriIndex = 0;
+} else {
+  switch (process.env.FEASY_PORT) {
+    case '8080':
+      redirectUriIndex = 1;
+      break;
+    case '8081':
+      redirectUriIndex = 2;
+      break;
+    default:
+      redirectUriIndex = 0;
+  }
+}
 
 module.exports = {
   secret: CONFIG.web.client_secret,
