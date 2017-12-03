@@ -56,6 +56,20 @@
       </a>
     </li>
     <li>
+      <a (click)="this.openLoadNLearn()">
+        <table>
+          <tr>
+            <td class="icon-menu">
+              <p class="material-icons">add_circle_outline</p>
+            </td>
+            <td>
+              <h6>Load n Learn</h6>
+            </td>
+          </tr>
+        </table>
+      </a>
+    </li>
+    <li>
       <a (click)="this.openQuickAdd()">
         <table>
           <tr>
@@ -154,6 +168,41 @@
       </div>
     </div>
   </ul>
+
+  <div id="loadNLearn" class="modal modal-fixed-footer">
+    <div id="loadNLearnContent" class="modal-content">
+      <div *ngIf="this.errors.general.occurred" id="loadNLearnError">
+        <div class="card error-message">
+          <div class="card-content">
+            {{ this.errors.general.message }}
+          </div>
+        </div>
+      </div>
+      <div *ngIf="this.success.general.occurred" id="loadNLearnSuccess">
+        <div class="card success-message">
+          <div class="card-content">
+            {{ this.success.general.message }}
+          </div>
+        </div>
+      </div>
+      <form class="col s12" action="#">
+        <div class="row">
+          <div class="file-field input-field">
+            <div class="waves-effect waves-light btn btn-red">
+              <span>Browse</span>
+              <input type="file">
+            </div>
+            <div class="file-path-wrapper">
+              <input class="file-path validate" type="text">
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <a class="waves-effect waves-red btn-flat" (click)="this.addTasksInBulk()">Upload</a>
+    </div>
+  </div>
 
   <div id="quickAdd" class="modal modal-fixed-footer">
     <div id="quickAddContent" class="modal-content">

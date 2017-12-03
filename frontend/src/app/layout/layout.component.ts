@@ -481,6 +481,10 @@ export class LayoutComponent implements OnInit {
     $('#quickAdd').modal('open');
   } // End openQuickAdd()
 
+  openLoadNLearn(): void {
+    $('#loadNLearn').modal('open');
+  }
+
   /**
    * Sends a message to subscribers about the task
    * and row that was chosen in the quick add modal
