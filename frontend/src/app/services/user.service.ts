@@ -1,15 +1,9 @@
 // Import angular packages
-import {
-  NgZone,
-  Injectable,
-} from '@angular/core';
 import { Router } from '@angular/router';
 import { Response } from '@angular/http';
+import { Injectable } from '@angular/core';
 
 // Import 3rd-party libraries
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/catch';
-import 'rxjs/add/operator/toPromise';
 import { GoogleAuthService } from 'ng-gapi/lib/GoogleAuthService';
 
 // Import our files
@@ -25,6 +19,12 @@ import { InvalidRequestError } from '../objects/invalid-request-error';
 
 @Injectable()
 export class UserService {
+  private autoRefreshTokenTimerId: number;
+
+  private times: Object = {
+    autoRefreshTokenInterval: 30000,
+  };
+
   constructor(
     private ROUTER: Router,
     private ERROR: ErrorService,
@@ -37,16 +37,14 @@ export class UserService {
   /**
    * Sends a request to create a new user
    * @param {User} [_user = new User()] the user object
-   * @param {string} [_alphaCode = ''] the special access alpha code
    * @return {Promise<string>} the authentication token for the newly created user
    */
-  create(_user: User = new User(), _alphaCode: string = ''): Promise<string> {
+  create(_user: User = new User()): Promise<string> {
     const createUserPath: string = '/users';
     const requestParams: Object = {
       username: _user.username,
       password: _user.password,
       email: _user.email,
-      alphaCode: _alphaCode,
     };
 
     // Add optional parameters
@@ -80,13 +78,12 @@ export class UserService {
             // Add the invalid parameters to the error object
             error.setCustomProperty('invalidParameters', invalidParameters);
           } else if (this.ERROR.isResourceError(error)) {
-            // A user with either the username, email, or access code already exists
+            // A user with either the username or email already exists
             let duplicateParameter: string;
             const errorMessage: string = error.getMessage();
             if (this.UTILS.hasValue(errorMessage)) {
               if (errorMessage.indexOf('username') !== -1) duplicateParameter = 'username';
               else if (errorMessage.indexOf('email') !== -1) duplicateParameter = 'email';
-              else if (errorMessage.indexOf('alpha') !== -1) duplicateParameter = 'alphaCode';
               else duplicateParameter = '';
             }
 
@@ -233,7 +230,58 @@ export class UserService {
   } // End getAuthToken()
 
   /**
-   * Sends an existing token from local storage to the /login/refresh API route to refresh the token
+   * Starts a repeating API call to refresh the JWT
+   * authentication token to ensure auto-login does not expire
+   * @return {boolean} whether or not the call to this
+   * method actually started the auto-refresh API call.
+   * This will return false if the timer has already started
+   */
+  startTokenAutoRefresh(): boolean {
+    let startedAutoRefresh: boolean = false;
+    if (!this.UTILS.hasValue(this.autoRefreshTokenTimerId)) {
+      const self = this;
+      this.autoRefreshTokenTimerId = window.setInterval(
+        () => {
+          self.refreshAuthToken()
+            .then((token: string) => self.STORAGE.setItem('token', token))
+            .catch((refreshTokenError: Error) => console.error(refreshTokenError));
+        },
+        this.times['autoRefreshTokenInterval']);
+
+      startedAutoRefresh = true;
+    }
+
+    return startedAutoRefresh;
+  } // End startTokenAutoRefresh()
+
+  /**
+   * Determines whether or not the token auto-refresh timer is running or not
+   * @return {boolean} the status of the token auto-refresh timer
+   */
+  isTokenAutoRefreshRunning(): boolean {
+    return this.UTILS.hasValue(this.autoRefreshTokenTimerId);
+  } // End isTokenAutoRefreshRunning()
+
+  /**
+   * Stops the repeating API call to refresh the JWT authentication token
+   * @return {boolean} whether or not the call to this
+   * method actually stopped the auto-refresh API call. This
+   * will return false if the timer was not already running
+   */
+  stopTokenAutoRefresh(): boolean {
+    let stoppedAutoRefresh: boolean = false;
+    if (this.UTILS.hasValue(this.autoRefreshTokenTimerId)) {
+      clearInterval(this.autoRefreshTokenTimerId);
+      this.autoRefreshTokenTimerId = null;
+      stoppedAutoRefresh = true;
+    }
+
+    return stoppedAutoRefresh;
+  } // End stopTokenAutoRefresh()
+
+  /**
+   * Sends an existing token from local storage to
+   * the /login/refresh API route to refresh the token
    * @return {Promise<string>} the token to authenticate subsequent requests
    */
   refreshAuthToken(): Promise<string> {
@@ -305,12 +353,11 @@ export class UserService {
    * Retrieves authentication info to login the user once
    * they have granted Feasy offline access. Will only work
    * if the Feasy-specific OAuth2.0 URL is accessed first
-   * @param {string} [_alphaCode = ''] the unique access code to sign up with
    * @return {Promise<Object>} the JSON containing the user's username and a JWT
    */
-  authenticateGoogle(_alphaCode: string = ''): Promise<Object> {
+  authenticateGoogle(): Promise<Object> {
     // Create request information
-    const authenticatePath = `/auth/google/await?alphaCode=${_alphaCode}`;
+    const authenticatePath = '/auth/google/await';
 
     // Send request
     const promise = this.FEASY_API.get(authenticatePath)
@@ -326,7 +373,7 @@ export class UserService {
         if (this.UTILS.hasValue(token)) authInfo['token'] = token;
         else validToken = false;
 
-        if (this.UTILS.hasValue(username)) authInfo['username'] = token;
+        if (this.UTILS.hasValue(username)) authInfo['username'] = username;
         else validUsername = false;
 
         if (validToken && validUsername) return Promise.resolve(authInfo);
@@ -354,10 +401,9 @@ export class UserService {
             // Add the invalid parameters to the error object
             error.setCustomProperty('invalidParameters', invalidParameters);
           } else if (this.ERROR.isResourceError(error)) {
-            // The provided alpha code has already been used or the username/email is taken
+            // The username/email is taken
             const errorMessage: string = error.getMessage() || '';
-            if (errorMessage.indexOf('alpha code') !== -1) error.setCustomProperty('invalidResource', 'alphaCode');
-            else if (errorMessage.indexOf('username') !== -1) error.setCustomProperty('invalidResource', 'username');
+            if (errorMessage.indexOf('username') !== -1) error.setCustomProperty('invalidResource', 'username');
             else if (errorMessage.indexOf('email') !== -1) error.setCustomProperty('invalidResource', 'email');
           }
         } else return Promise.reject(errorResponse);
@@ -423,7 +469,7 @@ export class UserService {
             // Add the invalid parameters to the error object
             error.setCustomProperty('invalidParameters', invalidParameters);
           } else if (this.ERROR.isResourceError(error)) {
-            // The provided alpha code has already been used or the username/email is taken
+            // The provided reset code has already been used or the username/email is taken
             const errorMessage: string = error.getMessage() || '';
             if (errorMessage.indexOf('expired') !== -1) error.setCustomProperty('invalidResourceReason', 'expired');
             else if (errorMessage.indexOf('already') !== -1) error.setCustomProperty('invalidResourceReason', 'used');
@@ -465,7 +511,7 @@ export class UserService {
           // Add the invalid parameters to the error object
           error.setCustomProperty('invalidParameters', invalidParameters);
         } else if (this.ERROR.isResourceError(error)) {
-          // The provided alpha code has already been used or the username/email is taken
+          // The provided reset code has already been used or the username/email is taken
           const errorMessage: string = error.getMessage() || '';
           if (errorMessage.indexOf('expired') !== -1) error.setCustomProperty('invalidResourceReason', 'expired');
           else if (errorMessage.indexOf('already') !== -1) error.setCustomProperty('invalidResourceReason', 'used');

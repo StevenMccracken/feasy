@@ -1,0 +1,31 @@
+// Import angular packages
+import {
+  async,
+  TestBed,
+  ComponentFixture,
+} from '@angular/core/testing';
+
+// Import our files
+import { HelpComponent } from './help.component';
+
+describe('HelpComponent', () => {
+  let component: HelpComponent;
+  let fixture: ComponentFixture<HelpComponent>;
+
+  beforeEach(async(() => {
+    TestBed.configureTestingModule({
+      declarations: [HelpComponent],
+    })
+    .compileComponents();
+  }));
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(HelpComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});

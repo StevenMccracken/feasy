@@ -121,7 +121,7 @@ export class AvatarService {
     },
   };
 
-  constructor(private _utils: CommonUtilsService) {
+  constructor(private UTILS: CommonUtilsService) {
     this.avatarsArray = [];
     for (const avatar in this.avatars) {
       if (this.avatars.hasOwnProperty(avatar)) this.avatarsArray.push(this.avatars[avatar]);
@@ -152,7 +152,7 @@ export class AvatarService {
   getAvatarUrl(_name: string = ''): string {
     let avatarUrl: string;
     const avatarInfo: Object = this.avatars[_name];
-    if (!this._utils.hasValue(avatarInfo) || this._utils.isJsonEmpty(avatarInfo)) {
+    if (!this.UTILS.hasValue(avatarInfo) || this.UTILS.isJsonEmpty(avatarInfo)) {
       avatarUrl = this.avatars['default'].url;
     } else avatarUrl = avatarInfo['url'];
 

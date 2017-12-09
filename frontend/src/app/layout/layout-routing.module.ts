@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 
 // Import our files
 import { LayoutComponent } from './layout.component';
+import { HelpComponent } from './help/help.component';
 import { AuthGuard } from '../router-guard/auth.guard';
 import { ToDoComponent } from './to-do/to-do.component';
 import { CalendarComponent } from './calendar/calendar.component';
@@ -34,6 +35,10 @@ const layoutRoutes: Routes = [
           {
             path: 'calendar',
             component: CalendarComponent,
+          },
+          {
+            path: 'help',
+            component: HelpComponent,
           },
         ],
       },

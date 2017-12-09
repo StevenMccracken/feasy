@@ -2,7 +2,7 @@ interface Serializable<T> {
   deserialize(_input: Object): T;
 }
 
-export class Assignment implements Serializable<Assignment> {
+export class Task implements Serializable<Task> {
   _id: string;
   googleId: string;
   title: string;
@@ -21,11 +21,11 @@ export class Assignment implements Serializable<Assignment> {
   editModeDescription: boolean = false;
 
   /**
-   * Converts a JSON representing an assignment to an Assignment object
-   * @param {Object} [_input = {}] JSON containing assignment information
-   * @return {Assignment} assignment with the attributes from the JSON input
+   * Converts a JSON representing a task to a task object
+   * @param {Object} [_input = {}] JSON containing task information
+   * @return {Task} task with the attributes from the JSON input
    */
-  deserialize(_input: Object = {}): Assignment {
+  deserialize(_input: Object = {}): Task {
     this._id = _input['_id'] || '';
     this.googleId = _input['googleId'] || '';
     this.title = _input['title'] || '';
@@ -44,15 +44,20 @@ export class Assignment implements Serializable<Assignment> {
     return this;
   } // End deserialize()
 
-  deepCopy(): Assignment {
-    const clone = new Assignment();
+  /**
+   * Returns a completely new object with all of the same
+   * attributes of the task that the function was called on
+   * @return {Task} the deep-cloned task
+   */
+  deepCopy(): Task {
+    const clone = new Task();
     clone._id = this._id;
     clone.googleId = this.googleId;
     clone.title = this.title;
-    clone.dueDate = new Date(this.dueDate.getTime());
+    clone.dueDate = this.dueDate instanceof Date ? new Date(this.dueDate.getTime()) : null;
     clone.completed = this.completed;
     clone.class = this.class;
-    clone.dateCreated = new Date(this.dateCreated.getTime());
+    clone.dateCreated = this.dateCreated instanceof Date ? new Date(this.dateCreated.getTime()) : null;
     clone.type = this.type;
     clone.description = this.description;
 
@@ -62,7 +67,7 @@ export class Assignment implements Serializable<Assignment> {
     clone.editModeDescription = this.editModeDescription;
 
     return clone;
-  } // End clone()
+  } // End deepCopy()
 
   getId(): string {
     return this._id;

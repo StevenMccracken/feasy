@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
-// Import 3rd party libraries
+// Import 3rd-party libraries
 import {
   DragulaModule,
   DragulaService,
@@ -12,6 +12,7 @@ import { CalendarModule } from 'angular-calendar';
 
 // Import our files
 import { LayoutComponent } from './layout.component';
+import { HelpComponent } from './help/help.component';
 import { AuthGuard } from '../router-guard/auth.guard';
 import { ToDoComponent } from './to-do/to-do.component';
 import { LayoutRoutingModule } from './layout-routing.module';
@@ -26,6 +27,7 @@ import { CalendarComponent } from './calendar/calendar.component';
     CalendarModule.forRoot(),
   ],
   declarations: [
+    HelpComponent,
     ToDoComponent,
     LayoutComponent,
     CalendarComponent,

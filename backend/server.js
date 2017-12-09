@@ -8,7 +8,6 @@ const BUGSNAG = require('bugsnag');
 const BODY_PARSER = require('body-parser');
 const DATABASE = require('./config/database');
 const UTIL = require('./app/modules/utility_mod');
-const ROUTES = require('./app/modules/router_mod');
 const BUGSNAG_CONFIG = require('./config/bugsnagSecret');
 
 /**
@@ -59,15 +58,35 @@ function shutdownLog(_message, _newLineBefore = false) {
 }
 
 let server;
-const DEFAULT_PORT = 8080;
+const PORTS = {
+  DEV: 8080,
+  TEST: 8081,
+  PRODUCTION: 8080,
+};
 
 /**
  * shutdown - Closes the Express application and logs the process
  */
 const closeExpress = function shutdown() {
-  shutdownLog('Closing the express app...', true);
-  server.close();
-  shutdownLog('Express closed');
+  const promise = new Promise((resolve, reject) => {
+    shutdownLog('Closing the express app...', true);
+    server.close();
+    shutdownLog('Express closed');
+
+    shutdownLog('Closing the database connection...', true);
+    DATABASE.disconnect()
+      .then(() => {
+        shutdownLog('Database connection closed');
+        resolve();
+      }) // End then()
+      .catch((disconnectError) => {
+        shutdownLog(`Database disconnect error: ${disconnectError}`);
+        shutdownLog('Did not finish cleaning up', true);
+        reject(disconnectError);
+      }); // End DATABASE.disconnect()
+  });
+
+  return promise;
 };
 
 // Initialize express application
@@ -105,20 +124,14 @@ express.use(BODY_PARSER.urlencoded({
 }));
 startupLog('Body-parser configured');
 
-// Register the routes from the router module with the express app
-startupLog('Adding Router configuration...', true);
-const ROUTER = ROUTES(Express.Router());
-express.use('/', ROUTER);
-startupLog('Router configured');
-
-// Define the port to listen on
-let port = 8080;
-if (process.env.TEST) port = 3000;
+// Define the default port to listen on
+let port = PORTS.DEV;
 
 startupLog('Checking arguments...', true);
 const usedArgsOptions = {
   env: false,
   port: false,
+  test: false,
   prod: false,
   bugsnag: false,
 };
@@ -137,15 +150,33 @@ process.argv.forEach((arg) => {
     } else startupLog(`Port argument ${potentialPort} is invalid`);
   }
 
+  // Check if server is meant to be run in test mode with the 'test' argument
+  const testMatches = arg.match(/--test/gi) || [];
+  if (!usedArgsOptions.prod && !usedArgsOptions.test && testMatches.length > 0) {
+    startupLog('Test flag recognized. Configuring test settings...', true);
+
+    startupLog('Setting \'FEASY_ENV\' environment variable to \'test\'...', true);
+    process.env.FEASY_ENV = 'test';
+    usedArgsOptions.env = true;
+    startupLog('Set environment to \'test\'');
+
+    // Override any previous port configuration with the default test port
+    startupLog('Configuring test port...', true);
+    port = PORTS.TEST;
+    usedArgsOptions.port = true;
+    startupLog(`Port configured as ${port}`);
+
+    usedArgsOptions.test = true;
+    startupLog('Test settings configured', true);
+  }
+
   // Check if server is meant to be run in production mode with the 'prod' argument
   const productionMatches = arg.match(/--prod/gi) || [];
   if (!usedArgsOptions.prod && productionMatches.length > 0) {
     startupLog('Production flag recognized. Configuring production settings...', true);
 
     startupLog('Setting \'FEASY_ENV\' environment variable to \'prod\'...', true);
-    /* eslint-disable dot-notation */
-    process.env['FEASY_ENV'] = 'prod';
-    /* eslint-enable dot-notation */
+    process.env.FEASY_ENV = 'prod';
     usedArgsOptions.env = true;
     startupLog('Set environment to \'prod\'');
 
@@ -155,9 +186,9 @@ process.argv.forEach((arg) => {
     usedArgsOptions.bugsnag = true;
     startupLog('Bugsnag error handler added');
 
-    // Override any previous port configuration with the default port of 8080
+    // Override any previous port configuration with the default production port
     startupLog('Configuring production port...', true);
-    port = DEFAULT_PORT;
+    port = PORTS.PRODUCTION;
     usedArgsOptions.port = true;
     startupLog(`Port configured as ${port}`);
 
@@ -165,24 +196,41 @@ process.argv.forEach((arg) => {
     startupLog('Production settings configured', true);
   }
 });
+
 startupLog('Arguments checked', true);
+
+// Set the port of the server in the environment
+process.env.FEASY_PORT = `${port}`;
+
+/*
+ Now require the routes module it, by proxy, requires Google
+ API config which needs environment information. Register the
+ routes from the router module with the express app
+ */
+const ROUTES = require('./app/modules/router_mod');
+
+startupLog('Adding Router configuration...', true);
+const ROUTER = ROUTES(Express.Router());
+express.use('/', ROUTER);
+startupLog('Router configured');
 
 // Connect to database server before express server starts
 startupLog('Starting the database connection...', true);
-DATABASE.connect()
+DATABASE.connect(usedArgsOptions.prod)
   .then(() => {
     startupLog('Database connected');
-
-    // Listen for all incoming requests on the specified port
-    startupLog('Starting the Express app...', true);
-    server = express.listen(port, (connectionError) => {
-      if (UTIL.hasValue(connectionError)) startupLog(`Express connection error: ${connectionError}`);
-      else startupLog(`Express app started. Listening on port ${port}`);
-    });
   }) // End then()
-  .catch(databaseConnectionError => (
-    startupLog(`Database connection failed: ${databaseConnectionError}`)
-  )); // End DATABASE.connect()
+  .catch((databaseConnectionError) => {
+    startupLog(`Database connection failed: ${databaseConnectionError}`);
+    closeExpress();
+  }); // End DATABASE.connect()
+
+// Listen for all incoming requests on the specified port
+startupLog('Starting the Express app...', true);
+server = express.listen(port, (connectionError) => {
+  if (UTIL.hasValue(connectionError)) startupLog(`Express connection error: ${connectionError}`);
+  else startupLog(`Express app started. Listening on port ${port}`);
+});
 
 // Catch the kill signal
 process.on('SIGINT', () => {
@@ -209,4 +257,8 @@ process.on('SIGINT', () => {
   }
 });
 
-module.exports.closeServer = closeExpress;
+module.exports = {
+  port,
+  app: server,
+  closeServer: closeExpress,
+};

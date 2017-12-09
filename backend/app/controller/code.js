@@ -38,7 +38,7 @@ const createRandom = function createRandom() {
   }); // End return promise
 }; // End createRandom()
 
-/*
+/**
  * Creates a Code with an expiration date of 1 hour from the current date
  * @param {User} [_userInfo = {}] the Mongoose object of the user
  * @param {String} _code a unique identifier for the Code object

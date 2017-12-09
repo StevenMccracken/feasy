@@ -4,21 +4,17 @@ const UuidV4 = require('uuid/v4');
 const REQUEST = require('request');
 const SERVER = require('../../server');
 
-// TODO: DELETE THIS WHEN ALPHA IS OVER
-const CODES = require('../../app/controller/code');
-
-// Server will check for TEST env variable and adjust the port according to the environment
-let baseUrl = 'http://localhost:8080';
-if (process.env.TEST) baseUrl = 'http://localhost:3000';
+const baseUrl = `http://localhost:${SERVER.port}`;
 
 /* eslint-disable no-undef */
 describe('Start server', () => {
   const start = Date.now();
-
   const baseApiRoute = 'Base API route';
   describe(baseApiRoute, () => {
     it('gets the welcome message and returns status code 200', (done) => {
       REQUEST.get(baseUrl, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
         LOG(baseApiRoute, body);
         done();
@@ -50,26 +46,19 @@ describe('Start server', () => {
     });
 
     it('creates a new user and returns status code 201', (done) => {
-      // TODO: DELETE THIS WHEN ALPHA IS OVER
-      CODES.createRandom()
-        .then((alphaCode) => {
-          requestParams.form.alphaCode = alphaCode.uuid;
-          REQUEST.post(requestParams, (error, response, body) => {
-            expect(response.statusCode).toBe(201);
-            LOG(createUser1, body);
+      REQUEST.post(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
+        expect(response.statusCode).toBe(201);
+        LOG(createUser1, body);
 
-            // Parse JSON response for the token
-            const data = JSON.parse(body);
-            expect(data.success).toBeDefined();
-            expect(data.success.token).toBeDefined();
-            user1Token = data.success.token;
-            done();
-          });
-        }) // End then(alphaCode)
-        .catch((createCodeError) => {
-          LOG(createUser1, createCodeError);
-          done();
-        }); // End CODES.createRandom()
+        // Parse JSON response for the token
+        const data = JSON.parse(body);
+        expect(data.success).toBeDefined();
+        expect(data.success.token).toBeDefined();
+        user1Token = data.success.token;
+        done();
+      });
     });
   }); // End create user 1
 
@@ -89,26 +78,19 @@ describe('Start server', () => {
     });
 
     it('creates a new user and returns status code 201', (done) => {
-      // TODO: DELETE THIS WHEN ALPHA IS OVER
-      CODES.createRandom()
-        .then((alphaCode) => {
-          requestParams.form.alphaCode = alphaCode.uuid;
-          REQUEST.post(requestParams, (error, response, body) => {
-            expect(response.statusCode).toBe(201);
-            LOG(createUser1, body);
+      REQUEST.post(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
+        expect(response.statusCode).toBe(201);
+        LOG(createUser1, body);
 
-            // Parse JSON response for the token
-            const data = JSON.parse(body);
-            expect(data.success).toBeDefined();
-            expect(data.success.token).toBeDefined();
-            user2Token = data.success.token;
-            done();
-          });
-        }) // End then(alphaCode)
-        .catch((createCodeError) => {
-          LOG(createUser2, createCodeError);
-          done();
-        }); // End CODES.createRandom()
+        // Parse JSON response for the token
+        const data = JSON.parse(body);
+        expect(data.success).toBeDefined();
+        expect(data.success.token).toBeDefined();
+        user2Token = data.success.token;
+        done();
+      });
     });
   }); // End create user 2
 
@@ -128,6 +110,8 @@ describe('Start server', () => {
 
     it('generates a token and returns status code 200', (done) => {
       REQUEST.post(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
         LOG(login, body);
 
@@ -153,6 +137,8 @@ describe('Start server', () => {
 
     it('generates a refreshed token and returns status code 200', (done) => {
       REQUEST.get(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
         LOG(login, body);
 
@@ -175,6 +161,8 @@ describe('Start server', () => {
 
     it('gets a Google OAuth URL and returns status code 200', (done) => {
       REQUEST.get(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
         LOG(googleOAuthUrl, body);
 
@@ -204,6 +192,8 @@ describe('Start server', () => {
       'requests for a password reset link to be sent via email and returns status code 200',
       (done) => {
         REQUEST.post(requestParams, (error, response, body) => {
+          expect(error).toBe(null);
+          expect(response).toBeDefined();
           expect(response.statusCode).toBe(200);
           LOG(requestPasswordReset, body);
           done();
@@ -225,6 +215,8 @@ describe('Start server', () => {
 
     it('gets user\'s information and returns status code 200', (done) => {
       REQUEST.get(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
         LOG(getUser1Info, body);
         done();
@@ -247,6 +239,8 @@ describe('Start server', () => {
 
     it('updates user\'s username and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
         LOG(updateUser1Username, body);
 
@@ -279,6 +273,8 @@ describe('Start server', () => {
 
     it('updates user\'s password and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -305,6 +301,8 @@ describe('Start server', () => {
 
     it('updates user\'s email and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -330,6 +328,8 @@ describe('Start server', () => {
 
     it('updates user\'s first name and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -355,6 +355,8 @@ describe('Start server', () => {
 
     it('updates user\'s last name and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -380,6 +382,8 @@ describe('Start server', () => {
 
     it('updates user\'s avatar and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -410,6 +414,8 @@ describe('Start server', () => {
 
     it('creates an assignment and returns status code 201', (done) => {
       REQUEST.post(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(201);
         LOG(createAssignment1, body);
 
@@ -453,6 +459,8 @@ describe('Start server', () => {
 
     it('creates multiple assignments and returns status code 201', (done) => {
       REQUEST.post(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(201);
 
         // Parse JSON response for the assignments
@@ -481,6 +489,8 @@ describe('Start server', () => {
 
     it('uploads a pdf and returns status code 200', (done) => {
       REQUEST.post(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         // Parse JSON response for the assignments
@@ -516,6 +526,8 @@ describe('Start server', () => {
 
     it('creates an assignment and returns status code 201', (done) => {
       REQUEST.post(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(201);
         LOG(createAssignment2, body);
 
@@ -541,6 +553,8 @@ describe('Start server', () => {
 
     it('gets the assignments and returns status code 200', (done) => {
       REQUEST.get(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         // Parse JSON response for the assignments
@@ -565,6 +579,8 @@ describe('Start server', () => {
 
     it('gets the assignment and returns status code 200', (done) => {
       REQUEST.get(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
         LOG(getAssignment1, body);
         done();
@@ -586,6 +602,8 @@ describe('Start server', () => {
 
     it('updates the assignment\'s title and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -611,6 +629,8 @@ describe('Start server', () => {
 
     it('updates the assignment\'s class and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -636,6 +656,8 @@ describe('Start server', () => {
 
     it('updates the assignment\'s type and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -661,6 +683,8 @@ describe('Start server', () => {
 
     it('update the assignment\'s description and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -686,6 +710,8 @@ describe('Start server', () => {
 
     it('updates the assignment\'s compmleted and returns status code 200', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -711,6 +737,8 @@ describe('Start server', () => {
 
     it('returns status code 200 on successful update', (done) => {
       REQUEST.put(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -735,6 +763,8 @@ describe('Start server', () => {
 
     it('deletes the assignment and returns status code 200', (done) => {
       REQUEST.delete(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -759,6 +789,8 @@ describe('Start server', () => {
 
     it('deletes the user and returns status code 200', (done) => {
       REQUEST.delete(requestParams, (error, response, body) => {
+        expect(error).toBe(null);
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -783,6 +815,7 @@ describe('Start server', () => {
 
     it('deletes the user and returns status code 200', (done) => {
       REQUEST.delete(requestParams, (error, response, body) => {
+        expect(response).toBeDefined();
         expect(response.statusCode).toBe(200);
 
         const data = JSON.parse(body);
@@ -798,10 +831,22 @@ describe('Start server', () => {
   const closeServer = 'Close server';
   describe(closeServer, () => {
     it('shuts down the test server', (done) => {
-      SERVER.closeServer();
-      LOG(closeServer, 'closed');
-      LOG('Test duration', `${(Date.now() - start) / 1000} seconds`);
-      done();
+      const finalConsoleLog = () => {
+        LOG('Test duration', `${(Date.now() - start) / 1000} seconds`);
+        done();
+      };
+
+      SERVER.closeServer()
+        .then(() => {
+          LOG(closeServer, 'Successfully closed server');
+          finalConsoleLog();
+        }) // End then()
+        .catch((closeError) => {
+          LOG(closeServer, 'Did not close database');
+          LOG(closeServer, closeError);
+          finalConsoleLog();
+        }); // End SERVER.closeServer()
     });
   }); // End close the server
 }); // End start server
+/* eslint-enable no-undef */

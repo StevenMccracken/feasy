@@ -10,16 +10,12 @@
     </div>
     <div class="row">
       <div class="input-field col s12 m12 l12">
-        <input placeholder="Username (required)" id="username" class="validate" type="text" name="username" required pattern="^\w+([\.-]?\w+)*$" [(ngModel)]="_username" #username="ngModel">
+        <input id="username" class="validate" type="text" name="username" required pattern="^\w+([\.-]?\w+)*$" [(ngModel)]="_username" #username="ngModel">
+        <label for="username">Username</label>
       </div>
       <div class="input-field col s12 m12 l12">
-        <input placeholder="Password (required)" id="password" class="validate" type="password" name="password" required pattern="^\S+$" [(ngModel)]="_password" #password="ngModel">
-      </div>
-    </div>
-    <div clas="row">
-      <div class="input-field col s12 m12 l12">
-        <input placeholder="Access code (for first time Google users only)" id="token" class="validate" type="text" name="alphaCode" pattern="^[a-zA-Z\d]{8}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{12}$" [(ngModel)]="_alphaCode" #alphaCode="ngModel">
-        <p>This access code is only required when <b>signing up</b> to use our app (even if you use a Google account). Once you have signed up, you do not need to enter a code to log in</p>
+        <input id="password" class="validate" type="password" name="password" required pattern="^\S+$" [(ngModel)]="_password" #password="ngModel">
+        <label for="password">Password</label>
       </div>
     </div>
     <div class="row">
