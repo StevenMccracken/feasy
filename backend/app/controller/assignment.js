@@ -189,6 +189,7 @@ const updateAttribute = function updateAttribute(_assignment, _attribute, _newVa
     // Re-assign assignment to not affect the argument passed in
     const assignment = _assignment;
     assignment[_attribute] = _newValue;
+    assignment["dateLastUpdated"] = Date.now;
 
     assignment.save()
       .then(() => resolve(_assignment)) // End then()
