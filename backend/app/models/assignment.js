@@ -29,6 +29,10 @@ const AssignmentSchema = MONGOOSE.Schema({
     type: Date,
     default: Date.now,
   },
+  dateLastUpdated:
+  {
+    type: Date,
+  },
   googleId: {
     trim: true,
     type: String,
