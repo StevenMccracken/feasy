@@ -14,6 +14,7 @@ const AUTH = require('./authentication_mod');
 const VALIDATE = require('./validation_mod');
 const GOOGLE_API = require('./googleApi_mod');
 const SENDGRID_API = require('./sendGridApi_mod');
+const FeasyError = require('../models/FeasyError');
 const ASSIGNMENTS = require('../controller/assignment');
 
 const eventEmitter = new EVENTS.EventEmitter();
@@ -27,108 +28,65 @@ function log(_message, _request) {
   LOG.log('Middleware Module', _message, _request);
 }
 
-const shit = async function shit(_request, _response) {
-  const SOURCE = 'shit()';
-  log(SOURCE, _request);
-
-  try {
-    const user = await USERS.getByUsernameAsync(_request.params.username, true);
-    if (user === null) throw new Error('not found');
-    console.log('ayyy');
-    return user;
-  } catch (error) { throw error; }
-};
-
 /**
  * authenticate - Authorizes a user and generates a JSON web token for the user
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
- * @return {Promise<Object>} a success JSON or error JSON
+ * @return {Object} the success JSON containing a JWT for authentication
  */
-const authenticate = function authenticate(_request, _response) {
-  const SOURCE = 'authenticate()';
-  log(SOURCE, _request);
+const authenticate = async function authenticate(_request, _response) {
+  const source = 'authenticate()';
+  log(source, _request);
 
-  return new Promise((resolve, reject) => {
-    // Check request parameters
-    const missingParams = [];
-    if (!UTIL.hasValue(_request.body.username)) missingParams.push('username');
-    if (!UTIL.hasValue(_request.body.password)) missingParams.push('password');
+  const missingParams = [];
+  if (!UTIL.hasValue(_request.body.username)) missingParams.push('username');
+  if (!UTIL.hasValue(_request.body.password)) missingParams.push('password');
 
-    if (missingParams.length > 0) {
-      const errorJson = ERROR.error(
-        SOURCE,
-        _request,
-        _response,
-        ERROR.CODE.INVALID_REQUEST_ERROR,
-        `Invalid parameters: ${missingParams.join()}`
-      );
+  if (missingParams.length > 0) {
+    const details = ERROR.error(source, _request, _response, ERROR.CODE.INVALID_REQUEST_ERROR, `Invalid parameters: ${missingParams.join()}`);
+    throw new FeasyError(details);
+  }
 
-      reject(errorJson);
-    } else {
-      // Parameters are valid. Retrieve user info from database
-      USERS.getByUsername(_request.body.username, true)
-        .then((user) => {
-          if (user === null) {
-            const errorJson = ERROR.error(
-              SOURCE,
-              _request,
-              _response,
-              ERROR.CODE.LOGIN_ERROR,
-              null,
-              `${_request.body.username} does not exist`
-            );
+  let user;
+  try {
+    user = await USERS.getByUsernameAsync(_request.body.username, true);
+  } catch (getUserError) {
+    const details = ERROR.userError(source, _request, _response, getUserError);
+    throw new FeasyError(details);
+  }
 
-            reject(errorJson);
-          } else if (USERS.isTypeGoogle(user)) {
-            const errorJson = ERROR.error(
-              SOURCE,
-              _request,
-              _response,
-              ERROR.CODE.RESOURCE_ERROR,
-              'Authenticating a Google user with this route is not allowed',
-              `${user.username} tried to use authenticate() method`
-            );
+  if (!UTIL.hasValue(user)) {
+    const details = ERROR.error(source, _request, _response, ERROR.CODE.LOGIN_ERROR, null, `${_request.body.username} does not exist`);
+    throw new FeasyError(details);
+  }
 
-            reject(errorJson);
-          } else {
-            AUTH.validatePasswords(_request.body.password, user.password)
-              .then((passwordsMatch) => {
-                if (passwordsMatch) {
-                  // Password is valid. Generate the JWT for the client
-                  const token = AUTH.generateToken(user);
-                  const successJson = {
-                    success: {
-                      token: `JWT ${token}`,
-                    },
-                  };
+  if (USERS.isTypeGoogle(user)) {
+    const details = ERROR.error(source, _request, _response, ERROR.CODE.RESOURCE_ERROR, 'Authenticating a Google user with this route is not allowed', `${user.username} tried to use authenticate() method`);
+    throw new FeasyError(details);
+  }
 
-                  resolve(successJson);
-                } else {
-                  const errorJson = ERROR.error(
-                    SOURCE,
-                    _request,
-                    _response,
-                    ERROR.CODE.LOGIN_ERROR,
-                    null,
-                    `Passwords do not match for '${_request.body.username}'`
-                  );
+  let passwordsMatch;
+  try {
+    passwordsMatch = await AUTH.validatePasswordsAsync(_request.body.password, user.password);
+  } catch (passwordValidationError) {
+    const details = ERROR.bcryptError(source, _request, _response, passwordValidationError);
+    throw new FeasyError(details);
+  }
 
-                  reject(errorJson);
-                }
-              }) // End then(passwordsMatch)
-              .catch((validationError) => {
-                const errorJson = ERROR.bcryptError(SOURCE, _request, _response, validationError);
-                reject(errorJson);
-              }); // End AUTH.validatePasswords()
-          }
-        }) // End then(user)
-        .catch((getUserError) => {
-          const errorJson = ERROR.userError(SOURCE, _request, _response, getUserError);
-          reject(errorJson);
-        }); // End USERS.getByUsername()
-    }
-  }); // End return promise
+  if (!passwordsMatch) {
+    const details = ERROR.error(source, _request, _response, ERROR.CODE.LOGIN_ERROR, null, `Passwords do not match for '${_request.body.username}'`);
+    throw new FeasyError(details);
+  }
+
+  // Password is valid. Generate the JWT for the client
+  const token = AUTH.generateToken(user);
+  const success = {
+    success: {
+      token: `JWT ${token}`,
+    },
+  };
+
+  return success;
 }; // End authenticate()
 
 /**
@@ -2758,7 +2716,6 @@ const deleteAssignment = function deleteAssignment(_request, _response) {
 }; // End deleteAssignment()
 
 module.exports = {
-  shit,
   authenticate,
   refreshAuthToken,
   getGoogleAuthUrl,

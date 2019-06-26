@@ -6,6 +6,8 @@ const LOG = require('./log_mod');
 const MEDIA = require('./media_mod');
 const UTIL = require('./utility_mod');
 const MIDDLEWARE = require('./middleware_mod');
+const ERROR = require('./error_mod');
+const FeasyError = require('../models/FeasyError');
 
 /**
  * log - Logs a message to the server console
@@ -14,6 +16,20 @@ const MIDDLEWARE = require('./middleware_mod');
  */
 function log(_message, _request) {
   LOG.log('Router Module', _message, _request);
+}
+
+/**
+ * Sends errors in
+ * @param {Error} [_error = new Error()] the error that was caught
+ * @param {Object} _request the HTTP request
+ * @param {Object} _response the HTTP response
+ */
+function handleError(_error = new Error(), _request, _response) {
+  let details;
+  if (_error instanceof FeasyError) details = _error.details;
+  else details = ERROR.error('unknown', _request, _response, ERROR.CODE.API_ERROR, null, _error);
+
+  _response.json(details);
 }
 
 let router;
@@ -35,26 +51,22 @@ const routing = function routing(_router) {
   });
 
   // The base GET route for the API. This route does not require token authentication
-  router.route('/').get((_request, _response) => (
-    _response.json({ message: 'This is the REST API for Feasy' })
+  router.route('/').get((request, response) => (
+    response.json({ message: 'This is the REST API for Feasy' })
   ));
-
-  router.route('/shit/:username').get(async (_request, _response) => {
-    try {
-      const result = await MIDDLEWARE.shit(_request, _response);
-      _response.json(result);
-    } catch (error) { _response.json(error.message); }
-  });
 
   /**
    * The POST route for validating login credentials. Sends
    * an error JSON or a JSON web token for authentication.
    * This route does not require token authentication
    */
-  router.route('/login').post((_request, _response) => {
-    MIDDLEWARE.authenticate(_request, _response)
-      .then(result => _response.json(result))
-      .catch(error => _response.json(error));
+  router.route('/login').post(async (request, response) => {
+    try {
+      const result = await MIDDLEWARE.authenticate(request, response);
+      response.json(result);
+    } catch (error) {
+      handleError(error, request, response);
+    }
   });
 
   /**

@@ -43,6 +43,27 @@ const validatePasswords = function validatePasswords(_givenPassword, _actualPass
 }; // End validatePasswords()
 
 /**
+ * validatePasswordsAsync - Verifies a given password against a hashed password
+ * @param {String} _givenPassword a given value for the supposed password
+ * @param {String} _hashedPassword a hashed password
+ * @return {Boolean} whether the passwords match or not
+ * @throws {Error} if the comparison fails
+ */
+const validatePasswordsAsync = async function validatePasswordsAsync(
+  _givenPassword,
+  _actualPassword
+) {
+  const SOURCE = 'validatePasswordsAsync()';
+  log(SOURCE);
+  try {
+    const doPasswordsMatch = await BCRYPT.compare(_givenPassword, _actualPassword);
+    return doPasswordsMatch;
+  } catch (comparisonError) {
+    throw comparisonError;
+  }
+}; // End validatePasswordsAsync()
+
+/**
  * verifyToken - Validates and verifies a JSON web token
  * @param {Object} _request the HTTP request
  * @param {Object} _response the HTTP response
@@ -103,6 +124,7 @@ const hash = function hash(_value) {
 
 module.exports = {
   validatePasswords,
+  validatePasswordsAsync,
   verifyToken,
   generateToken,
   hash,
