@@ -21,7 +21,7 @@
     "cors": " 2.8.1",
     "express": "latest",
     "googleapis": "^20.1.0",
-    "jsonwebtoken": "^7.3.0",
+    "jsonwebtoken": "^9.0.0",
     "mongoose": "latest",
     "multer": "^1.3.0",
     "passport": "^0.3.2",
