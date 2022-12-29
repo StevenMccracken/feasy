@@ -23,7 +23,7 @@
     "@angular/platform-browser-dynamic": "^4.0.0",
     "@angular/router": "^4.0.0",
     "@ng-bootstrap/ng-bootstrap": "^1.0.0-alpha.26",
-    "@ngtools/webpack": "^1.2.4",
+    "@ngtools/webpack": "^15.0.4",
     "@types/jquery": "^3.2.11",
     "angular-calendar": "^0.17.4",
     "bootstrap": "^3.3.7",
@@ -38,7 +38,7 @@
     "zone.js": "^0.8.4"
   },
   "devDependencies": {
-    "@angular/cli": "1.0.0",
+    "@angular/cli": "15.0.4",
     "@angular/compiler-cli": "^4.0.0",
     "@types/jasmine": "2.5.38",
     "@types/node": "~6.0.60",
